@@ -1,0 +1,754 @@
+# Flink для AISafetyOps: мониторинг, наблюдаемость и отладка
+
+## Глоссарий
+
+- **Lag** — отставание обработки относительно источника или event time.
+- **Watermark lag** — разница между ожидаемым прогрессом event time и текущим watermark.
+- **Backpressure** — upstream не может быстро отдать данные, потому что downstream не успевает их потреблять.
+- **Busy time** — доля времени, когда subtask реально выполнял работу.
+- **Idle time** — доля времени, когда subtask ждал входных данных.
+- **Checkpoint alignment** — фаза согласования checkpoint barriers между потоками.
+- **Checkpoint duration** — общее время выполнения snapshot.
+- **Failed checkpoint** — checkpoint, который не завершился успешно.
+- **Restart strategy** — политика перезапуска job после сбоя.
+- **Dead letter** — поток проблемных событий, которые нельзя корректно обработать в основном pipeline.
+- **Hot key** — ключ, на который попадает непропорционально большой объем событий.
+- **Skew** — неравномерное распределение данных или работы по subtasks.
+- **Subtask** — один параллельный экземпляр оператора.
+- **History Server** — сервис Flink для просмотра завершенных job и их архивированной метаинформации.
+
+## 1. Назначение документа
+
+Этот файл дополняет основной manual и отвечает на три практических вопроса:
+
+1. Что именно мониторить в Flink job под AISafetyOps.
+2. Как понять, на каком этапе пайплайна проблема.
+3. Как отлаживать ошибки и деградации без гадания по логам.
+
+Фокус на кейсе:
+
+- потоковые логи LLM-агентов;
+- guardrail findings;
+- stateful correlation;
+- event-time windows;
+- enrichment;
+- incident routing;
+- deployment в Kubernetes.
+
+## 2. Основной принцип наблюдаемости
+
+Flink нельзя эффективно мониторить только по одному сигналу.
+
+Нормальная operational-модель всегда включает четыре уровня:
+
+1. **Job-level health**
+   - job running/failed/restarting;
+   - end-to-end throughput;
+   - restart count;
+   - checkpoint success rate.
+2. **Stage/operator-level health**
+   - busy/idle/backpressure;
+   - records in/out;
+   - watermark progress;
+   - state size;
+   - async wait time.
+3. **Infrastructure-level health**
+   - CPU, memory, disk, network;
+   - pod restarts;
+   - object storage latency;
+   - Kafka lag.
+4. **Business-level health**
+   - guardrail hit rate;
+   - incident emission rate;
+   - per-tenant volume;
+   - доля invalid/late/dropped events.
+
+Если мониторить только JVM/CPU, вы пропустите ошибки event-time. Если мониторить только guardrail hit rate, вы пропустите деградацию checkpointing. Если смотреть только на Flink UI, можно не заметить, что upstream source уже отстает на десятки минут.
+
+## 3. Чем пользоваться в первую очередь
+
+Базовый operational stack для Flink обычно такой:
+
+- **Flink Web UI**
+  - смотреть job graph;
+  - backpressure;
+  - metrics subtasks;
+  - checkpoints;
+  - exceptions.
+- **Flink logs**
+  - JobManager logs;
+  - TaskManager logs;
+  - operator exceptions;
+  - serialization/classloading/state restore errors.
+- **Metrics backend**
+  - Prometheus/Grafana или совместимая система;
+  - агрегаты по job/operator/subtask.
+- **Kubernetes observability**
+  - `kubectl logs`;
+  - `kubectl describe pod`;
+  - pod restarts;
+  - resource throttling;
+  - node pressure.
+- **Source/sink observability**
+  - Kafka consumer lag;
+  - sink write latency;
+  - error rate во внешних API;
+  - object storage latency для checkpoints/savepoints.
+- **History Server**
+  - анализ завершенных и упавших job после остановки кластера.
+
+## 4. Что мониторить всегда
+
+### 4.1 Job-level метрики
+
+Минимальный набор:
+
+- job state: `RUNNING`, `RESTARTING`, `FAILING`, `FAILED`;
+- records in/out per second;
+- uptime;
+- restart count;
+- last checkpoint status;
+- number of failed checkpoints;
+- end-to-end processing delay;
+- watermark lag.
+
+Что должно настораживать:
+
+- job часто переходит в `RESTARTING`;
+- throughput резко просел без снижения входного трафика;
+- checkpoints стали длиннее или чаще падать;
+- watermark перестал двигаться;
+- incidents/output events внезапно стали почти нулевыми.
+
+### 4.2 Operator-level метрики
+
+На уровне operator/subtask смотреть:
+
+- `busyTimeMsPerSecond`;
+- `idleTimeMsPerSecond`;
+- `backPressureTimeMsPerSecond`;
+- `numRecordsIn`;
+- `numRecordsOut`;
+- `currentInputWatermark`;
+- `currentOutputWatermark`, если доступен;
+- state size;
+- async pending requests;
+- garbage collection pauses;
+- serialization/deserialization failures.
+
+Интерпретация:
+
+- высокий `busyTime`, низкий backpressure — оператор загружен compute work;
+- высокий backpressure upstream — downstream узкое место;
+- высокий idle time — нет входных данных или broken upstream;
+- watermark стоит на месте — один из upstream partitions тормозит event time.
+
+### 4.3 Infra-level метрики
+
+Для Kubernetes и JVM:
+
+- CPU saturation;
+- memory usage;
+- heap/off-heap pressure;
+- container restarts;
+- OOMKilled;
+- disk IO;
+- network retransmits;
+- object storage request latency;
+- Kafka broker/client errors.
+
+Важно:
+
+- Flink-проблема не всегда Flink-проблема;
+- падение checkpoint throughput часто вызвано storage/network;
+- idle operators иногда означают не "все хорошо", а "source не читает".
+
+## 5. Как мониторить по этапам пайплайна
+
+## 5.1 Этап Source / ingest
+
+Что происходит:
+
+- source читает данные из Kafka или файлов;
+- разбивает их на partitions/splits;
+- отдает в downstream operators.
+
+Что мониторить:
+
+- consumer lag по Kafka;
+- records in per source subtask;
+- idle time;
+- source errors;
+- rebalance/repartition behavior;
+- file discovery lag для `FileSource`, если используется continuous reading.
+
+Типовые симптомы:
+
+- входной трафик есть, а source почти idle;
+- один source subtask перегружен, остальные пустуют;
+- lag растет, хотя downstream почти не занят;
+- source падает по auth/network errors.
+
+Как отлаживать:
+
+1. Проверить внешний источник, а не только Flink UI.
+2. Сравнить lag по partitions.
+3. Проверить, сколько partitions реально читает job и соответствует ли это parallelism.
+4. Проверить ошибки auth, TLS, ACL, network policy.
+5. Проверить, не упирается ли source в slow deserialization.
+
+Частые ошибки:
+
+- неверные credentials или ACL;
+- слишком маленький parallelism относительно числа partitions;
+- heavy JSON parsing внутри source path;
+- schema drift в входных сообщениях.
+
+### 5.2 Этап Parse / schema validation / normalization
+
+Что происходит:
+
+- сырое сообщение превращается в доменный объект;
+- валидируются обязательные поля;
+- брак уходит в dead-letter или side output.
+
+Что мониторить:
+
+- parse error rate;
+- invalid event rate;
+- dead-letter throughput;
+- долю событий без обязательных полей;
+- latency на этапе нормализации.
+
+Типовые симптомы:
+
+- после релиза upstream schema incidents резко падают до нуля;
+- invalid events внезапно растут;
+- оператор normalization стал busy при прежнем трафике.
+
+Как отлаживать:
+
+1. Проверить sample raw messages.
+2. Сравнить фактическую schema с ожидаемой.
+3. Вытащить причины reject в структурированный error code, а не только exception text.
+4. Проверить, не потерялись ли timestamps, `tenantId`, `requestId`, `sessionId`.
+5. Убедиться, что side output для invalid data реально читается и наблюдается.
+
+Практический совет:
+
+- не ограничивайтесь `Exception in operator`; логируйте компактный доменный reason code.
+
+### 5.3 Этап timestamp assignment и watermarking
+
+Что происходит:
+
+- событию назначается event timestamp;
+- Flink вычисляет watermark progress.
+
+Что мониторить:
+
+- `currentInputWatermark`;
+- watermark lag по source и downstream;
+- долю late events;
+- долю dropped-too-late events;
+- idleness по partitions.
+
+Типовые симптомы:
+
+- окна не закрываются;
+- окна закрываются слишком поздно;
+- почти все события внезапно "late";
+- у разных subtasks watermark сильно расходится.
+
+Как отлаживать:
+
+1. Проверить, что timestamp берется из доменного event, а не из processing time.
+2. Проверить timezone/format parsing.
+3. Проверить реальное распределение `ingest_time - event_time`.
+4. Проверить, не висит ли один idle partition без `withIdleness(...)`.
+5. Проверить, не отправляет ли upstream события с неправильными часами.
+
+Ключевая метрика:
+
+- `currentInputWatermark` — официальный и самый полезный индикатор event-time progress в task metrics.
+
+### 5.4 Этап window aggregations
+
+Что происходит:
+
+- данные группируются по ключу и времени;
+- рассчитываются счетчики, average, percentile-подобные метрики или агрегаты.
+
+Что мониторить:
+
+- records in/out;
+- watermark progress;
+- state size;
+- window firing rate;
+- late events rate;
+- operator busy time.
+
+Типовые симптомы:
+
+- окно не срабатывает;
+- окно выдает слишком мало данных;
+- одно окно задерживает целый downstream;
+- state size растет без ограничения.
+
+Как отлаживать:
+
+1. Проверить watermark и allowed lateness.
+2. Проверить window assigner и keying.
+3. Проверить, нет ли слишком крупных ключей.
+4. Проверить, не делает ли window function тяжелые allocations.
+5. Проверить, не складываете ли вы полный набор событий вместо incremental aggregate.
+
+Частая ошибка:
+
+- разработчик думает, что проблема в window, а реальная проблема в том, что watermark не продвигается.
+
+### 5.5 Этап keyed state и correlation
+
+Что происходит:
+
+- оператор хранит историю по `sessionId`, `requestId` или другому ключу;
+- принимает решения по предыдущим событиям;
+- ставит timers.
+
+Что мониторить:
+
+- state size;
+- number of registered timers;
+- throughput на subtask;
+- skew по ключам;
+- restore time после restart;
+- TTL behavior косвенно через state growth.
+
+Типовые симптомы:
+
+- один subtask перегружен сильнее остальных;
+- state продолжает расти;
+- restore после restart стал очень долгим;
+- repeated duplicate alerts;
+- suppress logic перестала работать.
+
+Как отлаживать:
+
+1. Проверить ключ: `sessionId`, `requestId`, `tenantId + agentId` и т.д.
+2. Проверить наличие hot keys.
+3. Проверить TTL и cleanup strategy.
+4. Проверить, что timers удаляются или переиспользуются корректно.
+5. Проверить логику dedup/suppression на replay.
+
+Что обычно ломает keyed state:
+
+- плохой выбор ключа;
+- слишком длинный TTL;
+- хранение больших payload'ов вместо compact state;
+- несогласованность между `processElement()` и `onTimer()`.
+
+### 5.6 Этап Async I/O и enrichment
+
+Что происходит:
+
+- job ходит в справочник, cache или policy service;
+- ожидает async response;
+- продолжает обработку.
+
+Что мониторить:
+
+- pending async requests;
+- async timeout rate;
+- async error rate;
+- latency p50/p95/p99;
+- retry volume;
+- correlation между async latency и backpressure.
+
+Типовые симптомы:
+
+- throughput падает без роста CPU;
+- backpressure начинает распространяться upstream;
+- checkpoints деградируют;
+- enrichment results приходят слишком поздно.
+
+Как отлаживать:
+
+1. Проверить внешний сервис отдельно от Flink.
+2. Проверить concurrency limits.
+3. Проверить timeout settings.
+4. Проверить retry storm.
+5. Проверить cache hit ratio, если есть cache.
+
+Правило:
+
+- если Async I/O стал bottleneck, лечить надо не только Flink-конфиг, а весь контракт с внешним сервисом.
+
+### 5.7 Этап Broadcast State и dynamic rules
+
+Что происходит:
+
+- поток правил раздается всем subtasks;
+- основной event stream использует эти правила при классификации.
+
+Что мониторить:
+
+- rate обновлений правил;
+- размер broadcast state;
+- время применения новых правил;
+- mismatch между `policyVersion` во входном и выходном событии;
+- число событий, обработанных fallback policy.
+
+Типовые симптомы:
+
+- часть инцидентов классифицируется по старой версии policy;
+- после обновления правил output резко меняется;
+- subtasks долго догоняют поток rules.
+
+Как отлаживать:
+
+1. Проверить ordering и versioning policy updates.
+2. Проверить, что `policyVersion` проходит до sinks.
+3. Проверить, нет ли oversized broadcast payload.
+4. Проверить rollback scenario на replay.
+
+### 5.8 Этап CEP и сложные паттерны
+
+Что происходит:
+
+- Flink ищет последовательности событий в пределах окна времени.
+
+Что мониторить:
+
+- throughput CEP operator;
+- state size CEP;
+- watermark lag;
+- число matched patterns;
+- число partially matched patterns;
+- late event impact.
+
+Типовые симптомы:
+
+- ожидаемые паттерны не находятся;
+- совпадений слишком много;
+- CEP state быстро растет;
+- после late events результат нестабилен.
+
+Как отлаживать:
+
+1. Проверить event order assumptions.
+2. Проверить watermark strategy.
+3. Проверить временные границы паттерна.
+4. Проверить, не надо ли заменить CEP на более простой keyed-state алгоритм.
+
+### 5.9 Этап Sink
+
+Что происходит:
+
+- результаты уходят в Kafka, lakehouse, SIEM, case-management или dead-letter storage.
+
+Что мониторить:
+
+- sink throughput;
+- sink error rate;
+- write latency;
+- retries;
+- transaction/commit failures;
+- external system saturation.
+
+Типовые симптомы:
+
+- upstream backpressure нарастает от sink к source;
+- incidents вычислены, но не доходят до внешней системы;
+- checkpoints failing из-за sink commit path;
+- дубли в downstream.
+
+Как отлаживать:
+
+1. Проверить внешнюю систему отдельно.
+2. Проверить semantics sink: exactly-once, at-least-once, idempotent writes.
+3. Проверить commit/flush behavior.
+4. Проверить throttling, quotas и rate limits.
+5. Проверить, не перепутаны ли временные технические сбои и логические дубли.
+
+## 6. Как искать узкое место по Flink UI
+
+Практический порядок анализа:
+
+1. Открыть job graph.
+2. Найти оператор с максимальным backpressure или busy time.
+3. Сравнить metrics по subtasks, а не только aggregate.
+4. Проверить `currentInputWatermark`.
+5. Открыть checkpoints tab.
+6. Проверить exceptions tab.
+7. Сопоставить это с логами TaskManager и внешними системами.
+
+Интерпретация цветов и метрик backpressure полезна, но не должна использоваться изолированно:
+
+- `HIGH backpressure` на source почти всегда означает, что bottleneck downstream;
+- `HIGH busy` на одном subtask и нормальные соседние subtasks обычно намекает на skew;
+- высокий idle на всей ветке может означать не "система свободна", а "данные не приходят".
+
+## 7. Как читать checkpoints
+
+Что смотреть:
+
+- интервал checkpointing;
+- duration;
+- end-to-end duration;
+- alignment time;
+- bytes persisted;
+- failed vs completed checkpoints.
+
+Типовые симптомы:
+
+- duration растет от релиза к релизу;
+- checkpoints периодически timeout;
+- unaligned or aligned behavior меняется под нагрузкой;
+- restore после падения занимает слишком долго.
+
+Как отлаживать:
+
+1. Проверить state growth.
+2. Проверить object storage latency.
+3. Проверить backpressure.
+4. Проверить slow sink и async bottlenecks.
+5. Проверить размер state у конкретных operators.
+
+Если checkpointing деградирует, почти всегда страдает не только recovery, но и вся практическая устойчивость production job.
+
+## 8. Как отлаживать падения и exceptions
+
+### 8.1 Первый вопрос: это код, данные или инфраструктура
+
+Большинство инцидентов укладываются в три класса:
+
+1. **Code/logic issue**
+   - null handling;
+   - serialization issue;
+   - wrong assumptions about event ordering;
+   - state/timer bug.
+2. **Data issue**
+   - schema drift;
+   - invalid payload;
+   - corrupted timestamp;
+   - missing key fields.
+3. **Infra/dependency issue**
+   - Kafka/network/auth failure;
+   - object storage slowdown;
+   - sink outage;
+   - pod OOM/restart.
+
+### 8.2 Минимальный порядок разбора exception
+
+1. Найти failing operator name и subtask.
+2. Определить, на каком типе входных данных он падает.
+3. Проверить, повторяется ли падение после restart на том же месте.
+4. Проверить state restore logs.
+5. Проверить внешние зависимости этого оператора.
+
+### 8.3 Что нужно обязательно логировать в коде
+
+Для stateful AISafetyOps operators полезно логировать:
+
+- operator name;
+- tenantId;
+- requestId;
+- sessionId;
+- policyVersion;
+- compact error code;
+- stage name;
+- timestamp события;
+- correlation id внешнего enrichment запроса.
+
+Не надо:
+
+- писать целиком системные промпты или пользовательские prompts в открытые логи;
+- логировать полные PII payload'ы;
+- превращать TaskManager logs в дамп всех событий.
+
+## 9. Как отличать логическую ошибку от data skew
+
+Признаки логической ошибки:
+
+- job стабильно падает на одном классе данных;
+- поведение не зависит от нагрузки;
+- падение воспроизводится на replay;
+- исключение связано с бизнес-логикой или сериализацией.
+
+Признаки skew:
+
+- job не падает, но один или несколько subtasks значительно тяжелее;
+- высокий busy time только у части subtasks;
+- один ключ или tenant доминирует по объему;
+- задержка нарастает без явной exception.
+
+Как проверять skew:
+
+- выводить sampled distribution по ключам;
+- сравнивать records in/out по subtasks;
+- смотреть state size per subtask;
+- сравнивать watermark progress на разных ветках.
+
+## 10. Как отлаживать late data и неверную event-time логику
+
+Симптомы:
+
+- инциденты формируются позже ожидаемого;
+- окна пустые или неполные;
+- CEP не находит паттерны;
+- часть событий систематически улетает в late side output.
+
+Порядок разбора:
+
+1. Проверить timestamp extraction.
+2. Проверить фактический lag distribution по источникам.
+3. Проверить `withIdleness`.
+4. Проверить allowed lateness.
+5. Проверить, нет ли у upstream некорректных часов или timezone shifts.
+
+Очень частая ошибка:
+
+- разработчик отлаживает windows, хотя реальная причина в неправильном `eventTime` поле или в том, что часть источников присылает локальное время без UTC нормализации.
+
+## 11. Как отлаживать проблемы после релиза
+
+После rollout нового job version проверяйте в первые часы:
+
+- restart count;
+- checkpoint duration;
+- failed checkpoints;
+- watermark movement;
+- invalid/dead-letter rate;
+- throughput per sink;
+- incident volume against baseline;
+- policyVersion distribution;
+- state size growth.
+
+Если после релиза business metrics резко изменились, а технические метрики нормальны, это часто означает:
+
+- поломали бизнес-логику;
+- поломали mapping severity;
+- поменяли thresholds;
+- изменили keying;
+- сломали correlation.
+
+Если технические метрики тоже деградировали, чаще причина в:
+
+- более тяжелом state;
+- новом внешнем enrichment;
+- дополнительном shuffle;
+- возросшем числе timers;
+- sink bottleneck.
+
+## 12. Recommended runbooks
+
+### 12.1 Job stuck, но не падает
+
+Проверить:
+
+1. watermark progress;
+2. backpressure;
+3. busy/idle time;
+4. checkpoint tab;
+5. sink latency;
+6. async pending requests.
+
+### 12.2 Job часто рестартует
+
+Проверить:
+
+1. последние exceptions;
+2. repeating failing operator;
+3. state restore logs;
+4. OOMKilled и pod events;
+5. schema changes upstream;
+6. recent policy/rules changes.
+
+### 12.3 Инциденты перестали появляться
+
+Проверить:
+
+1. source records in;
+2. invalid/dead-letter rate;
+3. watermark progress;
+4. policy updates;
+5. sink delivery;
+6. не ушел ли весь output в side outputs.
+
+### 12.4 Checkpoints стали падать
+
+Проверить:
+
+1. state growth;
+2. object storage health;
+3. sink pressure;
+4. backpressure;
+5. recent code changes that increased state or timers.
+
+## 13. Что закладывать в код заранее ради отладки
+
+Чтобы job было легче сопровождать, полезно заранее сделать:
+
+- явные имена operators;
+- стабильные `uid()` для stateful stages;
+- side outputs для invalid и late events;
+- компактные structured error codes;
+- operator-specific metrics;
+- отдельные counters для dropped/suppressed events;
+- traceable `policyVersion`;
+- sampled diagnostic logging без утечки чувствительных данных.
+
+Для AISafetyOps особенно полезны отдельные счетчики:
+
+- `prompt_injection_hits_total`;
+- `toxicity_hits_total`;
+- `looping_hits_total`;
+- `system_prompt_leakage_hits_total`;
+- `incident_emitted_total`;
+- `incident_suppressed_total`;
+- `invalid_events_total`;
+- `late_events_total`.
+
+## 14. Практический чеклист дежурного инженера
+
+Если пришел алерт по Flink job, порядок проверки такой:
+
+1. Job state в Flink UI.
+2. Последние exceptions.
+3. Checkpoints status.
+4. Backpressure view.
+5. Watermark progress.
+6. Records in/out на подозрительных operators.
+7. TaskManager logs.
+8. Kafka lag или status источника.
+9. Sink/API/object storage status.
+10. Изменения релиза, policy updates и конфигурации.
+
+## 15. Краткий инженерный вывод
+
+Мониторинг Flink надо строить не вокруг "жива ли JVM", а вокруг трех осей:
+
+- движется ли data plane;
+- движется ли event time;
+- сохраняется ли state без деградации recovery.
+
+Если упростить до одного правила:
+
+**Любую проблему во Flink надо сначала локализовать по этапу пайплайна, и только потом лечить конфиг или код.**
+
+## 16. Ссылки на документацию
+
+Официальные источники, на которые стоит опираться:
+
+- Flink Operations overview: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/
+- Flink Metrics: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/metrics/
+- Flink Monitoring Back Pressure: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/monitoring/back_pressure/
+- Flink Monitoring Checkpointing: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/monitoring/checkpoint_monitoring/
+- Flink Debugging Windows and Event Time: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/debugging/debugging_event_time/
+- Flink Logging: https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/logging/
+- Flink History Server: https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/historyserver/
+- Flink REST API: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/rest_api/
+- Flink Checkpointing: https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/fault-tolerance/checkpointing/
+- Flink Task Failure Recovery: https://nightlies.apache.org/flink/flink-docs-stable/docs/ops/state/task_failure_recovery/
+- Flink Kubernetes deployment: https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/resource-providers/native_kubernetes/
+- Flink Kubernetes Operator docs: https://nightlies.apache.org/flink/flink-kubernetes-operator-docs-stable/
