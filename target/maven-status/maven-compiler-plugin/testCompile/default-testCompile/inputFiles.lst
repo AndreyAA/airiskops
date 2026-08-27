@@ -1,6 +1,0 @@
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/app/config/JobConfigTest.java
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/app/functions/GuardrailWindowAggregateFunctionTest.java
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/app/functions/GuardrailWindowingIntegrationTest.java
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/app/functions/RouteLateEventsFunctionTest.java
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/infra/parser/SafetyEventParserTest.java
-/home/bob/old_bob/IdeaProjects/flink/src/test/java/com/bank/aisafetyops/infra/serde/JsonSerdeTest.java
