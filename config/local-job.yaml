@@ -1,0 +1,14 @@
+bootstrapServers: kafka:9092
+topics:
+  - agent-requests
+  - agent-responses
+  - guardrail-findings
+groupId: aisafetyops-mvp
+normalizedEventsTopic: normalized-events
+invalidEventsTopic: invalid-events
+lateEventsTopic: late-events
+guardrailAggregatesTopic: guardrail-aggregates
+outOfOrdernessSeconds: 30
+idleTimeoutMinutes: 1
+lateToleranceMinutes: 5
+startFromEarliest: true

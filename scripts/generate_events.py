@@ -107,6 +107,9 @@ def build_guardrail_findings(
     session_id: str,
     request_id: str,
     ts: str,
+    model_name: str,
+    input_tokens: int,
+    output_tokens: int,
 ) -> List[dict]:
     prompt_conf = round(rng.uniform(*profile.prompt_range), 4)
     toxicity_conf = round(rng.uniform(*profile.toxicity_range), 4)
@@ -123,6 +126,9 @@ def build_guardrail_findings(
             "sessionId": session_id,
             "requestId": request_id,
             "eventTime": ts,
+            "modelName": model_name,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
             "confidence": prompt_conf,
             "triggered": triggered_from_confidence(prompt_conf, scenario),
             "detectorLatencyMs": 15 + int(profile.attack_bias * 10),
@@ -138,6 +144,9 @@ def build_guardrail_findings(
             "sessionId": session_id,
             "requestId": request_id,
             "eventTime": ts,
+            "modelName": model_name,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
             "confidence": toxicity_conf,
             "triggered": triggered_from_confidence(toxicity_conf, scenario),
             "detectorLatencyMs": 18 + int(profile.attack_bias * 12),
@@ -153,6 +162,9 @@ def build_guardrail_findings(
             "sessionId": session_id,
             "requestId": request_id,
             "eventTime": ts,
+            "modelName": model_name,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
             "triggered": looping,
             "detectorLatencyMs": 7,
             "detectorStatus": "OK",
@@ -167,6 +179,9 @@ def build_guardrail_findings(
             "sessionId": session_id,
             "requestId": request_id,
             "eventTime": ts,
+            "modelName": model_name,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
             "triggered": leakage,
             "detectorLatencyMs": 9,
             "detectorStatus": "OK",
@@ -191,19 +206,25 @@ def main() -> None:
         request_id = f"req-{idx + 1:06d}"
         request_ts = iso_ts(base_time, idx * 2)
         response_ts = iso_ts(base_time, idx * 2 + 1)
+        model_name = "gpt-4.1-mini"
+        input_tokens = 150 + (idx % 120)
+        output_tokens = 250 + (idx % 220)
 
         requests.append(build_request_event(args.agent_id, session_id, request_id, request_ts, idx))
         responses.append(build_response_event(args.agent_id, session_id, request_id, response_ts, idx))
         findings.extend(
-            build_guardrail_findings(
-                rng=rng,
-                scenario=args.scenario,
-                profile=profile,
-                agent_id=args.agent_id,
-                session_id=session_id,
-                request_id=request_id,
-                ts=response_ts,
-            )
+                build_guardrail_findings(
+                    rng=rng,
+                    scenario=args.scenario,
+                    profile=profile,
+                    agent_id=args.agent_id,
+                    session_id=session_id,
+                    request_id=request_id,
+                    ts=response_ts,
+                    model_name=model_name,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
         )
 
     write_jsonl(out_dir / "agent-requests.jsonl", requests)

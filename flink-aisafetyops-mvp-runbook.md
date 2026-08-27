@@ -28,6 +28,7 @@
 - `single-node Apache Kafka` в Docker;
 - `Flink JobManager` в Docker;
 - `Flink TaskManager` в Docker;
+- `Prometheus` в Docker;
 - `bash`-скрипты для operational действий;
 - `Python`-генератор для replay dataset;
 - `JSON` как стартовый транспортный формат событий;
@@ -40,9 +41,14 @@
 - [scripts/start-local.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/start-local.sh)
 - [scripts/stop-local.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/stop-local.sh)
 - [scripts/init-topics.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/init-topics.sh)
+- [scripts/reset-topics.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/reset-topics.sh)
+- [scripts/build-job.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/build-job.sh)
+- [scripts/submit-job.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/submit-job.sh)
+- [scripts/check-output-topics.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/check-output-topics.sh)
 - [scripts/load-policies.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/load-policies.sh)
 - [scripts/run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/run-replay.sh)
 - [scripts/run-regression.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/run-regression.sh)
+- [monitoring/prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/monitoring/prometheus.yml)
 - [scripts/generate_events.py](/home/bob/old_bob/IdeaProjects/flink/scripts/generate_events.py)
 - [tests/test_generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tests/test_generate_events.py)
 
@@ -77,6 +83,7 @@
 - поднимает Kafka;
 - поднимает JobManager;
 - поднимает TaskManager.
+- поднимает Prometheus.
 
 ### Шаг 2. Инициализировать topics
 
@@ -89,6 +96,18 @@
 - создает все нужные Kafka topics;
 - безопасно пропускает уже существующие.
 
+Если нужен чистый повторный прогон без исторических сообщений:
+
+```bash
+bash scripts/reset-topics.sh
+```
+
+Что делает:
+
+- удаляет входные и выходные MVP topics;
+- создает их заново;
+- позволяет валидировать текущий инкремент без смешения со старыми локальными прогонами.
+
 ### Шаг 3. Загрузить policy YAML
 
 ```bash
@@ -99,6 +118,19 @@
 
 - копирует policy YAML в локальную runtime-директорию;
 - подготавливает активную policy для MVP.
+
+### Шаг 4. Собрать и отправить Flink job
+
+```bash
+./scripts/build-job.sh
+./scripts/submit-job.sh
+```
+
+Что делает:
+
+- собирает fat jar c `Increment 1`;
+- отправляет job в локальный Flink cluster;
+- job начинает читать `agent-requests`, `agent-responses`, `guardrail-findings`.
 
 ## 6. Запуск replay dataset
 
@@ -126,14 +158,29 @@
 
 ### Проверить, что данные реально идут
 
-Пример чтения Kafka topic:
+Для локального single-node Kafka надёжнее сначала смотреть offsets, а не `console-consumer` с обычным consumer group.
+
+Рекомендуемая команда:
 
 ```bash
-docker compose exec -T kafka /opt/bitnami/kafka/bin/kafka-console-consumer.sh \
-  --bootstrap-server localhost:9092 \
+bash scripts/check-output-topics.sh
+```
+
+Что она делает:
+
+- показывает offsets по `normalized-events`, `invalid-events`, `late-events`;
+- читает один образец из `normalized-events` через фиксированный `partition` и `offset`;
+- убирает ложные `TimeoutException`, которые иногда встречаются при обычном `console-consumer` на локальном стенде.
+
+Если нужно проверить входной topic вручную:
+
+```bash
+docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server kafka:9092 \
   --topic guardrail-findings \
-  --from-beginning \
-  --max-messages 10
+  --partition 0 \
+  --offset 0 \
+  --max-messages 5
 ```
 
 ### Проверить policy
@@ -146,6 +193,27 @@ cat runtime/policies/active-policy.yaml
 
 ```bash
 ls -la runtime/replay/latest
+```
+
+### Проверить Prometheus и activity metrics
+
+Открыть локально:
+
+- `http://localhost:9090`
+- `http://localhost:8081`
+
+Полезные первые запросы в Prometheus:
+
+- `flink_taskmanager_job_task_operator_valid_events_total`
+- `flink_taskmanager_job_task_operator_invalid_events_total`
+- `flink_taskmanager_job_task_operator_late_events_total`
+- `flink_taskmanager_job_task_operator_on_time_events_total`
+
+Если нужны сырые метрики без UI:
+
+```bash
+curl -s http://localhost:9249/metrics | head -40
+curl -s http://localhost:9250/metrics | head -40
 ```
 
 ### Проверить incidents и debug output
@@ -211,6 +279,35 @@ Replay dataset нужен для трех задач:
 
 - `docker compose ps`
 - `docker compose logs kafka`
+
+### Output topic пустой, но Flink metrics растут
+
+Проверить:
+
+- `bash scripts/check-output-topics.sh`
+- offsets по `normalized-events`, `invalid-events`, `late-events`
+- counters `flink_taskmanager_job_task_operator_valid_events_total`
+- counters `flink_taskmanager_job_task_operator_on_time_events_total`
+
+Если offsets растут, а `console-consumer` иногда не читает:
+
+- это локальная особенность single-node Kafka consumer tooling;
+- для runbook считать источником истины offsets и Prometheus metrics;
+- для выборки сообщения использовать чтение по конкретному `partition` и `offset`.
+
+### В output topic смешаны старые и новые локальные данные
+
+Проверить:
+
+- не использовался ли один и тот же локальный Kafka topic в нескольких прогонах;
+- не читается ли `offset 0` после нескольких инкрементов подряд.
+
+Решение:
+
+- выполнить `bash scripts/reset-topics.sh`;
+- заново сделать `submit-job`;
+- заново прогнать `run-replay`;
+- после этого читать output topics уже на чистом наборе сообщений.
 
 ### Topics не создались
 
