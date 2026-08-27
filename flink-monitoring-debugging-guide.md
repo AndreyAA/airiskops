@@ -2,9 +2,31 @@
 
 ## Глоссарий
 
+- **Apache Flink** — distributed stream processing engine для потоковой и bounded-обработки данных в одном runtime.
+- **Job** — логический пайплайн Flink, который собирается в коде и отправляется на выполнение в кластер.
+- **JobManager** — координатор Flink job: планирование, recovery, checkpoint coordination, orchestration.
+- **TaskManager** — worker-процесс Flink, который исполняет subtasks и хранит state.
+- **Task** — исполняемая часть job graph на уровне runtime, обычно связанная с конкретным operator vertex.
 - **Lag** — отставание обработки относительно источника или event time.
+- **Slot** — единица выделения ресурсов внутри TaskManager, в которой может выполняться subtask.
+- **Parallelism** — число параллельных экземпляров оператора или job.
 - **Watermark lag** — разница между ожидаемым прогрессом event time и текущим watermark.
+- **Checkpoint** — согласованный snapshot состояния job, нужный для fault tolerance и восстановления после сбоя.
+- **Checkpoint barrier** — специальная служебная метка в потоке, по которой Flink координирует snapshot state между операторами.
 - **Backpressure** — upstream не может быстро отдать данные, потому что downstream не успевает их потреблять.
+- **Savepoint** — управляемый snapshot для ручных операций: обновлений, миграций, переноса и controlled restart.
+- **State** — данные, которые оператор хранит между событиями: counters, session context, correlation buffers, dedup maps.
+- **Keyed State** — state, изолированный по ключу после `keyBy`, например отдельно по `agentId` или `sessionId`.
+- **Operator State** — state, принадлежащий экземпляру оператора, а не конкретному ключу.
+- **State backend** — механизм хранения и восстановления state, например heap-based backend или RocksDB/ForSt-подобный backend.
+- **Watermark** — оценка того, что события с timestamp меньше некоторой границы уже в основном поступили в систему.
+- **Event Time** — обработка по бизнес-времени события, пришедшему из payload, а не по локальным часам машины.
+- **Processing Time** — обработка по системному времени узла, на котором исполняется subtask.
+- **Window** — группа событий, которую Flink агрегирует вместе по времени или по count-based правилам.
+- **Allowed Lateness** — интервал, в течение которого опоздавшее событие всё ещё может обновить уже закрытое окно.
+- **Operator chain** — несколько совместимых операторов, которые Flink исполняет в одном thread для снижения overhead.
+- **Shuffle** — перераспределение данных между subtasks, например после `keyBy`, `rebalance` или `rescale`.
+- **KeyBy** — логическое разбиение потока по ключу, после которого все события с одним ключом попадают в один logical state shard.
 - **Busy time** — доля времени, когда subtask реально выполнял работу.
 - **Idle time** — доля времени, когда subtask ждал входных данных.
 - **Checkpoint alignment** — фаза согласования checkpoint barriers между потоками.
@@ -102,6 +124,63 @@ Flink нельзя эффективно мониторить только по �
 - для проверки Kafka sink сначала смотреть topic offsets и Flink metrics;
 - `console-consumer` на локальном стенде может давать ложный `TimeoutException`, даже когда сообщения уже записаны в topic.
 
+## 3.1 Локальная Grafana для AISafetyOps
+
+В локальном контуре Grafana поднимается вместе с остальными сервисами.
+
+URL:
+
+- `http://localhost:3000`
+
+Доступ:
+
+- login: `admin`
+- password: `admin`
+
+Что уже настроено:
+
+- datasource `Prometheus`;
+- dashboard `AISafetyOps Flink Overview`;
+- папка dashboard: `AISafetyOps`.
+
+Что смотреть в dashboard в первую очередь:
+
+- `Running Jobs`
+  - есть ли живая Flink job;
+- `Completed Checkpoints`
+  - проходят ли checkpoints;
+- `Last Checkpoint Duration`
+  - не деградирует ли snapshot path;
+- `Failed Checkpoints`
+  - нет ли проблем со state/checkpointing;
+- `Records In Per Task`
+  - какие task реально получают поток;
+- `Records Out Per Task`
+  - какие task реально выпускают результат;
+- `Current Input Watermark By Task`
+  - движется ли event time;
+- `Guardrail Aggregate Emissions`
+  - публикуются ли `1m` и `5m` aggregates;
+- `AISafetyOps Domain Counters`
+  - растут ли `valid`, `invalid`, `late`, `on_time`.
+
+Практическая интерпретация:
+
+- `Running Jobs = 0`
+  - job не стартовала или уже упала;
+- `Completed Checkpoints` не растёт
+  - checkpointing не работает или job не выполняется стабильно;
+- `Records In` растёт, `Records Out` не растёт
+  - bottleneck или логическая проблема в конкретном task;
+- watermark не движется
+  - event-time окна не будут закрываться;
+- `late` резко растёт
+  - события приходят позже ожидаемого окна disorder/tolerance;
+- `invalid` растёт
+  - upstream schema drift, parse error или валидационный дефект;
+- `Guardrail Aggregate Emissions` растёт только для `1m`
+  - короткие окна уже закрываются, а `5m` ещё нет.
+
 ## 4. Что мониторить всегда
 
 ### 4.1 Job-level метрики
@@ -124,6 +203,176 @@ Flink нельзя эффективно мониторить только по �
 - checkpoints стали длиннее или чаще падать;
 - watermark перестал двигаться;
 - incidents/output events внезапно стали почти нулевыми.
+
+### 4.4 Минимальный набор Prometheus-запросов для AISafetyOps
+
+Ниже приведён набор запросов, которые стоит запускать вручную даже при наличии Grafana.
+
+#### Жива ли job
+
+```promql
+flink_jobmanager_numRunningJobs
+```
+
+Показывает:
+
+- сколько Flink jobs сейчас находится в `RUNNING`.
+
+Использование:
+
+- `1` для локального MVP означает, что job работает;
+- `0` означает, что сначала надо смотреть `submit`, `jobmanager logs` и `Flink UI`.
+
+#### Сколько checkpoint завершилось
+
+```promql
+flink_jobmanager_job_numberOfCompletedCheckpoints{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- число успешно завершённых checkpoint для нашей job.
+
+Использование:
+
+- значение должно монотонно расти;
+- если не растёт, state consistency path не работает как ожидалось.
+
+#### Есть ли failed checkpoints
+
+```promql
+flink_jobmanager_job_numberOfFailedCheckpoints{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- число checkpoint, завершившихся ошибкой.
+
+Использование:
+
+- в норме `0`;
+- рост часто указывает на storage, state pressure, timeout или runtime exception.
+
+#### Сколько длился последний checkpoint
+
+```promql
+flink_jobmanager_job_lastCheckpointDuration{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- длительность последнего completed checkpoint в миллисекундах.
+
+Использование:
+
+- помогает рано заметить деградацию state backend или I/O.
+
+#### Какие task получают входной поток
+
+```promql
+sum by (task_name) (
+  rate(flink_taskmanager_job_task_numRecordsInPerSecond{job_name="AISafetyOps_MVP_Increment_1"}[1m])
+)
+```
+
+Показывает:
+
+- входной throughput по task.
+
+Использование:
+
+- помогает понять, где поток реально присутствует, а где уже нет.
+
+#### Какие task отдают данные дальше
+
+```promql
+sum by (task_name) (
+  rate(flink_taskmanager_job_task_numRecordsOutPerSecond{job_name="AISafetyOps_MVP_Increment_1"}[1m])
+)
+```
+
+Показывает:
+
+- выходной throughput по task.
+
+Использование:
+
+- если `In` есть, а `Out` нет, проблема локализуется на этом task.
+
+#### Движется ли watermark
+
+```promql
+flink_taskmanager_job_task_currentInputWatermark{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- текущий input watermark по task.
+
+Использование:
+
+- если watermark застыл, event-time окна не будут эмитить агрегаты.
+
+#### Публикуются ли оконные guardrail aggregates
+
+```promql
+flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+```promql
+flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- число эмитированных aggregate-records по `1m` и `5m` окнам.
+
+Использование:
+
+- прямой operational сигнал для Stage 2;
+- если `1m=0`, а `GUARDRAIL_FINDING` точно приходят, проблема в event-time, lateness или ветке aggregation.
+
+#### Растут ли бизнес-счётчики pipeline
+
+```promql
+flink_taskmanager_job_task_operator_valid_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+```promql
+flink_taskmanager_job_task_operator_invalid_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+```promql
+flink_taskmanager_job_task_operator_late_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+```promql
+flink_taskmanager_job_task_operator_on_time_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- доменные counters нашего пайплайна intake/validation/timeliness.
+
+Использование:
+
+- `valid` растёт, `on_time` растёт — основной path работает;
+- `invalid` растёт — schema drift или parse/validation defect;
+- `late` растёт — data ordering или event-time issue.
+
+#### Жив ли Kafka sink path
+
+```promql
+flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- активность Kafka producer внутри Flink sink.
+
+Использование:
+
+- полезно, когда надо отделить проблему логики operator от проблемы записи в Kafka.
 
 ### 4.2 Operator-level метрики
 

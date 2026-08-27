@@ -47,6 +47,10 @@ def iso_ts(base: datetime, offset_seconds: int) -> str:
     return (base + timedelta(seconds=offset_seconds)).isoformat().replace("+00:00", "Z")
 
 
+def iso_ts_precise(base: datetime, offset_millis: int) -> str:
+    return (base + timedelta(milliseconds=offset_millis)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
 def write_jsonl(path: Path, rows: List[dict]) -> None:
     with path.open("w", encoding="utf-8") as handle:
         for row in rows:
@@ -189,47 +193,119 @@ def build_guardrail_findings(
     ]
 
 
-def main() -> None:
-    args = parse_args()
-    rng = random.Random(args.seed)
-    profile = SCENARIOS[args.scenario]
-    out_dir = Path(args.output_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
+def generate_event_batch(
+    rng: random.Random,
+    scenario: str,
+    request_count: int,
+    session_count: int,
+    agent_id: str,
+    base_time: datetime,
+    request_offset_seconds: int = 2,
+) -> Dict[str, List[dict]]:
+    profile = SCENARIOS[scenario]
     requests: List[dict] = []
     responses: List[dict] = []
     findings: List[dict] = []
-    base_time = datetime(2026, 8, 26, 12, 0, 0, tzinfo=timezone.utc)
 
-    for idx in range(args.requests):
-        session_id = pick_session(idx, args.sessions)
-        request_id = f"req-{idx + 1:06d}"
-        request_ts = iso_ts(base_time, idx * 2)
-        response_ts = iso_ts(base_time, idx * 2 + 1)
+    for idx in range(request_count):
+        session_id = pick_session(idx, session_count)
+        request_id = f"req-{int(base_time.timestamp())}-{idx + 1:06d}"
+        request_ts = iso_ts(base_time, idx * request_offset_seconds)
+        response_ts = iso_ts(base_time, idx * request_offset_seconds + 1)
         model_name = "gpt-4.1-mini"
         input_tokens = 150 + (idx % 120)
         output_tokens = 250 + (idx % 220)
 
-        requests.append(build_request_event(args.agent_id, session_id, request_id, request_ts, idx))
-        responses.append(build_response_event(args.agent_id, session_id, request_id, response_ts, idx))
+        requests.append(build_request_event(agent_id, session_id, request_id, request_ts, idx))
+        responses.append(build_response_event(agent_id, session_id, request_id, response_ts, idx))
         findings.extend(
-                build_guardrail_findings(
-                    rng=rng,
-                    scenario=args.scenario,
-                    profile=profile,
-                    agent_id=args.agent_id,
-                    session_id=session_id,
-                    request_id=request_id,
-                    ts=response_ts,
-                    model_name=model_name,
-                    input_tokens=input_tokens,
-                    output_tokens=output_tokens,
-                )
+            build_guardrail_findings(
+                rng=rng,
+                scenario=scenario,
+                profile=profile,
+                agent_id=agent_id,
+                session_id=session_id,
+                request_id=request_id,
+                ts=response_ts,
+                model_name=model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
         )
 
-    write_jsonl(out_dir / "agent-requests.jsonl", requests)
-    write_jsonl(out_dir / "agent-responses.jsonl", responses)
-    write_jsonl(out_dir / "guardrail-findings.jsonl", findings)
+    return {
+        "requests": requests,
+        "responses": responses,
+        "findings": findings,
+    }
+
+
+def generate_live_tick_batch(
+    rng: random.Random,
+    scenario: str,
+    requests_per_second: int,
+    session_count: int,
+    agent_id: str,
+    tick_time: datetime,
+    tick_index: int,
+) -> Dict[str, List[dict]]:
+    profile = SCENARIOS[scenario]
+    requests: List[dict] = []
+    responses: List[dict] = []
+    findings: List[dict] = []
+
+    for idx in range(requests_per_second):
+        global_index = tick_index * requests_per_second + idx
+        session_id = pick_session(global_index, session_count)
+        request_id = f"live-{int(tick_time.timestamp())}-{global_index + 1:06d}"
+        request_ts = iso_ts_precise(tick_time, idx * 100)
+        response_ts = iso_ts_precise(tick_time, idx * 100 + 50)
+        model_name = "gpt-4.1-mini"
+        input_tokens = 150 + (global_index % 120)
+        output_tokens = 250 + (global_index % 220)
+
+        requests.append(build_request_event(agent_id, session_id, request_id, request_ts, global_index))
+        responses.append(build_response_event(agent_id, session_id, request_id, response_ts, global_index))
+        findings.extend(
+            build_guardrail_findings(
+                rng=rng,
+                scenario=scenario,
+                profile=profile,
+                agent_id=agent_id,
+                session_id=session_id,
+                request_id=request_id,
+                ts=response_ts,
+                model_name=model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+        )
+
+    return {
+        "requests": requests,
+        "responses": responses,
+        "findings": findings,
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    rng = random.Random(args.seed)
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    base_time = datetime(2026, 8, 26, 12, 0, 0, tzinfo=timezone.utc)
+    batch = generate_event_batch(
+        rng=rng,
+        scenario=args.scenario,
+        request_count=args.requests,
+        session_count=args.sessions,
+        agent_id=args.agent_id,
+        base_time=base_time,
+    )
+
+    write_jsonl(out_dir / "agent-requests.jsonl", batch["requests"])
+    write_jsonl(out_dir / "agent-responses.jsonl", batch["responses"])
+    write_jsonl(out_dir / "guardrail-findings.jsonl", batch["findings"])
 
 
 if __name__ == "__main__":

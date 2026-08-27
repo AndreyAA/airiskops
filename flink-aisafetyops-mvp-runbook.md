@@ -2,6 +2,21 @@
 
 ## Глоссарий
 
+- **Apache Flink** — distributed stream processing engine, на котором исполняется локальный AISafetyOps MVP.
+- **Job** — логический Flink-пайплайн, который вы собираете и отправляете в кластер.
+- **JobManager** — координатор Flink job: scheduling, recovery, checkpoints.
+- **TaskManager** — worker-процесс Flink, который исполняет subtasks.
+- **Checkpoint** — согласованный snapshot состояния job для восстановления после сбоя.
+- **Savepoint** — управляемый snapshot для ручного stop/resume, upgrade и миграции.
+- **State** — данные, сохраняемые между событиями внутри оператора.
+- **Watermark** — индикатор прогресса event time во Flink.
+- **Event Time** — бизнес-время события из payload.
+- **Window** — временная или счётная группа событий для агрегирования.
+- **Allowed Lateness** — период, в который позднее событие ещё может обновить окно.
+- **KeyBy** — разбиение потока по ключу, после которого события одного ключа идут в один logical shard state.
+- **Parallelism** — число параллельных экземпляров оператора или job.
+- **Subtask** — один параллельный экземпляр оператора.
+- **Slot** — единица вычислительных ресурсов внутри TaskManager.
 - **Local stand** — локальный Docker-стенд для MVP.
 - **Replay dataset** — воспроизводимый набор событий для demo, regression и ручной проверки.
 - **Regression suite** — набор локальных проверок, который прогоняется после каждого инкремента.

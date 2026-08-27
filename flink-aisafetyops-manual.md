@@ -8,18 +8,23 @@
 - **JobGraph / ExecutionGraph** — внутренние представления job: сначала логический граф, затем исполняемый граф задач.
 - **JobManager** — процесс координации job: планирование, recovery, checkpoint coordination, resource orchestration.
 - **TaskManager** — worker-процесс Flink, который исполняет операторы и держит state.
+- **Task** — исполняемая runtime-единица в графе выполнения Flink, обычно связанная с конкретным vertex/operator stage.
 - **Slot** — единица выделения ресурсов внутри TaskManager. Несколько subtasks могут делить один процесс TaskManager через разные slots.
 - **Parallelism** — число параллельных экземпляров оператора.
 - **Subtask** — один параллельный экземпляр оператора.
 - **Operator chain** — несколько совместимых операторов, которые Flink может исполнять в одном thread для снижения serialization/network overhead.
 - **Shuffle** — перераспределение данных между subtasks, например после `keyBy()`.
+- **KeyBy** — логическое разбиение потока по ключу, после которого все события одного ключа направляются в один logical shard state.
 - **Keyed State** — state, привязанный к ключу потока.
 - **Operator State** — state, привязанный к экземпляру оператора, а не к ключу.
+- **State backend** — механизм хранения и восстановления state, например heap-based backend или RocksDB/ForSt-подобный backend.
 - **Checkpoint** — согласованный snapshot state для восстановления после сбоя.
+- **Checkpoint barrier** — служебная метка в потоке, по которой Flink координирует создание snapshot между операторами.
 - **Savepoint** — управляемый snapshot для обновлений, миграций и ручных операций.
 - **Watermark** — оценка того, что события с timestamp меньше некоторой границы уже в основном пришли.
 - **Event Time** — обработка по времени события, а не по системному времени машины.
 - **Processing Time** — обработка по локальному времени worker-узла.
+- **Window** — группа событий, которую Flink обрабатывает совместно по временным или count-based правилам.
 - **Allowed Lateness** — окно допустимого опоздания событий после формального закрытия окна.
 - **Backpressure** — состояние, когда downstream не успевает принимать данные и тормозит upstream.
 - **State TTL** — срок жизни записей в state.
