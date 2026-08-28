@@ -25,6 +25,8 @@ TOPIC_TO_BATCH_KEY = {
 }
 DEFAULT_DURATION_SECONDS = 300
 DEFAULT_REQUESTS_PER_SECOND = 1
+DEFAULT_MIN_REQUESTS_PER_SECOND = DEFAULT_REQUESTS_PER_SECOND
+DEFAULT_MAX_REQUESTS_PER_SECOND = DEFAULT_REQUESTS_PER_SECOND
 DEFAULT_SESSIONS = 12
 DEFAULT_AGENT_ID = "agent-risk-01"
 DEFAULT_SEED = 42
@@ -38,10 +40,38 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scenario", choices=sorted(SCENARIOS), default="mixed")
     parser.add_argument("--duration-seconds", type=int, default=DEFAULT_DURATION_SECONDS)
     parser.add_argument("--requests-per-second", type=int, default=DEFAULT_REQUESTS_PER_SECOND)
+    parser.add_argument("--min-requests-per-second", type=int, default=None)
+    parser.add_argument("--max-requests-per-second", type=int, default=None)
     parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS)
     parser.add_argument("--agent-id", default=DEFAULT_AGENT_ID)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     return parser.parse_args()
+
+
+def resolve_rps_bounds(args: argparse.Namespace) -> tuple[int, int]:
+    min_rps = (
+        args.min_requests_per_second
+        if args.min_requests_per_second is not None
+        else args.requests_per_second
+    )
+    max_rps = (
+        args.max_requests_per_second
+        if args.max_requests_per_second is not None
+        else args.requests_per_second
+    )
+    if min_rps <= 0:
+        raise ValueError("min requests per second must be greater than zero")
+    if max_rps <= 0:
+        raise ValueError("max requests per second must be greater than zero")
+    if min_rps > max_rps:
+        raise ValueError("min requests per second must be less than or equal to max requests per second")
+    return min_rps, max_rps
+
+
+def resolve_requests_per_second(rng: random.Random, min_rps: int, max_rps: int) -> int:
+    if min_rps == max_rps:
+        return min_rps
+    return rng.randint(min_rps, max_rps)
 
 
 def create_producer(topic: str) -> subprocess.Popen[str]:
@@ -82,16 +112,19 @@ def close_producer(producer: subprocess.Popen[str]) -> None:
 def main() -> None:
     args = parse_args()
     rng = random.Random(args.seed)
+    min_rps, max_rps = resolve_rps_bounds(args)
     producers = {topic: create_producer(topic) for topic in TOPIC_TO_BATCH_KEY}
+    total_requests_sent = 0
 
     try:
         start_monotonic = time.monotonic()
         for tick_index in range(args.duration_seconds):
             tick_time = datetime.now(timezone.utc)
+            requests_per_second = resolve_requests_per_second(rng, min_rps, max_rps)
             batch = generate_live_tick_batch(
                 rng=rng,
                 scenario=args.scenario,
-                requests_per_second=args.requests_per_second,
+                requests_per_second=requests_per_second,
                 session_count=args.sessions,
                 agent_id=args.agent_id,
                 tick_time=tick_time,
@@ -99,6 +132,7 @@ def main() -> None:
             )
             for topic, batch_key in TOPIC_TO_BATCH_KEY.items():
                 write_rows(producers[topic], batch[batch_key])
+            total_requests_sent += requests_per_second
 
             elapsed_seconds = time.monotonic() - start_monotonic
             remaining_sleep = (tick_index + 1) - elapsed_seconds
@@ -107,7 +141,9 @@ def main() -> None:
 
         print(
             f"Live stream published for {args.duration_seconds} seconds, "
-            f"{args.requests_per_second} request(s)/second, scenario={args.scenario}"
+            f"scenario={args.scenario}, "
+            f"rps-range={min_rps}..{max_rps}, "
+            f"total-requests={total_requests_sent}"
         )
     finally:
         for producer in producers.values():

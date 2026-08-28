@@ -1,12 +1,19 @@
 import json
+import random
 import subprocess
 import tempfile
 import unittest
+from datetime import datetime, timezone
+from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "generate_events.py"
+SPEC = spec_from_file_location("generate_events", SCRIPT)
+GENERATE_EVENTS = module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(GENERATE_EVENTS)
 
 
 def read_jsonl(path: Path):
@@ -59,6 +66,46 @@ class GenerateEventsTest(unittest.TestCase):
         self.assertEqual(sample["agentId"], "agent-risk-01")
         self.assertIn("sessionId", sample)
         self.assertIn("requestId", sample)
+
+    def test_generate_event_batch_builds_expected_payload(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(7),
+            scenario="mixed",
+            request_count=3,
+            session_count=2,
+            agent_id="agent-risk-02",
+            base_time=datetime(2026, 8, 26, 12, 0, 0, tzinfo=timezone.utc),
+        )
+        self.assertEqual(len(batch["requests"]), 3)
+        self.assertEqual(len(batch["responses"]), 3)
+        self.assertEqual(len(batch["findings"]), 12)
+        self.assertTrue(all(row["agentId"] == "agent-risk-02" for row in batch["requests"]))
+        self.assertEqual(
+            {row["guardrailName"] for row in batch["findings"]},
+            {
+                "PROMPT_INJECTION",
+                "TOXICITY",
+                "LOOPING",
+                "SYSTEM_PROMPT_LEAKAGE",
+            },
+        )
+
+    def test_generate_live_tick_batch_uses_live_request_ids_and_precise_timestamps(self):
+        batch = GENERATE_EVENTS.generate_live_tick_batch(
+            rng=random.Random(11),
+            scenario="attack",
+            requests_per_second=2,
+            session_count=3,
+            agent_id="agent-risk-03",
+            tick_time=datetime(2026, 8, 28, 10, 0, 0, tzinfo=timezone.utc),
+            tick_index=4,
+        )
+        self.assertEqual(len(batch["requests"]), 2)
+        self.assertEqual(len(batch["responses"]), 2)
+        self.assertEqual(len(batch["findings"]), 8)
+        self.assertTrue(all(row["requestId"].startswith("live-") for row in batch["requests"]))
+        self.assertTrue(all(row["eventTime"].endswith("Z") for row in batch["requests"]))
+        self.assertTrue(any("." in row["eventTime"] for row in batch["responses"]))
 
 
 if __name__ == "__main__":

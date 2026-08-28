@@ -22,6 +22,8 @@
 - **Regression suite** — набор локальных проверок, который прогоняется после каждого инкремента.
 - **Policy file** — YAML-файл с thresholds и operational rules.
 - **Topic bootstrap** — создание начальных Kafka topics для локального стенда.
+- **Finding** — одно сырое событие срабатывания гардрейла по конкретному `requestId` или ответу агента.
+- **Emission** — один опубликованный оконный агрегат в `guardrail-aggregates`.
 
 ## 1. Назначение
 
@@ -62,6 +64,8 @@
 - [scripts/check-output-topics.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/check-output-topics.sh)
 - [scripts/load-policies.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/load-policies.sh)
 - [scripts/run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/run-replay.sh)
+- [scripts/run-live-generator.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/run-live-generator.sh)
+- [scripts/stream_live_events.py](/home/bob/old_bob/IdeaProjects/flink/scripts/stream_live_events.py)
 - [scripts/run-regression.sh](/home/bob/old_bob/IdeaProjects/flink/scripts/run-regression.sh)
 - [monitoring/prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/monitoring/prometheus.yml)
 - [scripts/generate_events.py](/home/bob/old_bob/IdeaProjects/flink/scripts/generate_events.py)
@@ -169,6 +173,42 @@ bash scripts/reset-topics.sh
 - раскладывает события по topic-specific файлам;
 - публикует события в локальные Kafka topics.
 
+### Живой поток для Grafana и demo
+
+Если нужен не мгновенный replay, а поток на несколько минут, используйте live-генератор:
+
+```bash
+bash scripts/run-live-generator.sh
+```
+
+По умолчанию:
+
+- длительность `300` секунд;
+- скорость `1 request/sec`;
+- scenario `mixed`.
+
+Для переменной нагрузки:
+
+```bash
+bash scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --min-requests-per-second 1 \
+  --max-requests-per-second 5 \
+  --scenario mixed
+```
+
+Можно усилить динамику:
+
+```bash
+bash scripts/run-live-generator.sh --duration-seconds 300 --requests-per-second 3 --scenario attack
+```
+
+Назначение:
+
+- показать постепенное изменение дашбордов;
+- проверить NRTP-обработку на живом потоке;
+- убедиться, что окна `1m` и `5m` дают emissions не только на replay batch.
+
 ## 7. Как пользоваться системой после запуска
 
 ### Проверить, что данные реально идут
@@ -186,6 +226,21 @@ bash scripts/check-output-topics.sh
 - показывает offsets по `normalized-events`, `invalid-events`, `late-events`;
 - читает один образец из `normalized-events` через фиксированный `partition` и `offset`;
 - убирает ложные `TimeoutException`, которые иногда встречаются при обычном `console-consumer` на локальном стенде.
+
+Как читать бизнес-метрики:
+
+- `Findings`
+  - число сырых `GUARDRAIL_FINDING`, пришедших в pipeline;
+- `Emissions`
+  - число агрегатов, которые Flink уже выпустил downstream;
+- `Triggered Findings`
+  - подмножество findings, где detector сработал по порогу или boolean-условию.
+
+Нормальная картина для MVP:
+
+- findings растут быстрее emissions;
+- emissions начинают заметно расти после прогресса watermark и закрытия окна;
+- при `5m` окне первые emissions появляются позже, чем при `1m`.
 
 Если нужно проверить входной topic вручную:
 

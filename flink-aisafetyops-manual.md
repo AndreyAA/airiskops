@@ -36,6 +36,8 @@
 - **FileSource** — встроенный source Flink для файлов и директорий; подходит для bootstrap, replay, тестов и bounded jobs.
 - **Kafka Source** — production-grade source для непрерывного ingest событий в streaming-сценарии.
 - **Pekko RPC** — RPC subsystem в актуальных ветках Flink 2.x; исторически в старых ветках использовалась Akka.
+- **Finding** — одно сырое guardrail-событие по конкретному действию агента, например результат детекции prompt injection для одного `requestId`.
+- **Emission** — одно опубликованное вниз по pipeline агрегатное сообщение, например запись в `guardrail-aggregates` после закрытия окна.
 
 ## 1. Цель документа
 

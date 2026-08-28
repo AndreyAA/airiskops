@@ -323,6 +323,7 @@ docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
 
 - datasource `Prometheus` уже подключён автоматически;
 - dashboard `AISafetyOps Flink Overview` уже загружен автоматически;
+- dashboard `AISafetyOps Business Metrics` уже загружен автоматически;
 - папка dashboard: `AISafetyOps`.
 
 Что смотреть в первую очередь:
@@ -346,6 +347,27 @@ docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
 - `AISafetyOps Domain Counters`
   - показывает `valid`, `invalid`, `late`, `on_time`.
 
+Что означают `Findings` и `Emissions` на business dashboard:
+
+- `Findings`
+  - это число сырых событий `GUARDRAIL_FINDING`, пришедших в job;
+  - один `requestId` обычно порождает до 4 findings: prompt injection, toxicity, looping, system prompt leakage.
+- `Emissions`
+  - это число агрегатных сообщений, выпущенных оконным оператором в `guardrail-aggregates`;
+  - emission считается по факту публикации агрегата, а не по числу уникальных окон;
+  - при late events одно и то же окно может эмититься повторно.
+
+Как это интерпретировать вместе:
+
+- `Findings` растут
+  - значит детекторы и ingest работают;
+- `Emissions` растут
+  - значит окна закрываются и агрегаты реально публикуются;
+- `Findings` есть, а `Emissions` нет
+  - обычно надо смотреть watermarks, размер окна и allowed lateness;
+- `Emissions` заметно меньше `Findings`
+  - это нормально, потому что много raw findings схлопываются в один оконный агрегат.
+
 Как интерпретировать:
 
 - `Running Jobs = 0`
@@ -362,6 +384,126 @@ docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
   - upstream schema drift или ошибка нормализации;
 - `Guardrail Aggregate Emissions` для `1m` растёт
   - Stage 2 реально формирует агрегаты.
+
+## Шаг 11.0. Что показывает каждый dashboard Grafana
+
+### `AISafetyOps Flink Overview`
+
+Это runtime-dashboard. Он отвечает на вопрос, здорова ли Flink job как система обработки.
+
+Панели:
+
+- `Running Jobs`
+  - число живых Flink jobs;
+- `Completed Checkpoints`
+  - сколько checkpoints завершилось успешно;
+- `Last Checkpoint Duration`
+  - сколько длился последний checkpoint;
+- `Failed Checkpoints`
+  - сколько checkpoints завершилось с ошибкой;
+- `Records In Per Task`
+  - входной throughput по task;
+- `Records Out Per Task`
+  - выходной throughput по task;
+- `Mailbox Latency Samples By Task`
+  - косвенный индикатор внутренней перегрузки task;
+- `Current Input Watermark By Task`
+  - прогресс event time;
+- `Guardrail Aggregate Emissions`
+  - сколько агрегатов уже опубликовано;
+- `AISafetyOps Domain Counters`
+  - сколько событий прошло как `valid`, `invalid`, `late`, `on_time`.
+
+Когда смотреть:
+
+- сразу после submit job;
+- во время replay;
+- во время live-генератора;
+- при подозрении на остановку окон или деградацию processing.
+
+### `AISafetyOps Business Metrics`
+
+Это business-dashboard. Он отвечает на вопрос, какой risk-signal реально наблюдает AISafetyOps pipeline.
+
+Панели:
+
+- `1m Aggregate Emissions`
+  - сколько минутных агрегатов job выпустила downstream;
+- `1m Triggered Findings`
+  - сколько findings реально сработало;
+- `1m Detector Errors`
+  - сколько ошибок было у detector processing;
+- `1m Findings In Aggregates`
+  - сколько сырых findings попало в минутные агрегаты;
+- `Triggered Findings By Guardrail 1m`
+  - triggered findings по каждому guardrail;
+- `All Findings By Guardrail 1m`
+  - все findings по каждому guardrail;
+- `Triggered Share By Guardrail 1m`
+  - доля triggered относительно всех findings;
+- `Detector Errors By Guardrail 1m`
+  - ошибки в разрезе guardrail-а;
+- `Input Tokens By Guardrail 1m`
+  - объём входных токенов по findings;
+- `Output Tokens By Guardrail 1m`
+  - объём выходных токенов по findings.
+
+Когда смотреть:
+
+- после появления первых aggregate emissions;
+- при сравнении сценариев `normal`, `mixed`, `attack`;
+- когда надо понять, какие именно guardrail-ы дают основной объём сработок;
+- когда надо показать бизнесу, что поток не просто обрабатывается, а даёт осмысленные risk-метрики.
+
+## Шаг 11.1. Запустить живой генератор для Grafana
+
+Если хотите видеть, как панели меняются в реальном времени несколько минут подряд, используйте live-генератор:
+
+```bash
+bash scripts/run-live-generator.sh
+```
+
+Поведение по умолчанию:
+
+- публикует данные `300` секунд;
+- шлёт `1` запрос в секунду;
+- использует сценарий `mixed`;
+- пишет в topics `agent-requests`, `agent-responses`, `guardrail-findings`.
+
+Если нужна вариативная нагрузка, задайте диапазон:
+
+```bash
+bash scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --min-requests-per-second 1 \
+  --max-requests-per-second 5 \
+  --scenario mixed
+```
+
+Что это делает:
+
+- каждую секунду выбирает новый RPS в диапазоне `1..5`;
+- даёт более живую картину в Grafana;
+- помогает проверить, как pipeline реагирует на плавающий входной поток.
+
+Полезный вариант с чуть более заметной динамикой в Grafana:
+
+```bash
+bash scripts/run-live-generator.sh --duration-seconds 300 --requests-per-second 3 --scenario mixed
+```
+
+Что вы увидите:
+
+- рост `Records In` в Flink Overview;
+- рост `Findings` на business dashboard;
+- появление `Emissions` после накопления окна;
+- обновление `Triggered Findings` по конкретным guardrail-ам.
+
+Когда использовать live-генератор:
+
+- для demo на живой системе;
+- для ручной проверки panel refresh в Grafana;
+- для smoke-проверки, что Kafka, Flink и Prometheus связаны корректно.
 
 ## Шаг 12. Запросы в Prometheus и что они означают
 

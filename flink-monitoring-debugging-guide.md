@@ -38,6 +38,8 @@
 - **Skew** — неравномерное распределение данных или работы по subtasks.
 - **Subtask** — один параллельный экземпляр оператора.
 - **History Server** — сервис Flink для просмотра завершенных job и их архивированной метаинформации.
+- **Finding** — одно сырое событие срабатывания гардрейла по конкретному запросу или ответу агента.
+- **Aggregate emission** — один выходной агрегат, который Flink опубликовал downstream по завершению или переиспуску окна.
 
 ## 1. Назначение документа
 
@@ -141,6 +143,7 @@ URL:
 
 - datasource `Prometheus`;
 - dashboard `AISafetyOps Flink Overview`;
+- dashboard `AISafetyOps Business Metrics`;
 - папка dashboard: `AISafetyOps`.
 
 Что смотреть в dashboard в первую очередь:
@@ -164,6 +167,24 @@ URL:
 - `AISafetyOps Domain Counters`
   - растут ли `valid`, `invalid`, `late`, `on_time`.
 
+Как читать `Emissions` и `Findings` в business/dashboard панелях:
+
+- `Findings`
+  - это число сырых событий `GUARDRAIL_FINDING`, которые pipeline получил и включил в оконную обработку;
+  - одно пользовательское действие обычно даёт до 4 findings, потому что у нас 4 guardrail-а;
+  - рост `Findings` означает, что входной поток есть и guardrail detectors реально производят результаты.
+- `Emissions`
+  - это число агрегатных записей, которые оконный оператор Flink выпустил в topic `guardrail-aggregates`;
+  - emission не равен числу запросов и не равен числу уникальных окон;
+  - одно окно может дать больше одного emission, если разрешены late events и окно переизлучается с обновлёнными значениями.
+
+Практический смысл:
+
+- `Findings` отвечают на вопрос: "сколько сырых guardrail-срабатываний мы наблюдаем";
+- `Emissions` отвечают на вопрос: "сколько раз Flink уже пересчитал и опубликовал агрегированный результат";
+- если `Findings` растут, а `Emissions` долго стоят на нуле, обычно проблема в watermark/window timing;
+- если `Emissions` растут, а `Findings` нет, значит вы смотрите на догоняющие окна или late replay старых данных.
+
 Практическая интерпретация:
 
 - `Running Jobs = 0`
@@ -180,6 +201,124 @@ URL:
   - upstream schema drift, parse error или валидационный дефект;
 - `Guardrail Aggregate Emissions` растёт только для `1m`
   - короткие окна уже закрываются, а `5m` ещё нет.
+
+## 3.2 Что показывает каждый dashboard в Grafana
+
+Ниже описание всех готовых dashboards и панелей, которые уже provisioned в локальном стенде.
+
+### Dashboard `AISafetyOps Flink Overview`
+
+Это operational dashboard для ответа на вопрос:
+
+- жива ли Flink job;
+- принимает ли она поток;
+- движется ли event time;
+- не деградирует ли runtime.
+
+Панели:
+
+- `Running Jobs`
+  - показывает число job в статусе `RUNNING`;
+  - для локального MVP обычно ожидается `1`;
+  - `0` означает, что сначала надо смотреть Flink UI, submit и logs JobManager.
+- `Completed Checkpoints`
+  - показывает общее число успешно завершённых checkpoints;
+  - число должно монотонно расти;
+  - если метрика застыла, fault tolerance path не отрабатывает.
+- `Last Checkpoint Duration`
+  - показывает длительность последнего checkpoint в миллисекундах;
+  - рост метрики часто означает проблемы со state backend, диском или network path.
+- `Failed Checkpoints`
+  - показывает число неуспешных checkpoints;
+  - в здоровом локальном стенде должно быть `0`;
+  - рост требует проверки logs, storage и timeout-настроек.
+- `Records In Per Task`
+  - показывает входной throughput по task;
+  - нужен для локализации участка pipeline, который реально получает события;
+  - если source растёт, а downstream task пустой, проблема между ними.
+- `Records Out Per Task`
+  - показывает выходной throughput по task;
+  - помогает быстро увидеть bottleneck;
+  - если `In` есть, а `Out` почти нет, оператор либо фильтрует всё, либо зависает, либо ошибается.
+- `Mailbox Latency Samples By Task`
+  - показывает samples внутренней latency исполнения task mailbox;
+  - полезно как ранний сигнал перегрузки, GC pauses или тяжёлого пользовательского кода;
+  - резкий рост при стабильном входном трафике требует проверки operator logic и ресурсов TaskManager.
+- `Current Input Watermark By Task`
+  - показывает текущий прогресс event time по task;
+  - критична для окон и allowed lateness;
+  - если watermark не движется, окна не будут эмитить результаты вовремя.
+- `Guardrail Aggregate Emissions`
+  - показывает, сколько агрегатов Flink уже выпустил по окнам `1m` и `5m`;
+  - полезна для ответа на вопрос, закрываются ли окна вообще;
+  - если `1m` растёт, а `5m` нет, это нормально на коротком горизонте наблюдения.
+- `AISafetyOps Domain Counters`
+  - показывает доменные counters по типам обработки: `valid`, `invalid`, `late`, `on_time`;
+  - рост `invalid` означает проблемы со schema/validation;
+  - рост `late` означает слишком поздние события или неверные ожидания по event time.
+
+### Dashboard `AISafetyOps Business Metrics`
+
+Это business/analytical dashboard для ответа на вопрос:
+
+- сколько guardrail-событий реально приходит;
+- сколько из них срабатывает;
+- как это распределено по guardrail-ам;
+- сколько токенов и ошибок связано с каждым guardrail-ом.
+
+Панели:
+
+- `1m Aggregate Emissions`
+  - показывает количество emitted aggregates по минутному окну;
+  - это не число raw events, а число опубликованных агрегатов;
+  - полезно для проверки, что окно `1m` живое и downstream получает агрегаты.
+- `1m Triggered Findings`
+  - показывает количество findings за минутное окно, где `triggered=true`;
+  - это основной бизнес-сигнал, сколько реальных сработок даёт pipeline;
+  - рост во время `attack`-сценария ожидаем.
+- `1m Detector Errors`
+  - показывает количество ошибок detector processing, попавших в aggregate metrics;
+  - в MVP обычно должно быть `0`;
+  - любое ненулевое значение стоит расследовать как quality issue detector-а или нормализации.
+- `1m Findings In Aggregates`
+  - показывает общее число сырых findings, попавших в минутные агрегаты;
+  - метрика отвечает на вопрос, сколько входного risk-signal реально было учтено окнами;
+  - если findings есть во входе, а тут пусто, вероятна проблема с windowing/watermark.
+- `Triggered Findings By Guardrail 1m`
+  - показывает triggered findings в разрезе `PROMPT_INJECTION`, `TOXICITY`, `LOOPING`, `SYSTEM_PROMPT_LEAKAGE`;
+  - удобна для сравнения профиля рисков между guardrail-ами;
+  - если один guardrail резко доминирует, нужно проверить либо реальный инцидент, либо bias правил.
+- `All Findings By Guardrail 1m`
+  - показывает все findings по guardrail-ам, включая `triggered=false`;
+  - помогает отделить объём анализа от объёма реальных срабатываний;
+  - если общий поток высок, а triggered низкий, значит детектор видит много событий, но пороги отсекают большинство.
+- `Triggered Share By Guardrail 1m`
+  - показывает долю triggered findings относительно всех findings по каждому guardrail;
+  - это proxy-метрика чувствительности guardrail-а;
+  - слишком высокая доля может означать noisy detector или слишком низкий threshold.
+- `Detector Errors By Guardrail 1m`
+  - показывает ошибки по guardrail-ам в разрезе типов детектора;
+  - помогает понять, ломается ли конкретный detector, а не весь pipeline;
+  - особенно полезна после rollout новой версии правила или parser-а.
+- `Input Tokens By Guardrail 1m`
+  - показывает суммарный `inputTokens`, пришедший в findings данного guardrail-а;
+  - полезна для оценки нагрузки detector-а и объёма анализируемого контента;
+  - помогает замечать рост сложных или длинных пользовательских запросов.
+- `Output Tokens By Guardrail 1m`
+  - показывает суммарный `outputTokens`, связанных с findings данного guardrail-а;
+  - нужна для оценки рисков на стороне ответа модели;
+  - особенно полезна для анализа leakage и toxic response patterns.
+
+Как использовать оба dashboard вместе:
+
+- сначала открыть `AISafetyOps Flink Overview`
+  - проверить, что job жива и метрики runtime выглядят здоровыми;
+- затем открыть `AISafetyOps Business Metrics`
+  - убедиться, что бизнес-сигналы действительно текут и агрегируются;
+- если business dashboard пустой, а overview живой
+  - обычно проблема в topic data, watermark, окнах или том, что вы смотрите слишком рано;
+- если business dashboard растёт, а overview показывает failed checkpoints или latency spike
+  - данные пока идут, но runtime уже деградирует и может скоро упасть.
 
 ## 4. Что мониторить всегда
 

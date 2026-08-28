@@ -63,9 +63,9 @@ def pick_session(index: int, session_count: int) -> str:
 
 def triggered_from_confidence(confidence: float, scenario: str) -> bool:
     if scenario == "normal":
-      return confidence >= 0.75
+        return confidence >= 0.75
     if scenario == "attack":
-      return confidence >= 0.65
+        return confidence >= 0.65
     return confidence >= 0.70
 
 
