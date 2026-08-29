@@ -1,5 +1,7 @@
 # Flink для AISafetyOps: локальный MVP runbook
 
+Дата актуальности: 2026-08-29
+
 ## Глоссарий
 
 - **Apache Flink** — distributed stream processing engine, на котором исполняется локальный AISafetyOps MVP.
@@ -46,6 +48,7 @@
 - `Flink JobManager` в Docker;
 - `Flink TaskManager` в Docker;
 - `Prometheus` в Docker;
+- `Grafana` в Docker;
 - `bash`-скрипты для operational действий;
 - `Python`-генератор для replay dataset;
 - `JSON` как стартовый транспортный формат событий;
@@ -79,6 +82,10 @@
 - `agent-requests`
 - `agent-responses`
 - `guardrail-findings`
+- `normalized-events`
+- `invalid-events`
+- `late-events`
+- `guardrail-aggregates`
 - `guardrail-quality-metrics`
 - `policy-updates`
 - `debug-incidents`
@@ -86,6 +93,8 @@
 Этого достаточно для:
 
 - подачи входных событий;
+- проверки нормализации и маршрутизации invalid/late событий;
+- публикации оконных агрегатов в выходные topics;
 - проверки quality/incident flows;
 - будущего расширения policy stream;
 - локального debug вывода.
@@ -133,8 +142,9 @@ bash tools/scripts/cleanup-local.sh
 
 - поднимает Kafka;
 - поднимает JobManager;
-- поднимает TaskManager.
+- поднимает TaskManager;
 - поднимает Prometheus.
+- поднимает Grafana.
 
 ### Шаг 2. Инициализировать topics
 
@@ -169,10 +179,8 @@ bash tools/scripts/reset-topics.sh
 
 Правило выбора:
 
-- `reset-topics.sh`
-  - использовать, когда нужно только очистить Kafka-сообщения и прогнать pipeline повторно на уже поднятом стенде;
-- `cleanup-local.sh`
-  - использовать, когда нужен полный reset всего локального окружения.
+- `reset-topics.sh` использовать, когда нужно только очистить Kafka-сообщения и прогнать pipeline повторно на уже поднятом стенде.
+- `cleanup-local.sh` использовать, когда нужен полный reset всего локального окружения.
 
 ### Шаг 3. Загрузить policy YAML
 
@@ -184,6 +192,12 @@ bash tools/scripts/reset-topics.sh
 
 - копирует policy YAML в локальную runtime-директорию;
 - подготавливает активную policy для MVP.
+
+Важно:
+
+- на текущем этапе MVP этот шаг готовит локальный policy snapshot;
+- текущая job пока не применяет `runtime/policies/active-policy.yaml` как live runtime source;
+- это подготовка к следующему инкременту с внешним policy-driven поведением.
 
 ### Шаг 4. Собрать и отправить Flink job
 
@@ -366,11 +380,12 @@ curl -s http://localhost:9250/metrics | head -40
 1. Поднять стенд.
 2. Инициализировать topics.
 3. Загрузить policy YAML.
-4. Сгенерировать и прогнать `normal` replay.
-5. Сгенерировать и прогнать `attack` replay.
-6. Сгенерировать и прогнать `mixed` replay.
-7. Проверить метрики, logs и output.
-8. После изменения логики снова прогнать полный regression.
+4. Собрать и отправить Flink job.
+5. Сгенерировать и прогнать `normal` replay.
+6. Сгенерировать и прогнать `attack` replay.
+7. Сгенерировать и прогнать `mixed` replay.
+8. Проверить метрики, logs и output.
+9. После изменения логики снова прогнать полный regression.
 
 ## 10. Когда нужен replay dataset
 
@@ -452,6 +467,6 @@ Replay dataset нужен для трех задач:
 
 Следующая практическая итерация после этого runbook:
 
-1. Подключить реальный Java Flink job к этим topics.
-2. Начать с этапа `Trusted Event Foundation`.
+1. Добавить live-применение policy-конфига из внешнего источника.
+2. Расширить output для quality/incidents потоков.
 3. После каждого инкремента добавлять тест и прогонять `run-regression.sh`.
