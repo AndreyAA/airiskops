@@ -2,6 +2,7 @@ package com.bank.aisafetyops.app.functions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bank.aisafetyops.model.EventType;
 import com.bank.aisafetyops.model.GuardrailNames;
@@ -37,6 +38,10 @@ class GuardrailWindowAggregateFunctionTest {
         assertEquals(0.73d, result.minConfidence());
         assertEquals(0.82d, result.avgConfidence(), 0.0001d);
         assertEquals(0.91d, result.maxConfidence());
+        assertEquals(2, result.confidenceValues().size());
+        assertTrue(result.confidenceValues().contains(0.73d));
+        assertTrue(result.confidenceValues().contains(0.91d));
+        assertEquals(0.91d, result.triggeredConfidenceValues().get(0));
         assertEquals(15L, result.minDetectorLatencyMs());
         assertEquals(20.0d, result.avgDetectorLatencyMs(), 0.0001d);
         assertEquals(25L, result.maxDetectorLatencyMs());
@@ -58,6 +63,8 @@ class GuardrailWindowAggregateFunctionTest {
         assertNull(result.minConfidence());
         assertNull(result.avgConfidence());
         assertNull(result.maxConfidence());
+        assertEquals(0, result.confidenceValues().size());
+        assertEquals(0, result.triggeredConfidenceValues().size());
     }
 
     private static SafetyEvent buildFinding(

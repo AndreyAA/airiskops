@@ -308,6 +308,22 @@ URL:
   - показывает суммарный `outputTokens`, связанных с findings данного guardrail-а;
   - нужна для оценки рисков на стороне ответа модели;
   - особенно полезна для анализа leakage и toxic response patterns.
+- `Last Emitted Confidence P50 By Guardrail Window`
+  - показывает последнее эмитированное `p50Confidence` по окнам `1m` и `5m` для `PROMPT_INJECTION` и `TOXICITY`;
+  - это хороший индикатор типичной силы сигнала на последнем агрегате;
+  - полезна для быстрой оценки того, смещается ли baseline confidence вверх.
+- `Last Emitted Confidence P95 By Guardrail Window`
+  - показывает последнее эмитированное `p95Confidence`;
+  - помогает видеть верхний хвост confidence distribution;
+  - особенно полезна при всплесках инъекций и токсичных взаимодействий.
+- `Last Emitted Triggered Confidence P50 By Guardrail Window`
+  - показывает типичный confidence только для findings с `triggered=true`;
+  - удобна для контроля того, насколько уверенными остаются уже реальные сработки;
+  - если метрика падает, threshold или detector quality стоит пересмотреть.
+- `Last Emitted Triggered Confidence P95 By Guardrail Window`
+  - показывает хвост самых сильных triggered findings;
+  - помогает быстро замечать агрессивные пики по `PROMPT_INJECTION` и `TOXICITY`;
+  - на коротком окне `1m` даёт быстрый operational signal.
 
 Как использовать оба dashboard вместе:
 
@@ -512,6 +528,83 @@ flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AISafety
 Использование:
 
 - полезно, когда надо отделить проблему логики operator от проблемы записи в Kafka.
+
+#### Какой последний `p50Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p50_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Показывает:
+
+- последнее эмитированное значение `p50Confidence` по окнам `1m` и `5m`.
+
+Использование:
+
+- это типичный confidence на последнем агрегате, а не percentile по всей исторической выборке;
+- полезно для быстрого контроля baseline по confidence-based гардрейлам.
+
+#### Какой последний `p95Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p95_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Показывает:
+
+- верхний хвост confidence distribution на последнем эмитированном окне.
+
+Использование:
+
+- полезно для обнаружения усиления опасного хвоста даже при стабильном `p50Confidence`.
+
+#### Какой последний `triggeredP50Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p50_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Показывает:
+
+- типичный confidence только по findings с `triggered=true`.
+
+Использование:
+
+- помогает оценивать, насколько уверенными остаются уже реальные сработки.
+
+#### Какой последний `triggeredP95Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p95_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Показывает:
+
+- верхний хвост уже triggered findings.
+
+Использование:
+
+- особенно полезно на `attack` и `mixed` нагрузке, когда надо быстро увидеть очень сильные срабатывания.
 
 ### 4.2 Operator-level метрики
 

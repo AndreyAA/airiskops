@@ -1,6 +1,7 @@
 package com.bank.aisafetyops.app.functions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.bank.aisafetyops.model.GuardrailAggregateKey;
 import com.bank.aisafetyops.model.EventType;
@@ -63,11 +64,19 @@ class GuardrailWindowingIntegrationTest {
             assertEquals(FIRST_WINDOW_END, aggregates.get(0).windowEndMillis());
             assertEquals(2L, aggregates.get(0).totalEvents());
             assertEquals(2L, aggregates.get(0).triggeredCount());
+            assertEquals(0.82d, aggregates.get(0).p50Confidence());
+            assertEquals(0.91d, aggregates.get(0).p95Confidence());
+            assertEquals(0.82d, aggregates.get(0).triggeredP50Confidence());
+            assertEquals(0.91d, aggregates.get(0).triggeredP95Confidence());
 
             assertEquals(FIRST_WINDOW_END, aggregates.get(1).windowStartMillis());
             assertEquals(SECOND_WINDOW_END, aggregates.get(1).windowEndMillis());
             assertEquals(2L, aggregates.get(1).totalEvents());
             assertEquals(0L, aggregates.get(1).triggeredCount());
+            assertEquals(0.66d, aggregates.get(1).p50Confidence());
+            assertEquals(0.74d, aggregates.get(1).p95Confidence());
+            assertNull(aggregates.get(1).triggeredP50Confidence());
+            assertNull(aggregates.get(1).triggeredP95Confidence());
         }
     }
 
@@ -102,11 +111,43 @@ class GuardrailWindowingIntegrationTest {
             assertEquals(FIRST_WINDOW_END, aggregates.get(0).windowEndMillis());
             assertEquals(1L, aggregates.get(0).totalEvents());
             assertEquals(1L, aggregates.get(0).triggeredCount());
+            assertEquals(0.91d, aggregates.get(0).p50Confidence());
+            assertEquals(0.91d, aggregates.get(0).p95Confidence());
+            assertEquals(0.91d, aggregates.get(0).triggeredP50Confidence());
+            assertEquals(0.91d, aggregates.get(0).triggeredP95Confidence());
 
             assertEquals(BASE_TIME, aggregates.get(1).windowStartMillis());
             assertEquals(FIRST_WINDOW_END, aggregates.get(1).windowEndMillis());
             assertEquals(2L, aggregates.get(1).totalEvents());
             assertEquals(2L, aggregates.get(1).triggeredCount());
+            assertEquals(0.82d, aggregates.get(1).p50Confidence());
+            assertEquals(0.91d, aggregates.get(1).p95Confidence());
+            assertEquals(0.82d, aggregates.get(1).triggeredP50Confidence());
+            assertEquals(0.91d, aggregates.get(1).triggeredP95Confidence());
+        }
+    }
+
+    @Test
+    void leavesPercentilesNullForBooleanGuardrails() throws Exception {
+        WindowOperator<GuardrailAggregateKey, SafetyEvent, ?, GuardrailWindowAggregate, ?> operator =
+                buildWindowOperator(Time.minutes(5));
+
+        try (KeyedOneInputStreamOperatorTestHarness<GuardrailAggregateKey, SafetyEvent, GuardrailWindowAggregate> harness =
+                     new KeyedOneInputStreamOperatorTestHarness<>(
+                             operator,
+                             new GuardrailAggregateKeySelector(),
+                             TypeInformation.of(new TypeHint<>() {
+                             })
+                     )) {
+            harness.open();
+            harness.processElement(buildFinding("req-000010", BASE_TIME + 5_000L, null, true, 10L, GuardrailNames.LOOPING), BASE_TIME + 5_000L);
+            harness.processWatermark(FIRST_WINDOW_END);
+
+            GuardrailWindowAggregate aggregate = (GuardrailWindowAggregate) harness.extractOutputStreamRecords().get(0).getValue();
+            assertNull(aggregate.p50Confidence());
+            assertNull(aggregate.p95Confidence());
+            assertNull(aggregate.triggeredP50Confidence());
+            assertNull(aggregate.triggeredP95Confidence());
         }
     }
 
@@ -138,6 +179,17 @@ class GuardrailWindowingIntegrationTest {
             boolean triggered,
             Long detectorLatencyMs
     ) {
+        return buildFinding(requestId, eventTime, confidence, triggered, detectorLatencyMs, GuardrailNames.PROMPT_INJECTION);
+    }
+
+    private static SafetyEvent buildFinding(
+            String requestId,
+            long eventTime,
+            Double confidence,
+            boolean triggered,
+            Long detectorLatencyMs,
+            String guardrailName
+    ) {
         return new SafetyEvent(
                 TENANT_ID,
                 null,
@@ -152,7 +204,7 @@ class GuardrailWindowingIntegrationTest {
                 "web",
                 100,
                 50,
-                GuardrailNames.PROMPT_INJECTION,
+                guardrailName,
                 GUARDRAIL_VERSION,
                 POLICY_VERSION,
                 confidence,

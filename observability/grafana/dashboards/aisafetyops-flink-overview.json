@@ -436,20 +436,20 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name=\"AISafetyOps_MVP_Increment_1\"}",
-          "legendFormat": "{{operator_name}}",
+          "expr": "increase(flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name=\"AISafetyOps_MVP_Increment_1\"}[1m])",
+          "legendFormat": "{{operator_name}} 1m",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_name=\"AISafetyOps_MVP_Increment_1\"}",
-          "legendFormat": "{{operator_name}}",
+          "expr": "increase(flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_name=\"AISafetyOps_MVP_Increment_1\"}[5m])",
+          "legendFormat": "{{operator_name}} 5m",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Guardrail Aggregate Emissions",
+      "title": "Guardrail Aggregate Emissions By Window",
       "type": "timeseries"
     },
     {
@@ -537,6 +537,6 @@
   "timezone": "",
   "title": "AISafetyOps Flink Overview",
   "uid": "aisafetyops-flink-overview",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

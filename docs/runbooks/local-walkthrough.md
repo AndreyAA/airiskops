@@ -290,6 +290,10 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - `minConfidence`
 - `avgConfidence`
 - `maxConfidence`
+- `p50Confidence`
+- `p95Confidence`
+- `triggeredP50Confidence`
+- `triggeredP95Confidence`
 - `minDetectorLatencyMs`
 - `avgDetectorLatencyMs`
 - `maxDetectorLatencyMs`
@@ -303,6 +307,10 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
   - за минуту агент дал 7 сработок по инъекциям;
 - `TOXICITY`, `avgConfidence=0.81`
   - средняя уверенность детектора токсичности высокая;
+- `PROMPT_INJECTION`, `p95Confidence=0.97`
+  - верхний хвост окна показывает очень сильные сигналы возможной инъекции;
+- `TOXICITY`, `triggeredP50Confidence=0.88`
+  - типичное уже сработавшее токсичное событие имеет высокий confidence;
 - `LOOPING`, `triggeredCount=3`
   - зафиксированы 3 случая зацикливания;
 - `SYSTEM_PROMPT_LEAKAGE`, `triggeredCount=1`
@@ -372,10 +380,10 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 Что означают `Findings` и `Emissions` на business dashboard:
 
 - `Findings`
-  - это число сырых событий `GUARDRAIL_FINDING`, пришедших в job;
+  - это число сырых событий `GUARDRAIL_FINDING`, учтённых business-метриками за последнюю минуту;
   - один `requestId` обычно порождает до 4 findings: prompt injection, toxicity, looping, system prompt leakage.
 - `Emissions`
-  - это число агрегатных сообщений, выпущенных оконным оператором в `guardrail-aggregates`;
+  - это число агрегатных сообщений, выпущенных оконным оператором в `guardrail-aggregates` за последнюю минуту наблюдения;
   - emission считается по факту публикации агрегата, а не по числу уникальных окон;
   - при late events одно и то же окно может эмититься повторно.
 
@@ -450,25 +458,37 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 Панели:
 
 - `1m Aggregate Emissions`
-  - сколько минутных агрегатов job выпустила downstream;
+  - сколько агрегатных сообщений было выпущено downstream за последнюю минуту;
 - `1m Triggered Findings`
-  - сколько findings реально сработало;
+  - сколько findings с `triggered=true` было учтено за последнюю минуту;
 - `1m Detector Errors`
-  - сколько ошибок было у detector processing;
+  - сколько detector errors было учтено за последнюю минуту;
 - `1m Findings In Aggregates`
-  - сколько сырых findings попало в минутные агрегаты;
+  - сколько сырых findings было учтено минутной business-метрикой за последнюю минуту;
 - `Triggered Findings By Guardrail 1m`
-  - triggered findings по каждому guardrail;
+  - triggered findings по каждому guardrail за последнюю минуту;
 - `All Findings By Guardrail 1m`
-  - все findings по каждому guardrail;
+  - все findings по каждому guardrail за последнюю минуту;
 - `Triggered Share By Guardrail 1m`
-  - доля triggered относительно всех findings;
+  - доля triggered относительно всех findings за последнюю минуту;
 - `Detector Errors By Guardrail 1m`
-  - ошибки в разрезе guardrail-а;
+  - ошибки в разрезе guardrail-а за последнюю минуту;
 - `Input Tokens By Guardrail 1m`
-  - объём входных токенов по findings;
+  - объём входных токенов по findings за последнюю минуту;
 - `Output Tokens By Guardrail 1m`
-  - объём выходных токенов по findings.
+  - объём выходных токенов по findings за последнюю минуту.
+- `Last Emitted Confidence P50 By Guardrail Window`
+  - показывает последнее эмитированное `p50Confidence` для `PROMPT_INJECTION` и `TOXICITY`;
+  - даёт NRT-представление о типичном confidence по окнам `1m` и `5m`.
+- `Last Emitted Confidence P95 By Guardrail Window`
+  - показывает последнее эмитированное `p95Confidence`;
+  - полезна для отслеживания сильного хвоста по confidence-based гардрейлам.
+- `Last Emitted Triggered Confidence P50 By Guardrail Window`
+  - показывает типичный confidence только среди уже triggered findings;
+  - помогает оценивать качество текущих порогов.
+- `Last Emitted Triggered Confidence P95 By Guardrail Window`
+  - показывает верхний хвост уже сработавших findings;
+  - особенно полезна на `attack` и `mixed` сценариях.
 
 Когда смотреть:
 
@@ -719,6 +739,87 @@ flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AISafety
 Как читать:
 
 - ненулевое значение подтверждает, что sink path реально общается с Kafka.
+
+### 12. Какой последний `p50Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p50_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Что делает:
+
+- показывает последнее эмитированное значение `p50Confidence` по окнам `1m` и `5m`.
+
+Как читать:
+
+- это типичный confidence на последнем агрегате, а не percentile по всей истории;
+- `1m` полезен для быстрого NRT-сигнала;
+- `5m` показывает более устойчивый фон.
+
+### 13. Какой последний `p95Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p95_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Что делает:
+
+- показывает верхний хвост confidence distribution на последнем эмитированном окне.
+
+Как читать:
+
+- рост `p95Confidence` при стабильном `p50Confidence` означает усиление опасного хвоста;
+- это особенно важно для `PROMPT_INJECTION`.
+
+### 14. Какой последний `triggeredP50Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p50_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Что делает:
+
+- показывает типичный confidence только по findings с `triggered=true`.
+
+Как читать:
+
+- если `triggeredP50Confidence` близок к threshold, detector работает на границе;
+- если метрика стабильно высокая, triggered-события действительно сильные.
+
+### 15. Какой последний `triggeredP95Confidence` по `PROMPT_INJECTION` и `TOXICITY`
+
+```promql
+max by (guardrail, window) (
+  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p95_confidence{
+    job_name="AISafetyOps_MVP_Increment_1",
+    guardrail=~"PROMPT_INJECTION|TOXICITY"
+  }
+)
+```
+
+Что делает:
+
+- показывает верхний хвост уже реально triggered findings.
+
+Как читать:
+
+- помогает быстро увидеть всплески очень уверенных инъекций или токсичности;
+- особенно полезно на `attack` и `mixed` сценариях.
 
 ## Шаг 13. Важное замечание про окно 5m
 

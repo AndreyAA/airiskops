@@ -5,6 +5,8 @@ import com.bank.aisafetyops.model.EventType;
 import com.bank.aisafetyops.model.GuardrailNames;
 import com.bank.aisafetyops.model.SafetyEvent;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Mutable accumulator for guardrail window aggregation.
@@ -38,6 +40,8 @@ public final class GuardrailAggregateAccumulator implements Serializable {
     private double confidenceSum;
     private Double minConfidence;
     private Double maxConfidence;
+    private final List<Double> confidenceValues = new ArrayList<>();
+    private final List<Double> triggeredConfidenceValues = new ArrayList<>();
 
     public void add(SafetyEvent event) {
         tenantId = firstNonBlank(tenantId, event.tenantId());
@@ -77,6 +81,10 @@ public final class GuardrailAggregateAccumulator implements Serializable {
             confidenceSum += event.confidence();
             minConfidence = minDouble(minConfidence, event.confidence());
             maxConfidence = maxDouble(maxConfidence, event.confidence());
+            confidenceValues.add(event.confidence());
+            if (Boolean.TRUE.equals(event.triggered())) {
+                triggeredConfidenceValues.add(event.confidence());
+            }
         }
     }
 
@@ -103,6 +111,8 @@ public final class GuardrailAggregateAccumulator implements Serializable {
         confidenceSum += other.confidenceSum;
         minConfidence = minDouble(minConfidence, other.minConfidence);
         maxConfidence = maxDouble(maxConfidence, other.maxConfidence);
+        confidenceValues.addAll(other.confidenceValues);
+        triggeredConfidenceValues.addAll(other.triggeredConfidenceValues);
         return this;
     }
 
@@ -172,6 +182,14 @@ public final class GuardrailAggregateAccumulator implements Serializable {
 
     public long detectorLatencyCount() {
         return detectorLatencyCount;
+    }
+
+    public List<Double> confidenceValues() {
+        return List.copyOf(confidenceValues);
+    }
+
+    public List<Double> triggeredConfidenceValues() {
+        return List.copyOf(triggeredConfidenceValues);
     }
 
     private static String firstNonBlank(String left, String right) {

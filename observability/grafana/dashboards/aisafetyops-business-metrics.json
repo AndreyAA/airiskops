@@ -60,7 +60,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_aggregates_emitted_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum(increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_aggregates_emitted_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "1m aggregates",
           "range": true,
           "refId": "A"
@@ -108,7 +108,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum(increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "1m triggered",
           "range": true,
           "refId": "A"
@@ -156,7 +156,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_detector_errors_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum(increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_detector_errors_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "1m detector errors",
           "range": true,
           "refId": "A"
@@ -204,7 +204,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum(increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "1m findings",
           "range": true,
           "refId": "A"
@@ -248,7 +248,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
@@ -292,7 +292,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
@@ -336,7 +336,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}) / clamp_min(sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}), 1)",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m])) / clamp_min(sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m])), 1)",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
@@ -380,7 +380,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_detector_errors_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_detector_errors_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
@@ -424,7 +424,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_input_tokens_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_input_tokens_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
@@ -468,13 +468,189 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (guardrail) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_output_tokens_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})",
+          "expr": "sum by (guardrail) (increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_output_tokens_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"}[1m]))",
           "legendFormat": "{{guardrail}}",
           "range": true,
           "refId": "A"
         }
       ],
       "title": "Output Tokens By Guardrail 1m",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by (guardrail, window) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p50_confidence{job_name=\"AISafetyOps_MVP_Increment_1\",guardrail=~\"PROMPT_INJECTION|TOXICITY\"})",
+          "legendFormat": "{{guardrail}} {{window}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last Emitted Confidence P50 By Guardrail Window",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by (guardrail, window) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p95_confidence{job_name=\"AISafetyOps_MVP_Increment_1\",guardrail=~\"PROMPT_INJECTION|TOXICITY\"})",
+          "legendFormat": "{{guardrail}} {{window}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last Emitted Confidence P95 By Guardrail Window",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by (guardrail, window) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p50_confidence{job_name=\"AISafetyOps_MVP_Increment_1\",guardrail=~\"PROMPT_INJECTION|TOXICITY\"})",
+          "legendFormat": "{{guardrail}} {{window}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last Emitted Triggered Confidence P50 By Guardrail Window",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by (guardrail, window) (flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p95_confidence{job_name=\"AISafetyOps_MVP_Increment_1\",guardrail=~\"PROMPT_INJECTION|TOXICITY\"})",
+          "legendFormat": "{{guardrail}} {{window}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Last Emitted Triggered Confidence P95 By Guardrail Window",
       "type": "timeseries"
     }
   ],
@@ -497,6 +673,6 @@
   "timezone": "",
   "title": "AISafetyOps Business Metrics",
   "uid": "aisafetyops-business-metrics",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }

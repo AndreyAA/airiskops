@@ -82,6 +82,75 @@ Java-модуль с production-кодом Flink job.
 - хранить dashboards AISafetyOps;
 - отделять observability-артефакты от runtime-кода job.
 
+## Скриншоты Observability
+
+Ниже приведены актуальные примеры Grafana dashboards локального MVP.
+
+### Business Dashboard: верхняя часть
+
+Показывает основные NRT business-метрики за последнюю минуту:
+
+- число emitted aggregates;
+- число triggered findings;
+- detector errors;
+- общее число findings, попавших в оконную аналитику;
+- разрез по guardrail для triggered и all findings.
+
+![AISafetyOps Business Metrics Top](docs/images/grafana1.png)
+
+### Business Dashboard: доли и токены
+
+Показывает:
+
+- `Triggered Share By Guardrail 1m`;
+- `Detector Errors By Guardrail 1m`;
+- входные токены по guardrail;
+- выходные токены по guardrail.
+
+Это полезно для понимания чувствительности правил и объёма трафика, который проходит через detectors.
+
+![AISafetyOps Business Metrics Shares And Tokens](docs/images/grafana2.png)
+
+### Business Dashboard: confidence percentiles
+
+Показывает последние эмитированные percentile-метрики для `PROMPT_INJECTION` и `TOXICITY`:
+
+- `Last Emitted Confidence P50 By Guardrail Window`;
+- `Last Emitted Confidence P95 By Guardrail Window`;
+- `Last Emitted Triggered Confidence P50 By Guardrail Window`;
+- `Last Emitted Triggered Confidence P95 By Guardrail Window`.
+
+Этот экран нужен для контроля типичного и хвостового confidence по окнам `1m` и `5m`.
+
+![AISafetyOps Business Metrics Confidence Percentiles](docs/images/grafana3.png)
+
+### Flink Overview: runtime summary
+
+Показывает базовое состояние job:
+
+- `Running Jobs`;
+- `Completed Checkpoints`;
+- `Last Checkpoint Duration`;
+- `Failed Checkpoints`;
+- входной и выходной throughput по task.
+
+Это первый экран для проверки, что job жива и поток реально проходит через topology.
+
+![AISafetyOps Flink Overview Runtime](docs/images/grafana4.png)
+
+### Flink Overview: watermarks и emissions
+
+Показывает:
+
+- `Mailbox Latency Samples By Task`;
+- `Current Input Watermark By Task`;
+- `Guardrail Aggregate Emissions By Window`;
+- `AISafetyOps Domain Counters`.
+
+Этот экран помогает понять, движется ли event time, закрываются ли окна и не деградирует ли pipeline на runtime-уровне.
+
+![AISafetyOps Flink Overview Watermarks And Emissions](docs/images/grafana5.png)
+
 ### `tools/`
 
 Вспомогательные скрипты и генераторы.
