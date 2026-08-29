@@ -99,6 +99,18 @@
 - будущего расширения policy stream;
 - локального debug вывода.
 
+Подробный контракт по topics и JSON-сообщениям вынесен в отдельный документ:
+
+- [event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+
+Коротко для runbook:
+
+- одно Kafka-сообщение = одно доменное событие;
+- один пользовательский запрос = набор связанных событий;
+- связь строится по `agentId`, `sessionId`, `requestId`;
+- для одного `requestId` обычно есть `AGENT_REQUEST`, `AGENT_RESPONSE` и до 4 `GUARDRAIL_FINDING`;
+- основные выходные topics для текущего MVP: `normalized-events`, `invalid-events`, `late-events`, `guardrail-aggregates`.
+
 ## 5. Старт локального стенда
 
 ### Полный reset локального стенда

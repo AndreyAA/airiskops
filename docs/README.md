@@ -30,7 +30,8 @@
 Если нужно понять архитектуру и границы модулей:
 
 1. [architecture/aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
-2. [architecture/adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
+2. [architecture/event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+3. [architecture/adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
 
 Если нужно понять MVP и этапы внедрения:
 
@@ -45,6 +46,9 @@
 - [aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
   - основной manual по Flink для кейса AISafetyOps;
   - архитектура пайплайна, runtime, deployment, data model, increments.
+- [event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+  - Kafka topics и JSON-контракты локального MVP;
+  - обязательные поля, связи между событиями и смысл каждого потока.
 - [adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
   - как правильно добавлять новые агрегированные метрики за `N` минут;
   - принципы, типовые ошибки, примеры кода.
