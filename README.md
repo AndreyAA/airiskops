@@ -91,6 +91,7 @@ Java-модуль с production-кодом Flink job.
 - `tools/scripts/` — operational shell scripts;
 - `tools/generators/` — Python-генераторы replay и live stream;
 - `tools/tests/` — Python tests для генераторов.
+- `tools/testdata/` — только маленькие фиксированные test fixtures, если они реально нужны.
 
 Назначение:
 
@@ -99,6 +100,12 @@ Java-модуль с production-кодом Flink job.
 - публиковать replay dataset;
 - генерировать живой поток для Grafana;
 - прогонять локальный regression.
+
+Правило хранения данных:
+
+- runtime replay datasets не хранятся в git;
+- всё, что можно воспроизвести генератором, должно генерироваться;
+- в репозитории допустимы только маленькие fixture-наборы для тестов.
 
 ### `docs/`
 

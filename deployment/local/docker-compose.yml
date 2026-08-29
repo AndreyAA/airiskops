@@ -1,3 +1,5 @@
+name: flink
+
 services:
   kafka:
     image: apache/kafka:3.8.1

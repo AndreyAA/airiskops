@@ -19,5 +19,6 @@ mkdir -p runtime/policies
 
 echo "[cleanup] removing build artifacts"
 rm -rf flink-job/target
+mkdir -p flink-job/target
 
 echo "[cleanup] local environment reset completed"
