@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Resets the main Kafka topics used by the MVP pipeline.
+# Use when the Docker stack is already running and you want to clear Kafka
+# history without doing a full environment cleanup.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

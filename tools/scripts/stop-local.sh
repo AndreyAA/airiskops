@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Stops and removes the local AISafetyOps Docker stack.
+# Use when you want to shut down the local environment without keeping
+# containers, volumes, or compose state.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

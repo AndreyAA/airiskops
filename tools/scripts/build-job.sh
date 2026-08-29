@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Builds the Flink job JAR with tests and shading.
+# Use before submitting the job, and after Java changes that must be packaged
+# into the local Docker-based Flink cluster.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

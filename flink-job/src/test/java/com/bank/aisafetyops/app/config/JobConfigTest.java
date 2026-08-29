@@ -29,13 +29,16 @@ class JobConfigTest {
                 outOfOrdernessSeconds: 45
                 idleTimeoutMinutes: 2
                 lateToleranceMinutes: 7
+                checkpointIntervalSeconds: 40
+                autoWatermarkIntervalSeconds: 8
                 startFromEarliest: false
                 """);
 
         JobConfig config = JobConfig.fromArgs(new String[]{
                 "--configFile", configFile.toString(),
                 "--groupId", "cli-group",
-                "--lateToleranceMinutes", "9"
+                "--lateToleranceMinutes", "9",
+                "--autoWatermarkIntervalSeconds", "6"
         });
 
         assertEquals("kafka:9092", config.bootstrapServers());
@@ -48,6 +51,8 @@ class JobConfigTest {
         assertEquals(Duration.ofSeconds(45), config.outOfOrderness());
         assertEquals(Duration.ofMinutes(2), config.idleTimeout());
         assertEquals(Duration.ofMinutes(9), config.lateTolerance());
+        assertEquals(Duration.ofSeconds(40), config.checkpointInterval());
+        assertEquals(Duration.ofSeconds(6), config.autoWatermarkInterval());
         assertFalse(config.startFromEarliest());
     }
 }

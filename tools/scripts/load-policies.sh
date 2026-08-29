@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Copies the selected policy YAML into the active local runtime location.
+# Use before submitting the job, or whenever you want the local stack to read
+# an updated policy file during manual verification.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

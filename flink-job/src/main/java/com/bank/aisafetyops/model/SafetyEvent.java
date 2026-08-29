@@ -1,5 +1,12 @@
 package com.bank.aisafetyops.model;
 
+/**
+ * Normalized domain event used inside the AISafetyOps Flink pipeline.
+ *
+ * <p>The record unifies agent requests, agent responses, and guardrail findings
+ * into a single transport-neutral model that downstream operators can process
+ * with consistent keys and timestamps.
+ */
 public record SafetyEvent(
         String tenantId,
         String environment,

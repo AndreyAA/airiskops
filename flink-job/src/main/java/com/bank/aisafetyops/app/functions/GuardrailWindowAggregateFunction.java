@@ -3,6 +3,13 @@ package com.bank.aisafetyops.app.functions;
 import com.bank.aisafetyops.model.SafetyEvent;
 import org.apache.flink.api.common.functions.AggregateFunction;
 
+/**
+ * Incremental aggregate function for guardrail finding windows.
+ *
+ * <p>This operator updates a mutable accumulator per incoming finding and keeps
+ * window aggregation lightweight before the richer window result is produced by
+ * {@code GuardrailWindowProcessFunction}.
+ */
 public final class GuardrailWindowAggregateFunction
         implements AggregateFunction<SafetyEvent, GuardrailAggregateAccumulator, GuardrailAggregateAccumulator> {
     @Override

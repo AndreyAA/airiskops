@@ -6,6 +6,13 @@ import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Counter;
 
+/**
+ * Parses raw JSON payloads into validated domain events.
+ *
+ * <p>This is the first business-safe boundary in the topology: successful
+ * records move forward as {@code ParseResult.success}, and malformed or
+ * incomplete payloads are retained for downstream inspection as invalid events.
+ */
 public final class ParseAndValidateFunction extends RichMapFunction<String, ParseResult> {
     private static final String VALID_EVENTS_METRIC = "valid_events_total";
     private static final String INVALID_EVENTS_METRIC = "invalid_events_total";

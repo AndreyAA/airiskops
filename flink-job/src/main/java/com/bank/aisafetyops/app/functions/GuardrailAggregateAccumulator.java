@@ -6,6 +6,13 @@ import com.bank.aisafetyops.model.GuardrailNames;
 import com.bank.aisafetyops.model.SafetyEvent;
 import java.io.Serializable;
 
+/**
+ * Mutable accumulator for guardrail window aggregation.
+ *
+ * <p>The accumulator combines raw finding counts, trigger counts, token usage,
+ * confidence statistics, and detector latency/error signals before the final
+ * window result is materialized as {@code GuardrailWindowAggregate}.
+ */
 public final class GuardrailAggregateAccumulator implements Serializable {
     private static final long serialVersionUID = 1L;
 

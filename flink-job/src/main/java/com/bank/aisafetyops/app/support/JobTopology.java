@@ -5,6 +5,13 @@ import com.bank.aisafetyops.model.LateEvent;
 import com.bank.aisafetyops.model.WindowNames;
 import org.apache.flink.util.OutputTag;
 
+/**
+ * Stable names, UIDs, and side-output tags for the AISafetyOps Flink topology.
+ *
+ * <p>These constants keep the job graph readable in Flink UI and help preserve
+ * stable operator identity across local reruns and future savepoint-aware
+ * changes.
+ */
 public final class JobTopology {
     public static final String JOB_NAME = "AISafetyOps MVP Increment 1";
 

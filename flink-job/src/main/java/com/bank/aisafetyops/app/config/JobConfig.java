@@ -7,6 +7,13 @@ import java.util.List;
 import java.util.Map;
 import org.apache.flink.api.java.utils.ParameterTool;
 
+/**
+ * Runtime configuration for the AISafetyOps Flink job.
+ *
+ * <p>This record combines CLI arguments and YAML defaults into a single object
+ * that can be passed through topology setup without leaking parameter parsing
+ * details into application logic.
+ */
 public record JobConfig(
         String bootstrapServers,
         List<String> topics,
@@ -15,6 +22,8 @@ public record JobConfig(
         Duration outOfOrderness,
         Duration idleTimeout,
         Duration lateTolerance,
+        Duration checkpointInterval,
+        Duration autoWatermarkInterval,
         boolean startFromEarliest
 ) {
     public static JobConfig fromArgs(String[] args) {
@@ -78,6 +87,18 @@ public record JobConfig(
                         yamlConfig,
                         JobConfigOptions.ARG_LATE_TOLERANCE_MINUTES,
                         JobConfigOptions.DEFAULT_LATE_TOLERANCE_MINUTES
+                )),
+                Duration.ofSeconds(readLong(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_CHECKPOINT_INTERVAL_SECONDS,
+                        JobConfigOptions.DEFAULT_CHECKPOINT_INTERVAL_SECONDS
+                )),
+                Duration.ofSeconds(readLong(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_AUTO_WATERMARK_INTERVAL_SECONDS,
+                        JobConfigOptions.DEFAULT_AUTO_WATERMARK_INTERVAL_SECONDS
                 )),
                 readBoolean(
                         parameters,

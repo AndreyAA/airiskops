@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Creates the Kafka topics required by the local MVP.
+# Use after the local stack is up, or whenever you need to bootstrap topics
+# before submitting the Flink job or replaying test traffic.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

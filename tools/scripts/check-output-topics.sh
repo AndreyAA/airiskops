@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Checks the main output Kafka topics and prints sample records.
+# Use after replay or live generation to verify that the pipeline produced
+# normalized events and guardrail aggregates without opening Kafka manually.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

@@ -11,4 +11,6 @@ guardrailAggregatesTopic: guardrail-aggregates
 outOfOrdernessSeconds: 30
 idleTimeoutMinutes: 1
 lateToleranceMinutes: 5
+checkpointIntervalSeconds: 30
+autoWatermarkIntervalSeconds: 5
 startFromEarliest: true

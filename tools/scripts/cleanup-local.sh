@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Fully resets the local AISafetyOps environment.
+# Use when you need a clean start: it removes the Docker stack, runtime data,
+# and build artifacts, then recreates the required local directories.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

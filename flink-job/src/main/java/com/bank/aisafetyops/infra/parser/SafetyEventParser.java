@@ -7,6 +7,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 
+/**
+ * Converts raw JSON payloads into normalized {@code SafetyEvent} instances.
+ *
+ * <p>The parser enforces the minimum identity and guardrail requirements needed
+ * by downstream keyed state, watermark handling, and window aggregation.
+ */
 public final class SafetyEventParser {
     private static final int DEFAULT_TOKEN_COUNT = 0;
     private static final String FIELD_EVENT_TYPE = "eventType";

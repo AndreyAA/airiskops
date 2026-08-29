@@ -2,6 +2,9 @@ package com.bank.aisafetyops.model;
 
 import java.util.Set;
 
+/**
+ * Canonical guardrail names used across parsing, aggregation, generators, and dashboards.
+ */
 public final class GuardrailNames {
     public static final String PROMPT_INJECTION = "PROMPT_INJECTION";
     public static final String TOXICITY = "TOXICITY";

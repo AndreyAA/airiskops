@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Streams live AISafetyOps events into Kafka at a fixed or variable RPS.
+# Use when you want to observe changing metrics and dashboards over time on a
+# running local stack instead of publishing a one-shot replay batch.
 import argparse
 import json
 import random

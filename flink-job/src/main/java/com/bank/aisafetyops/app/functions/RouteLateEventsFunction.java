@@ -9,6 +9,13 @@ import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
 
+/**
+ * Routes events either to the main on-time stream or to the late-events side output.
+ *
+ * <p>The decision is made against the current watermark and the configured late
+ * tolerance so the main NRTP pipeline can stay predictable without silently
+ * losing records that are still useful for auditing and replay.
+ */
 public final class RouteLateEventsFunction extends ProcessFunction<SafetyEvent, SafetyEvent> {
     private static final String LATE_EVENT_REASON = "Event is older than current watermark tolerance";
     private static final long UNINITIALIZED_WATERMARK = Long.MIN_VALUE;

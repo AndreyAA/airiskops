@@ -1,5 +1,11 @@
 package com.bank.aisafetyops.app.config;
 
+/**
+ * Centralized names and defaults for job CLI and YAML configuration options.
+ *
+ * <p>Keeping these keys in one place avoids drift between scripts, YAML files,
+ * and Java code when the local MVP evolves.
+ */
 public final class JobConfigOptions {
     public static final String ARG_CONFIG_FILE = "configFile";
     public static final String ARG_BOOTSTRAP_SERVERS = "bootstrapServers";
@@ -12,6 +18,8 @@ public final class JobConfigOptions {
     public static final String ARG_OUT_OF_ORDERNESS_SECONDS = "outOfOrdernessSeconds";
     public static final String ARG_IDLE_TIMEOUT_MINUTES = "idleTimeoutMinutes";
     public static final String ARG_LATE_TOLERANCE_MINUTES = "lateToleranceMinutes";
+    public static final String ARG_CHECKPOINT_INTERVAL_SECONDS = "checkpointIntervalSeconds";
+    public static final String ARG_AUTO_WATERMARK_INTERVAL_SECONDS = "autoWatermarkIntervalSeconds";
     public static final String ARG_START_FROM_EARLIEST = "startFromEarliest";
 
     public static final String DEFAULT_CONFIG_FILE = "config/job/local-job.yaml";
@@ -25,6 +33,8 @@ public final class JobConfigOptions {
     public static final long DEFAULT_OUT_OF_ORDERNESS_SECONDS = 30L;
     public static final long DEFAULT_IDLE_TIMEOUT_MINUTES = 1L;
     public static final long DEFAULT_LATE_TOLERANCE_MINUTES = 5L;
+    public static final long DEFAULT_CHECKPOINT_INTERVAL_SECONDS = 30L;
+    public static final long DEFAULT_AUTO_WATERMARK_INTERVAL_SECONDS = 5L;
     public static final boolean DEFAULT_START_FROM_EARLIEST = true;
 
     public static final String TOPIC_SEPARATOR = ",";

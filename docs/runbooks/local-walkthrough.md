@@ -58,6 +58,28 @@ bash tools/scripts/cleanup-local.sh
 - очищает runtime policy snapshots;
 - удаляет собранный `flink-job/target/`.
 
+Это и есть основной полный reset script локального стенда.
+
+Когда использовать именно его:
+
+- нужно полностью пересоздать локальный Docker-контур;
+- нужно убрать старые volumes/network state;
+- изменился `deployment/local/docker-compose.yml`;
+- нужно гарантированно пересобрать JAR и стартовать с нуля.
+
+Если нужно очистить только Kafka topics, а контейнеры и runtime оставить, использовать не `cleanup-local.sh`, а:
+
+```bash
+bash tools/scripts/reset-topics.sh
+```
+
+Что делает `reset-topics.sh`:
+
+- удаляет и пересоздает входные и выходные Kafka topics;
+- не останавливает контейнеры;
+- не чистит `runtime/replay/latest`;
+- не удаляет `flink-job/target`.
+
 ## Шаг 1. Поднять локальный контур
 
 ```bash

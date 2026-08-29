@@ -12,6 +12,13 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
+/**
+ * Finalizes guardrail window aggregates and exports matching business metrics.
+ *
+ * <p>The function converts the mutable accumulator into the immutable
+ * {@code GuardrailWindowAggregate} contract and updates Prometheus-visible
+ * counters scoped by window name and guardrail.
+ */
 public final class GuardrailWindowProcessFunction extends
         ProcessWindowFunction<GuardrailAggregateAccumulator, GuardrailWindowAggregate, GuardrailAggregateKey, TimeWindow> {
     private static final String AISAFETYOPS_GROUP = "aisafetyops";

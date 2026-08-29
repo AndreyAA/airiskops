@@ -10,6 +10,12 @@ import java.util.Map;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
+/**
+ * Loads job configuration from YAML files into a generic key-value structure.
+ *
+ * <p>The loader intentionally stays infrastructure-only so application config
+ * assembly can reuse it without depending on YAML-specific APIs elsewhere.
+ */
 public final class YamlJobConfigLoader {
     private YamlJobConfigLoader() {
     }

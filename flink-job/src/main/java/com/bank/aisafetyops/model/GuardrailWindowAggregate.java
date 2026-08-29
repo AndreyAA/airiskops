@@ -1,5 +1,11 @@
 package com.bank.aisafetyops.model;
 
+/**
+ * Immutable output contract for one emitted guardrail aggregation window.
+ *
+ * <p>The record is written to Kafka and also mirrored into metrics-friendly
+ * counters, so it represents the business-visible aggregate produced by the job.
+ */
 public record GuardrailWindowAggregate(
         String tenantId,
         String agentId,

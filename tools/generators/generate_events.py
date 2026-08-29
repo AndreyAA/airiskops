@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Generates deterministic replay JSONL datasets for the AISafetyOps MVP.
+# Use when you need reproducible local test traffic for Kafka replay,
+# regression scenarios, or fixture generation from a fixed seed.
 import argparse
 import json
 import random

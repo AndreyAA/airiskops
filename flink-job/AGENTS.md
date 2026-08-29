@@ -74,7 +74,30 @@
 
 ## Правила кодирования
 
+- Для production Java-классов добавлять class-level Javadoc по best practices.
+- Javadoc должен объяснять:
+  - назначение класса;
+  - его роль в pipeline или архитектуре;
+  - важные ограничения или semantics, если они неочевидны.
+- Особенно это обязательно для:
+  - Flink functions;
+  - topology builders;
+  - job entrypoints;
+  - config classes;
+  - source/sink factories;
+  - parser/serde adapters.
+- Не писать шаблонный Javadoc, который просто повторяет имя класса.
+- Для простых `record`, `enum` и очевидных value objects краткий Javadoc желателен, но не должен превращаться в шум.
 - Выносить строковые и числовые константы в общие классы или config models.
+- Все часто меняющиеся runtime-параметры по умолчанию выносить в YAML/CLI config.
+- Не хардкодить в Java значения, которые регулярно меняются между локальной средой, стендом и production:
+  - checkpoint intervals;
+  - watermark emission intervals;
+  - timeouts;
+  - topic names;
+  - feature flags;
+  - пороги и окна анализа.
+- Кодовые default values допустимы только как fallback, если внешний config не передан.
 - Не копировать имена topics, metric names, window names и guardrail names по нескольким классам.
 - Добавлять комментарии там, где важны:
   - watermark decisions;

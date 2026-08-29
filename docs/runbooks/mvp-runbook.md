@@ -57,6 +57,7 @@
 - [default-policy.yaml](/home/bob/old_bob/IdeaProjects/flink/config/policies/default-policy.yaml)
 - [start-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/start-local.sh)
 - [stop-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/stop-local.sh)
+- [cleanup-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/cleanup-local.sh)
 - [init-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init-topics.sh)
 - [reset-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/reset-topics.sh)
 - [build-job.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/build-job.sh)
@@ -90,6 +91,37 @@
 - локального debug вывода.
 
 ## 5. Старт локального стенда
+
+### Полный reset локального стенда
+
+Если нужно вернуть систему в полностью чистое начальное состояние, использовать:
+
+```bash
+bash tools/scripts/cleanup-local.sh
+```
+
+Что делает:
+
+- останавливает и удаляет локальные контейнеры;
+- удаляет Docker volumes и сеть локального стенда;
+- очищает `runtime/replay/latest`;
+- очищает `runtime/policies`;
+- удаляет и заново создает `flink-job/target`.
+
+Когда использовать:
+
+- перед полным повторным прогоном с нуля;
+- после конфликтов контейнеров или старого compose state;
+- если нужно гарантированно пересобрать JAR и поднять новый стек;
+- после изменений в `deployment/local/docker-compose.yml`.
+
+После `cleanup-local.sh` обычный путь такой:
+
+1. `bash tools/scripts/build-job.sh`
+2. `bash tools/scripts/start-local.sh`
+3. `bash tools/scripts/init-topics.sh`
+4. `bash tools/scripts/load-policies.sh`
+5. `bash tools/scripts/submit-job.sh`
 
 ### Шаг 1. Поднять Docker services
 
@@ -126,6 +158,21 @@ bash tools/scripts/reset-topics.sh
 - удаляет входные и выходные MVP topics;
 - создает их заново;
 - позволяет валидировать текущий инкремент без смешения со старыми локальными прогонами.
+
+Что не делает:
+
+- не останавливает Docker-контур;
+- не очищает `runtime/replay/latest`;
+- не очищает `runtime/policies`;
+- не удаляет `flink-job/target`;
+- не пересоздает контейнеры.
+
+Правило выбора:
+
+- `reset-topics.sh`
+  - использовать, когда нужно только очистить Kafka-сообщения и прогнать pipeline повторно на уже поднятом стенде;
+- `cleanup-local.sh`
+  - использовать, когда нужен полный reset всего локального окружения.
 
 ### Шаг 3. Загрузить policy YAML
 

@@ -8,7 +8,6 @@ import com.bank.aisafetyops.app.functions.ParseAndValidateFunction;
 import com.bank.aisafetyops.app.functions.RouteLateEventsFunction;
 import com.bank.aisafetyops.app.functions.SerializeGuardrailAggregateFunction;
 import com.bank.aisafetyops.app.functions.SplitParseResultsFunction;
-import com.bank.aisafetyops.app.support.FlinkEnvironmentDefaults;
 import com.bank.aisafetyops.app.support.JobTopology;
 import com.bank.aisafetyops.infra.parser.ParseResult;
 import com.bank.aisafetyops.infra.serde.JsonSerde;
@@ -30,6 +29,13 @@ import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindo
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
+/**
+ * Builds the current AISafetyOps MVP streaming topology.
+ *
+ * <p>The topology ingests raw Kafka events, validates and normalizes them,
+ * routes invalid and late records to side outputs, and computes 1-minute and
+ * 5-minute event-time aggregates for guardrail findings.
+ */
 public final class IncrementOneTopologyBuilder {
     private IncrementOneTopologyBuilder() {
     }
@@ -38,8 +44,8 @@ public final class IncrementOneTopologyBuilder {
         // Increment 1 already uses checkpointing and periodic watermark emission
         // so that the local MVP behaves close to the runtime discipline required
         // later in NRTP production flows.
-        env.enableCheckpointing(FlinkEnvironmentDefaults.CHECKPOINT_INTERVAL.toMillis());
-        env.getConfig().setAutoWatermarkInterval(FlinkEnvironmentDefaults.AUTO_WATERMARK_INTERVAL.toMillis());
+        env.enableCheckpointing(config.checkpointInterval().toMillis());
+        env.getConfig().setAutoWatermarkInterval(config.autoWatermarkInterval().toMillis());
 
         DataStream<String> rawEvents = env
                 .fromSource(

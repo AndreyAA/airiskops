@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Submits the built AISafetyOps job to the local Flink cluster.
+# Use after the stack is running, topics are initialized, policies are loaded,
+# and the shaded JAR is available in flink-job/target.
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

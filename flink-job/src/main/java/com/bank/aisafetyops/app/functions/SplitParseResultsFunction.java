@@ -7,6 +7,12 @@ import com.bank.aisafetyops.model.SafetyEvent;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 
+/**
+ * Splits parse results into valid domain events and invalid side-output records.
+ *
+ * <p>This keeps malformed payloads inspectable without polluting the main stream
+ * that later receives timestamps, watermarks, and stateful processing.
+ */
 public final class SplitParseResultsFunction extends ProcessFunction<ParseResult, SafetyEvent> {
     @Override
     public void processElement(ParseResult value, Context ctx, Collector<SafetyEvent> out) {
