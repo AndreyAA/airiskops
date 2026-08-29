@@ -1,4 +1,5 @@
-target/
+/target/
+/flink-job/target/
 
 .idea/
 *.iml

@@ -420,12 +420,12 @@ bash tools/scripts/cleanup-local.sh
 ## Где смотреть дальше
 
 - Архитектурный manual:
-  - [docs/architecture/flink-aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/flink-aisafetyops-manual.md)
+  - [docs/architecture/aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
 - Manual по добавлению новых агрегированных метрик:
-  - [docs/architecture/flink-adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/flink-adding-n-minute-metrics.md)
+  - [docs/architecture/adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
 - Monitoring и debugging:
-  - [docs/monitoring/flink-monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/flink-monitoring-debugging-guide.md)
+  - [docs/monitoring/monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md)
 - Local walkthrough:
-  - [docs/runbooks/flink-local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/flink-local-walkthrough.md)
+  - [docs/runbooks/local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
 - MVP runbook:
-  - [docs/runbooks/flink-aisafetyops-mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/flink-aisafetyops-mvp-runbook.md)
+  - [docs/runbooks/mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
