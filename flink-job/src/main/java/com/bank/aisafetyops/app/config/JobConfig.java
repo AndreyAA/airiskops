@@ -1,6 +1,8 @@
 package com.bank.aisafetyops.app.config;
 
+import com.bank.aisafetyops.infra.config.IncidentPolicyLoader;
 import com.bank.aisafetyops.infra.config.YamlJobConfigLoader;
+import com.bank.aisafetyops.model.IncidentPolicy;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -19,6 +21,9 @@ public record JobConfig(
         List<String> topics,
         String consumerGroupId,
         OutputTopics outputTopics,
+        IncidentConfig incidentConfig,
+        PolicyConfig policyConfig,
+        IncidentPolicy bootstrapIncidentPolicy,
         Duration outOfOrderness,
         Duration idleTimeout,
         Duration lateTolerance,
@@ -39,6 +44,39 @@ public record JobConfig(
         // Topics stay configurable even for the local MVP so that we can keep the
         // transport contract stable while swapping only the serialization layer later.
         List<String> topics = readTopics(parameters, yamlConfig);
+
+        PolicyConfig policyConfig = new PolicyConfig(
+                readBoolean(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_POLICY_ENABLED,
+                        JobConfigOptions.DEFAULT_POLICY_ENABLED
+                ),
+                Path.of(readString(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_POLICY_BOOTSTRAP_FILE,
+                        JobConfigOptions.DEFAULT_POLICY_BOOTSTRAP_FILE
+                )),
+                readBoolean(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_POLICY_REQUIRE_BOOTSTRAP,
+                        JobConfigOptions.DEFAULT_POLICY_REQUIRE_BOOTSTRAP
+                ),
+                readString(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_POLICY_UPDATES_TOPIC,
+                        JobConfigOptions.DEFAULT_POLICY_UPDATES_TOPIC
+                ),
+                readBoolean(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_POLICY_REJECT_OLDER_VERSIONS,
+                        JobConfigOptions.DEFAULT_POLICY_REJECT_OLDER_VERSIONS
+                )
+        );
 
         return new JobConfig(
                 bootstrapServers,
@@ -68,8 +106,66 @@ public record JobConfig(
                                 yamlConfig,
                                 JobConfigOptions.ARG_GUARDRAIL_AGGREGATES_TOPIC,
                                 JobConfigOptions.DEFAULT_GUARDRAIL_AGGREGATES_TOPIC
+                        ),
+                        readString(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_BASIC_INCIDENTS_TOPIC,
+                                JobConfigOptions.DEFAULT_BASIC_INCIDENTS_TOPIC
                         )
                 ),
+                new IncidentConfig(
+                        readBoolean(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_INCIDENT_ENABLED,
+                                JobConfigOptions.DEFAULT_INCIDENT_ENABLED
+                        ),
+                        readString(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_BASIC_INCIDENTS_TOPIC,
+                                JobConfigOptions.DEFAULT_BASIC_INCIDENTS_TOPIC
+                        ),
+                        readBoolean(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_INCIDENT_EMIT_UPDATES,
+                                JobConfigOptions.DEFAULT_INCIDENT_EMIT_UPDATES
+                        ),
+                        Duration.ofMinutes(readLong(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_INCIDENT_SESSION_TIMEOUT_MINUTES,
+                                JobConfigOptions.DEFAULT_INCIDENT_SESSION_TIMEOUT_MINUTES
+                        )),
+                        readInt(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_INCIDENT_MAX_REQUEST_IDS,
+                                JobConfigOptions.DEFAULT_INCIDENT_MAX_REQUEST_IDS
+                        ),
+                        readInt(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_PROMPT_INJECTION_BURST_MIN_FINDINGS,
+                                JobConfigOptions.DEFAULT_PROMPT_INJECTION_BURST_MIN_FINDINGS
+                        ),
+                        readInt(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_TOXICITY_CAMPAIGN_MIN_FINDINGS,
+                                JobConfigOptions.DEFAULT_TOXICITY_CAMPAIGN_MIN_FINDINGS
+                        ),
+                        readInt(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_LOOPING_MIN_OCCURRENCES,
+                                JobConfigOptions.DEFAULT_LOOPING_MIN_OCCURRENCES
+                        )
+                ),
+                policyConfig,
+                loadBootstrapIncidentPolicy(policyConfig),
                 Duration.ofSeconds(readLong(
                         parameters,
                         yamlConfig,
@@ -107,6 +203,16 @@ public record JobConfig(
                         JobConfigOptions.DEFAULT_START_FROM_EARLIEST
                 )
         );
+    }
+
+    private static IncidentPolicy loadBootstrapIncidentPolicy(PolicyConfig policyConfig) {
+        if (!policyConfig.enabled()) {
+            return null;
+        }
+        if (policyConfig.requireBootstrapPolicy()) {
+            return IncidentPolicyLoader.loadRequired(policyConfig.bootstrapFile());
+        }
+        return IncidentPolicyLoader.loadIfExists(policyConfig.bootstrapFile());
     }
 
     private static Map<String, Object> loadYamlConfig(ParameterTool parameters) {
@@ -163,6 +269,26 @@ public record JobConfig(
         }
         if (yamlValue instanceof String value) {
             return Long.parseLong(value);
+        }
+        return defaultValue;
+    }
+
+    private static int readInt(
+            ParameterTool parameters,
+            Map<String, Object> yamlConfig,
+            String key,
+            int defaultValue
+    ) {
+        String cliValue = parameters.get(key);
+        if (cliValue != null) {
+            return Integer.parseInt(cliValue);
+        }
+        Object yamlValue = yamlConfig.get(key);
+        if (yamlValue instanceof Number number) {
+            return number.intValue();
+        }
+        if (yamlValue instanceof String value) {
+            return Integer.parseInt(value);
         }
         return defaultValue;
     }

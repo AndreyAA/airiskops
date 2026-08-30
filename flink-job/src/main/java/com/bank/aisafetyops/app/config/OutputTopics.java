@@ -10,6 +10,7 @@ public record OutputTopics(
         String normalizedEventsTopic,
         String invalidEventsTopic,
         String lateEventsTopic,
-        String guardrailAggregatesTopic
+        String guardrailAggregatesTopic,
+        String basicIncidentsTopic
 ) {
 }

@@ -15,6 +15,7 @@ TOPICS=(
   "invalid-events"
   "late-events"
   "guardrail-aggregates"
+  "basic-incidents"
   "guardrail-quality-metrics"
   "policy-updates"
   "debug-incidents"

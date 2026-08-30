@@ -43,6 +43,7 @@ services:
     volumes:
       - ../../flink-job/target:/opt/flink/usrlib
       - ../../config:/opt/flink/job-config:ro
+      - ../../runtime:/opt/flink/runtime
     depends_on:
       kafka:
         condition: service_healthy
@@ -63,6 +64,7 @@ services:
     volumes:
       - ../../flink-job/target:/opt/flink/usrlib
       - ../../config:/opt/flink/job-config:ro
+      - ../../runtime:/opt/flink/runtime
     depends_on:
       - jobmanager
 

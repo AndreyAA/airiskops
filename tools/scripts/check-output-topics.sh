@@ -12,6 +12,7 @@ TOPICS=(
   "invalid-events"
   "late-events"
   "guardrail-aggregates"
+  "basic-incidents"
 )
 
 cd "$ROOT_DIR"
@@ -35,6 +36,14 @@ echo "== guardrail-aggregates sample =="
 docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
   --bootstrap-server kafka:9092 \
   --topic guardrail-aggregates \
+  --partition 0 \
+  --offset 0 \
+  --max-messages 3
+
+echo "== basic-incidents sample =="
+docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
+  --bootstrap-server kafka:9092 \
+  --topic basic-incidents \
   --partition 0 \
   --offset 0 \
   --max-messages 3

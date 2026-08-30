@@ -132,6 +132,7 @@ docker compose -f deployment/local/docker-compose.yml ps
 - `invalid-events`
 - `late-events`
 - `guardrail-aggregates`
+- `basic-incidents`
 
 Проверка:
 
@@ -206,7 +207,9 @@ bash tools/scripts/submit-job.sh
 - filter `GUARDRAIL_FINDING`;
 - `Guardrail Aggregates 1m`;
 - `Guardrail Aggregates 5m`;
+- `Session Incident Evaluator`;
 - sink в `guardrail-aggregates`.
+- sink в `basic-incidents`.
 
 Что это означает:
 
@@ -249,11 +252,13 @@ bash tools/scripts/check-output-topics.sh
 - offsets по output topics;
 - sample из `normalized-events`;
 - sample из `guardrail-aggregates`.
+- sample из `basic-incidents`.
 
 Как интерпретировать:
 
 - если `normalized-events` не пустой, intake/validation/main flow работает;
 - если `guardrail-aggregates` не пустой, Stage 2 оконной агрегации работает.
+- если `basic-incidents` не пустой, минимальный session correlation layer работает.
 
 ## Шаг 8. Посмотреть Kafka output вручную
 
@@ -298,6 +303,30 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - `avgDetectorLatencyMs`
 - `maxDetectorLatencyMs`
 - `detectorErrorCount`
+
+### Базовые incidents
+
+```bash
+docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server kafka:9092 \
+  --topic basic-incidents \
+  --partition 0 \
+  --offset 0 \
+  --max-messages 10
+```
+
+На что смотреть в `basic-incidents`:
+
+- `incidentId`
+- `agentId`
+- `sessionId`
+- `ruleName`
+- `severity`
+- `requestIds`
+- `guardrailNames`
+- `triggeredFindingsCount`
+- `emissionRevision`
+- `summary`
 
 ## Шаг 9. Как читать бизнес-смысл агрегатов
 

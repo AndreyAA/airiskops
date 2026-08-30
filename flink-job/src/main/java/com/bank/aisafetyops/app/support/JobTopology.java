@@ -1,8 +1,11 @@
 package com.bank.aisafetyops.app.support;
 
 import com.bank.aisafetyops.model.InvalidEvent;
+import com.bank.aisafetyops.model.IncidentPolicy;
 import com.bank.aisafetyops.model.LateEvent;
 import com.bank.aisafetyops.model.WindowNames;
+import org.apache.flink.api.common.state.MapStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.util.OutputTag;
 
 /**
@@ -38,6 +41,7 @@ public final class JobTopology {
     public static final String LATE_SINK_UID = "kafka-late-events";
     public static final String LATE_SINK_NAME = "Kafka Late Events";
     public static final String GUARDRAIL_FILTER_NAME = "Filter Guardrail Findings";
+    public static final String TRIGGERED_GUARDRAIL_FILTER_NAME = "Filter Triggered Guardrail Findings";
     public static final String GUARDRAIL_AGGREGATES_1M_UID = "guardrail-aggregates-1m";
     public static final String GUARDRAIL_AGGREGATES_1M_NAME = "Guardrail Aggregates 1m";
     public static final String GUARDRAIL_AGGREGATES_5M_UID = "guardrail-aggregates-5m";
@@ -46,6 +50,21 @@ public final class JobTopology {
     public static final String GUARDRAIL_AGGREGATES_SERIALIZE_NAME = "Serialize Guardrail Aggregates";
     public static final String GUARDRAIL_AGGREGATES_SINK_UID = "kafka-guardrail-aggregates";
     public static final String GUARDRAIL_AGGREGATES_SINK_NAME = "Kafka Guardrail Aggregates";
+    public static final String INCIDENT_EVALUATOR_UID = "session-incident-evaluator";
+    public static final String INCIDENT_EVALUATOR_NAME = "Session Incident Evaluator";
+    public static final String INCIDENT_SINK_UID = "kafka-basic-incidents";
+    public static final String INCIDENT_SINK_NAME = "Kafka Basic Incidents";
+    public static final String POLICY_SOURCE_UID = "kafka-policy-updates";
+    public static final String POLICY_SOURCE_NAME = "Kafka Policy Updates";
+    public static final String POLICY_PARSE_UID = "parse-policy-updates";
+    public static final String POLICY_PARSE_NAME = "Parse Policy Updates";
+    public static final String POLICY_BROADCAST_STATE_NAME = "incident-policy-state";
+    public static final MapStateDescriptor<String, IncidentPolicy> INCIDENT_POLICY_BROADCAST_STATE =
+            new MapStateDescriptor<>(
+                    POLICY_BROADCAST_STATE_NAME,
+                    TypeInformation.of(String.class),
+                    TypeInformation.of(IncidentPolicy.class)
+            );
     public static final String GUARDRAIL_WINDOW_1M_NAME = WindowNames.WINDOW_1_MINUTE;
     public static final String GUARDRAIL_WINDOW_5M_NAME = WindowNames.WINDOW_5_MINUTES;
 

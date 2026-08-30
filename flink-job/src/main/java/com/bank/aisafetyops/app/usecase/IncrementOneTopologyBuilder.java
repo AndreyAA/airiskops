@@ -5,7 +5,10 @@ import com.bank.aisafetyops.app.functions.GuardrailAggregateKeySelector;
 import com.bank.aisafetyops.app.functions.GuardrailWindowAggregateFunction;
 import com.bank.aisafetyops.app.functions.GuardrailWindowProcessFunction;
 import com.bank.aisafetyops.app.functions.ParseAndValidateFunction;
+import com.bank.aisafetyops.app.functions.ParseIncidentPolicyUpdateFunction;
+import com.bank.aisafetyops.app.functions.PolicyAwareSessionIncidentEvaluatorFunction;
 import com.bank.aisafetyops.app.functions.RouteLateEventsFunction;
+import com.bank.aisafetyops.app.functions.SessionIncidentKeySelector;
 import com.bank.aisafetyops.app.functions.SerializeGuardrailAggregateFunction;
 import com.bank.aisafetyops.app.functions.SplitParseResultsFunction;
 import com.bank.aisafetyops.app.support.JobTopology;
@@ -13,14 +16,17 @@ import com.bank.aisafetyops.infra.parser.ParseResult;
 import com.bank.aisafetyops.infra.serde.JsonSerde;
 import com.bank.aisafetyops.infra.sink.KafkaSinkFactory;
 import com.bank.aisafetyops.infra.source.KafkaSourceFactory;
+import com.bank.aisafetyops.model.BasicIncident;
 import com.bank.aisafetyops.model.EventType;
 import com.bank.aisafetyops.model.GuardrailAggregateKey;
 import com.bank.aisafetyops.model.GuardrailWindowAggregate;
+import com.bank.aisafetyops.model.IncidentPolicy;
 import com.bank.aisafetyops.model.InvalidEvent;
 import com.bank.aisafetyops.model.LateEvent;
 import com.bank.aisafetyops.model.SafetyEvent;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -132,6 +138,49 @@ public final class IncrementOneTopologyBuilder {
                 .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().guardrailAggregatesTopic()))
                 .uid(JobTopology.GUARDRAIL_AGGREGATES_SINK_UID)
                 .name(JobTopology.GUARDRAIL_AGGREGATES_SINK_NAME);
+
+        if (config.incidentConfig().enabled()) {
+            BroadcastStream<IncidentPolicy> policyUpdates = env
+                    .fromSource(
+                            KafkaSourceFactory.buildSingleTopic(
+                                    config.bootstrapServers(),
+                                    config.policyConfig().updatesTopic(),
+                                    config.consumerGroupId() + "-policy-updates",
+                                    config.startFromEarliest()
+                            ),
+                            WatermarkStrategy.noWatermarks(),
+                            JobTopology.POLICY_SOURCE_UID
+                    )
+                    .uid(JobTopology.POLICY_SOURCE_UID)
+                    .name(JobTopology.POLICY_SOURCE_NAME)
+                    .flatMap(new ParseIncidentPolicyUpdateFunction())
+                    .uid(JobTopology.POLICY_PARSE_UID)
+                    .name(JobTopology.POLICY_PARSE_NAME)
+                    .broadcast(JobTopology.INCIDENT_POLICY_BROADCAST_STATE);
+
+            DataStream<BasicIncident> incidents = guardrailFindings
+                    .filter(event -> Boolean.TRUE.equals(event.triggered()))
+                    .name(JobTopology.TRIGGERED_GUARDRAIL_FILTER_NAME)
+                    .keyBy(new SessionIncidentKeySelector())
+                    .connect(policyUpdates)
+                    // Session incidents intentionally run as a separate branch
+                    // from the aggregate layer so we can evolve correlation logic
+                    // without changing the existing NRT window contracts.
+                    .process(new PolicyAwareSessionIncidentEvaluatorFunction(
+                            config.incidentConfig(),
+                            config.policyConfig(),
+                            config.bootstrapIncidentPolicy(),
+                            JobTopology.INCIDENT_POLICY_BROADCAST_STATE
+                    ))
+                    .uid(JobTopology.INCIDENT_EVALUATOR_UID)
+                    .name(JobTopology.INCIDENT_EVALUATOR_NAME);
+
+            incidents
+                    .map(JsonSerde::toJson)
+                    .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().basicIncidentsTopic()))
+                    .uid(JobTopology.INCIDENT_SINK_UID)
+                    .name(JobTopology.INCIDENT_SINK_NAME);
+        }
     }
 
     private static DataStream<GuardrailWindowAggregate> buildGuardrailAggregates(

@@ -288,6 +288,43 @@
 - именно этот topic показывает NRTP risk picture по агентам;
 - его можно читать из downstream alerting, dashboards и incident tooling.
 
+### 4.5 `basic-incidents`
+
+Назначение:
+
+- поток минимальных incident-сигналов по `agentId + sessionId`;
+- первый operational output поверх сырых findings и оконных агрегатов.
+
+Что туда попадает:
+
+- incidents по правилам:
+  - `PROMPT_INJECTION_BURST`;
+  - `TOXICITY_CAMPAIGN`;
+  - `LEAKAGE_WITH_INJECTION`;
+  - `LOOPING_PERSISTENCE`.
+
+Что содержит запись:
+
+- `incidentId`;
+- `tenantId`;
+- `agentId`;
+- `sessionId`;
+- `ruleName`;
+- `severity`;
+- список связанных `requestIds`;
+- список guardrail names, versions и policy versions;
+- `appliedPolicyVersion`;
+- `firstEventTimeMillis` и `lastEventTimeMillis`;
+- `triggeredFindingsCount`;
+- `emissionRevision`;
+- `summary`.
+
+Что это значит:
+
+- пайплайн умеет переходить от telemetry и dashboards к конкретным подозрительным сессиям;
+- risk-команда может разбирать не только всплеск на графике, но и конкретный incident payload для triage.
+- видно, по какой bootstrap policy incident был классифицирован в текущем runtime.
+
 ## 5. Topics следующей очереди
 
 Следующие topics уже заведены для развития, но пока не являются центральной частью runtime-потока MVP:
@@ -305,7 +342,14 @@
 
 - поток обновлений policy для будущего dynamic rules / broadcast state сценария.
 
-### 5.3 `debug-incidents`
+### 5.3 `guardrail-quality-metrics`
+
+Потенциальное назначение:
+
+- отдельный поток quality-сигналов по работе детекторов;
+- агрегаты по invalid/late/error degradation вне основного incident stream.
+
+### 5.4 `debug-incidents`
 
 Потенциальное назначение:
 

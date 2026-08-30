@@ -12,4 +12,5 @@ cd "$ROOT_DIR"
 docker compose -f "$COMPOSE_FILE" exec -T jobmanager ./bin/flink run -d \
   -c com.bank.aisafetyops.app.job.AiSafetyOpsMvpJob \
   "$JAR_PATH" \
-  --configFile /opt/flink/job-config/job/local-job.yaml
+  --configFile /opt/flink/job-config/job/local-job.yaml \
+  --policyBootstrapFile /opt/flink/runtime/policies/active-policy.yaml

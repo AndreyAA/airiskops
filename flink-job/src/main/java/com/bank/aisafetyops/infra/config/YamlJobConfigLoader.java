@@ -31,6 +31,24 @@ public final class YamlJobConfigLoader {
         return Files.exists(path) ? load(path) : Collections.emptyMap();
     }
 
+    public static Map<String, Object> loadFromString(String yamlContent) {
+        return loadFromString(yamlContent, "inline-yaml");
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> loadFromString(String yamlContent, String sourceName) {
+        LoadSettings settings = LoadSettings.builder().build();
+        Load loader = new Load(settings);
+        Object loaded = loader.loadFromString(yamlContent);
+        if (loaded == null) {
+            return Collections.emptyMap();
+        }
+        if (!(loaded instanceof Map<?, ?> rawMap)) {
+            throw new IllegalArgumentException("YAML root must be a map: " + sourceName);
+        }
+        return new LinkedHashMap<>((Map<String, Object>) rawMap);
+    }
+
     @SuppressWarnings("unchecked")
     private static Map<String, Object> load(Path path) {
         LoadSettings settings = LoadSettings.builder().build();

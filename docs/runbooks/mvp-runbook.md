@@ -86,6 +86,7 @@
 - `invalid-events`
 - `late-events`
 - `guardrail-aggregates`
+- `basic-incidents`
 - `guardrail-quality-metrics`
 - `policy-updates`
 - `debug-incidents`
@@ -109,7 +110,7 @@
 - один пользовательский запрос = набор связанных событий;
 - связь строится по `agentId`, `sessionId`, `requestId`;
 - для одного `requestId` обычно есть `AGENT_REQUEST`, `AGENT_RESPONSE` и до 4 `GUARDRAIL_FINDING`;
-- основные выходные topics для текущего MVP: `normalized-events`, `invalid-events`, `late-events`, `guardrail-aggregates`.
+- основные выходные topics для текущего MVP: `normalized-events`, `invalid-events`, `late-events`, `guardrail-aggregates`, `basic-incidents`.
 
 ## 5. Старт локального стенда
 
@@ -207,9 +208,10 @@ bash tools/scripts/reset-topics.sh
 
 Важно:
 
-- на текущем этапе MVP этот шаг готовит локальный policy snapshot;
-- текущая job пока не применяет `runtime/policies/active-policy.yaml` как live runtime source;
-- это подготовка к следующему инкременту с внешним policy-driven поведением.
+- начиная с `Increment 3.2a` job читает `runtime/policies/active-policy.yaml` при старте;
+- bootstrap policy влияет на incident classification и severity mapping;
+- чтобы применить изменённую policy, нужно заново отправить job в Flink.
+- начиная с `Increment 3.2b` можно отправить runtime update в `policy-updates` без redeploy через `bash tools/scripts/load-policies.sh <file> --publish`.
 
 ### Шаг 4. Собрать и отправить Flink job
 
