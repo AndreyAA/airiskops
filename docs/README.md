@@ -1,6 +1,6 @@
 # Документация AISafetyOps Flink
 
-Дата актуальности: 2026-08-29
+Дата актуальности: 2026-08-30
 
 ## Назначение
 
@@ -62,7 +62,7 @@
   - как читать Grafana dashboards;
   - какие Prometheus-запросы использовать;
   - как локализовать ошибки по этапам пайплайна;
-  - где смотреть runtime contract, saturation signals и replay control metrics.
+  - где смотреть runtime contract и saturation signals.
 
 ### `runbooks/`
 

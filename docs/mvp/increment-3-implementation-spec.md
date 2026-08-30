@@ -539,14 +539,6 @@
 
 #### Prometheus metrics
 
-##### Replay and scenario visibility
-
-- `aisafetyops_replay_events_generated_total{scenario=...,mode=...}`
-- `aisafetyops_replay_invalid_generated_total`
-- `aisafetyops_replay_late_generated_total`
-- `aisafetyops_replay_detector_errors_generated_total`
-- `aisafetyops_replay_current_rps_gauge`
-
 ##### Runtime contract visibility
 
 - `aisafetyops_runtime_contract_info{window_type=...,window_sizes=...,delivery_guarantee=...}`

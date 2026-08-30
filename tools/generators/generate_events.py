@@ -15,14 +15,6 @@ GENERATOR_DIR = Path(__file__).resolve().parent
 if str(GENERATOR_DIR) not in sys.path:
     sys.path.insert(0, str(GENERATOR_DIR))
 
-from replay_metrics import (
-    DEFAULT_PUSHGATEWAY_URL,
-    DEFAULT_REPLAY_METRICS_JOB,
-    ReplayMetricSummary,
-    build_metrics_payload,
-    safe_push_metrics,
-)
-
 PROMPT_INJECTION = "PROMPT_INJECTION"
 TOXICITY = "TOXICITY"
 LOOPING = "LOOPING"
@@ -146,9 +138,6 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--out-of-orderness-seconds", type=int, default=DEFAULT_OUT_OF_ORDERNESS_SECONDS)
     parser.add_argument("--late-tolerance-seconds", type=int, default=DEFAULT_LATE_TOLERANCE_SECONDS)
-    parser.add_argument("--pushgateway-url", default=DEFAULT_PUSHGATEWAY_URL)
-    parser.add_argument("--replay-metrics-job", default=DEFAULT_REPLAY_METRICS_JOB)
-    parser.add_argument("--disable-replay-metrics", action="store_true")
     return parser.parse_args()
 
 
@@ -541,25 +530,24 @@ def build_batch_meta(batch: Dict[str, List[dict]], mutation_stats: DeliveryMutat
     }
 
 
-def build_replay_metric_summary(batch: Dict[str, List[dict]]) -> ReplayMetricSummary:
+def build_replay_summary(batch: Dict[str, List[dict]]) -> dict[str, int]:
     meta = batch.get("meta", {})
-    return ReplayMetricSummary(
-        requests_generated=meta.get("totalRequests", len(batch["requests"])),
-        responses_generated=meta.get("totalResponses", len(batch["responses"])),
-        findings_generated=meta.get("totalFindings", len(batch["findings"])),
-        triggered_findings_generated=meta.get(
+    return {
+        "requestsGenerated": meta.get("totalRequests", len(batch["requests"])),
+        "responsesGenerated": meta.get("totalResponses", len(batch["responses"])),
+        "findingsGenerated": meta.get("totalFindings", len(batch["findings"])),
+        "triggeredFindingsGenerated": meta.get(
             "triggeredFindings",
             len([row for row in batch["findings"] if row.get("triggered") is True]),
         ),
-        invalid_generated=(
+        "invalidGenerated": (
             meta.get("invalidRequests", 0)
             + meta.get("invalidResponses", 0)
             + meta.get("invalidFindings", 0)
         ),
-        late_generated=meta.get("lateRequests", 0) + meta.get("tooLateRequests", 0),
-        detector_errors_generated=meta.get("detectorErrorFindings", 0),
-        current_rps=meta.get("totalRequests", len(batch["requests"])),
-    )
+        "lateGenerated": meta.get("lateRequests", 0) + meta.get("tooLateRequests", 0),
+        "detectorErrorsGenerated": meta.get("detectorErrorFindings", 0),
+    }
 
 
 def generate_event_batch(
@@ -719,21 +707,18 @@ def main() -> None:
     write_jsonl(out_dir / "agent-requests.jsonl", batch["requests"])
     write_jsonl(out_dir / "agent-responses.jsonl", batch["responses"])
     write_jsonl(out_dir / "guardrail-findings.jsonl", batch["findings"])
-    if not args.disable_replay_metrics:
-        push_error = safe_push_metrics(
-            args.pushgateway_url,
-            args.replay_metrics_job,
-            build_metrics_payload(
-                scenario=args.business_scenario,
-                delivery_mode=args.delivery_mode,
-                source_kind="replay",
-                agent_id=args.agent_id,
-                summary=build_replay_metric_summary(batch),
-                status="completed",
-            ),
-        )
-        if push_error is not None:
-            print(f"{push_error}. Status: не исправлено")
+    summary = build_replay_summary(batch)
+    print(
+        "Replay dataset generated: "
+        f"scenario={args.business_scenario}, "
+        f"mode={args.delivery_mode}, "
+        f"requests={summary['requestsGenerated']}, "
+        f"findings={summary['findingsGenerated']}, "
+        f"triggered-findings={summary['triggeredFindingsGenerated']}, "
+        f"invalid={summary['invalidGenerated']}, "
+        f"late={summary['lateGenerated']}, "
+        f"detector-errors={summary['detectorErrorsGenerated']}"
+    )
 
 
 if __name__ == "__main__":

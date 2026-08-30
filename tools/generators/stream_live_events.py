@@ -21,15 +21,9 @@ if str(GENERATOR_DIR) not in sys.path:
 from generate_events import (  # noqa: E402
     DELIVERY_MODES,
     SCENARIOS,
-    build_replay_metric_summary,
+    build_replay_summary,
     build_replay_options,
     generate_live_tick_batch,
-)
-from replay_metrics import (  # noqa: E402
-    DEFAULT_PUSHGATEWAY_URL,
-    DEFAULT_REPLAY_METRICS_JOB,
-    build_metrics_payload,
-    safe_push_metrics,
 )
 
 
@@ -85,9 +79,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--detector-latency-multiplier", type=float, default=6.0)
     parser.add_argument("--out-of-orderness-seconds", type=int, default=30)
     parser.add_argument("--late-tolerance-seconds", type=int, default=300)
-    parser.add_argument("--pushgateway-url", default=DEFAULT_PUSHGATEWAY_URL)
-    parser.add_argument("--replay-metrics-job", default=DEFAULT_REPLAY_METRICS_JOB)
-    parser.add_argument("--disable-replay-metrics", action="store_true")
     return parser.parse_args()
 
 
@@ -185,29 +176,14 @@ def main() -> None:
             )
             for topic, batch_key in TOPIC_TO_BATCH_KEY.items():
                 write_rows(producers[topic], batch[batch_key])
-            tick_summary = build_replay_metric_summary(batch)
-            total_requests_sent += tick_summary.requests_generated
-            total_responses_sent += tick_summary.responses_generated
-            total_findings_sent += tick_summary.findings_generated
-            total_triggered_findings_sent += tick_summary.triggered_findings_generated
-            total_invalid_generated += tick_summary.invalid_generated
-            total_late_generated += tick_summary.late_generated
-            total_detector_errors_generated += tick_summary.detector_errors_generated
-            if not args.disable_replay_metrics:
-                push_error = safe_push_metrics(
-                    args.pushgateway_url,
-                    args.replay_metrics_job,
-                    build_metrics_payload(
-                        scenario=args.business_scenario,
-                        delivery_mode=args.delivery_mode,
-                        source_kind="live",
-                        agent_id=args.agent_id,
-                        summary=tick_summary,
-                        status="running",
-                    ),
-                )
-                if push_error is not None:
-                    print(f"{push_error}. Status: не исправлено")
+            tick_summary = build_replay_summary(batch)
+            total_requests_sent += tick_summary["requestsGenerated"]
+            total_responses_sent += tick_summary["responsesGenerated"]
+            total_findings_sent += tick_summary["findingsGenerated"]
+            total_triggered_findings_sent += tick_summary["triggeredFindingsGenerated"]
+            total_invalid_generated += tick_summary["invalidGenerated"]
+            total_late_generated += tick_summary["lateGenerated"]
+            total_detector_errors_generated += tick_summary["detectorErrorsGenerated"]
 
             elapsed_seconds = time.monotonic() - start_monotonic
             remaining_sleep = (tick_index + 1) - elapsed_seconds
@@ -219,42 +195,13 @@ def main() -> None:
             f"scenario={args.business_scenario}, "
             f"mode={args.delivery_mode}, "
             f"rps-range={min_rps}..{max_rps}, "
-            f"total-requests={total_requests_sent}"
+            f"total-requests={total_requests_sent}, "
+            f"total-findings={total_findings_sent}, "
+            f"triggered-findings={total_triggered_findings_sent}, "
+            f"invalid={total_invalid_generated}, "
+            f"late={total_late_generated}, "
+            f"detector-errors={total_detector_errors_generated}"
         )
-        if not args.disable_replay_metrics:
-            final_summary = build_replay_metric_summary(
-                {
-                    "requests": [{}] * total_requests_sent,
-                    "responses": [{}] * total_responses_sent,
-                    "findings": [],
-                    "meta": {
-                        "totalRequests": total_requests_sent,
-                        "totalResponses": total_responses_sent,
-                        "totalFindings": total_findings_sent,
-                        "triggeredFindings": total_triggered_findings_sent,
-                        "invalidRequests": total_invalid_generated,
-                        "invalidResponses": 0,
-                        "invalidFindings": 0,
-                        "lateRequests": total_late_generated,
-                        "tooLateRequests": 0,
-                        "detectorErrorFindings": total_detector_errors_generated,
-                    },
-                }
-            )
-            push_error = safe_push_metrics(
-                args.pushgateway_url,
-                args.replay_metrics_job,
-                build_metrics_payload(
-                    scenario=args.business_scenario,
-                    delivery_mode=args.delivery_mode,
-                    source_kind="live",
-                    agent_id=args.agent_id,
-                    summary=final_summary,
-                    status="completed",
-                ),
-            )
-            if push_error is not None:
-                print(f"{push_error}. Status: не исправлено")
     finally:
         for producer in producers.values():
             close_producer(producer)

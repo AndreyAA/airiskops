@@ -1,6 +1,6 @@
 # Flink для AISafetyOps: локальный MVP runbook
 
-Дата актуальности: 2026-08-29
+Дата актуальности: 2026-08-30
 
 ## Глоссарий
 
@@ -48,7 +48,6 @@
 - `Flink JobManager` в Docker;
 - `Flink TaskManager` в Docker;
 - `Prometheus` в Docker;
-- `Pushgateway` в Docker;
 - `Grafana` в Docker;
 - `bash`-скрипты для operational действий;
 - `Python`-генератор для replay dataset;
@@ -210,13 +209,11 @@ bash tools/scripts/cleanup-local.sh
 - поднимает JobManager;
 - поднимает TaskManager;
 - поднимает Prometheus.
-- поднимает Pushgateway.
 - поднимает Grafana с dashboards:
   - `AISafetyOps Flink Overview`;
   - `AISafetyOps Business Metrics`;
   - `AISafetyOps Capacity And Performance`.
   - `AISafetyOps Detector Quality`.
-  - `AISafetyOps Replay Control`.
 
 ### Шаг 2. Инициализировать topics
 
@@ -356,7 +353,6 @@ bash tools/scripts/reset-topics.sh
 - генерирует deterministic JSON Lines dataset;
 - раскладывает события по topic-specific файлам;
 - публикует события в локальные Kafka topics.
-- публикует replay control metrics в `Pushgateway`, если он доступен.
 
 Полезные demo-команды:
 
@@ -471,33 +467,20 @@ bash tools/scripts/run-live-generator.sh \
 - late arrivals;
 - деградацию detector quality.
 
-### Replay control metrics
+### Replay execution summary
 
-После запуска `run-replay.sh` или `run-live-generator.sh` генератор публикует технические control-plane метрики:
+После запуска `run-replay.sh` или `run-live-generator.sh` генератор печатает краткую сводку в stdout:
 
-- `aisafetyops_replay_run_info`
-- `aisafetyops_replay_events_generated_total`
-- `aisafetyops_replay_triggered_findings_generated_total`
-- `aisafetyops_replay_invalid_generated_total`
-- `aisafetyops_replay_late_generated_total`
-- `aisafetyops_replay_detector_errors_generated_total`
-- `aisafetyops_replay_current_rps`
+- `scenario`
+- `mode`
+- число `requests`
+- число `findings`
+- число `triggered findings`
+- число `invalid`
+- число `late`
+- число `detector errors`
 
-Где смотреть:
-
-- Grafana dashboard `AISafetyOps Replay Control`;
-- Prometheus UI `http://localhost:9090`;
-- Pushgateway UI `http://localhost:9091`.
-
-Если эти метрики не нужны:
-
-```bash
-./tools/scripts/run-replay.sh --disable-replay-metrics
-```
-
-```bash
-bash tools/scripts/run-live-generator.sh --disable-replay-metrics
-```
+Это нужно, чтобы сверить ожидаемый профиль сценария с тем, что потом видно в Kafka topics и на Flink/Grafana dashboards.
 
 ## 7. Как пользоваться системой после запуска
 

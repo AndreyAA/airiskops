@@ -146,7 +146,6 @@ URL:
 - dashboard `AISafetyOps Business Metrics`;
 - dashboard `AISafetyOps Capacity And Performance`;
 - dashboard `AISafetyOps Detector Quality`;
-- dashboard `AISafetyOps Replay Control`;
 - папка dashboard: `AISafetyOps`.
 
 Что смотреть в dashboard в первую очередь:
@@ -389,39 +388,6 @@ URL:
 - `Current Input Watermark By Task`
   - нужен для понимания, движется ли event time по веткам job.
 
-### Dashboard `AISafetyOps Replay Control`
-
-Это dashboard для replay/live generator tooling.
-
-Панели:
-
-- `Active Replay Or Live Run`
-  - показывает активные `scenario`, `mode`, `source_kind`, `agent_id`, `status`;
-  - помогает проверить, какой именно сценарий сейчас подаётся в систему.
-- `Requests Generated`
-  - сколько synthetic requests создал текущий запуск.
-- `Findings Generated`
-  - сколько synthetic findings создал генератор.
-- `Triggered Findings Generated`
-  - сколько findings пришло уже с `triggered=true`.
-- `Current Replay RPS`
-  - текущий RPS live-генератора или размер batch в replay.
-- `Generated Findings By Scenario And Mode`
-  - позволяет сравнивать объём synthetic findings по сценариям.
-- `Triggered Findings By Scenario And Mode`
-  - показывает, насколько агрессивен конкретный scenario.
-- `Invalid Payloads Generated`
-  - сколько generator специально сделал schema/validation проблем.
-- `Late Payloads Generated`
-  - сколько generator специально сдвинул в late/too-late диапазон.
-- `Detector Errors Generated`
-  - сколько findings generator пометил как `detectorStatus=ERROR`.
-
-Практический смысл:
-
-- сначала подтвердить, что генератор реально создал нужный сценарный сигнал;
-- потом уже анализировать, как этот сигнал обработала Flink job.
-
 ### Dashboard `AISafetyOps Detector Quality`
 
 Это dashboard для ответа на вопрос:
@@ -639,44 +605,6 @@ max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_late_tolera
 
 - понять, почему late scenario попадает в окно или уходит в `late-events`;
 - объяснить observed delay между поступлением finding и emission aggregate.
-
-#### Какой scenario сейчас генерируется
-
-```promql
-aisafetyops_replay_run_info
-```
-
-Показывает:
-
-- активный `scenario`, `mode`, `source_kind`, `agent_id`, `status`.
-
-Использование:
-
-- быстро проверить, что запущен именно тот replay/live profile, который вы ожидаете;
-- удобно перед сравнением business metrics между несколькими прогонками.
-
-#### Сколько synthetic late/invalid/error событий создал генератор
-
-```promql
-aisafetyops_replay_invalid_generated_total
-```
-
-```promql
-aisafetyops_replay_late_generated_total
-```
-
-```promql
-aisafetyops_replay_detector_errors_generated_total
-```
-
-Показывает:
-
-- контрольные метрики replay/live tooling, а не Flink runtime.
-
-Использование:
-
-- если `late-events` topic не растёт, сначала проверить, что generator действительно создал late данные;
-- если detector quality не меняется, сначала проверить, что scenario реально создал `detectorStatus=ERROR`.
 
 #### Публикуются ли оконные guardrail aggregates
 

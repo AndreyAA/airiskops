@@ -25,9 +25,6 @@ ERROR_SHARE=0.08
 DETECTOR_LATENCY_MULTIPLIER=6.0
 OUT_OF_ORDERNESS_SECONDS=30
 LATE_TOLERANCE_SECONDS=300
-PUSHGATEWAY_URL="http://localhost:9091"
-REPLAY_METRICS_JOB="aisafetyops-replay"
-DISABLE_REPLAY_METRICS="false"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -103,18 +100,6 @@ while [[ $# -gt 0 ]]; do
       LATE_TOLERANCE_SECONDS="$2"
       shift 2
       ;;
-    --pushgateway-url)
-      PUSHGATEWAY_URL="$2"
-      shift 2
-      ;;
-    --replay-metrics-job)
-      REPLAY_METRICS_JOB="$2"
-      shift 2
-      ;;
-    --disable-replay-metrics)
-      DISABLE_REPLAY_METRICS="true"
-      shift 1
-      ;;
     *)
       echo "Unknown argument: $1" >&2
       exit 1
@@ -142,14 +127,8 @@ PYTHON_ARGS=(
   --detector-latency-multiplier "$DETECTOR_LATENCY_MULTIPLIER"
   --out-of-orderness-seconds "$OUT_OF_ORDERNESS_SECONDS"
   --late-tolerance-seconds "$LATE_TOLERANCE_SECONDS"
-  --pushgateway-url "$PUSHGATEWAY_URL"
-  --replay-metrics-job "$REPLAY_METRICS_JOB"
   --output-dir "$OUT_DIR"
 )
-
-if [[ "$DISABLE_REPLAY_METRICS" == "true" ]]; then
-  PYTHON_ARGS+=(--disable-replay-metrics)
-fi
 
 python3 "$ROOT_DIR/tools/generators/generate_events.py" \
   "${PYTHON_ARGS[@]}"

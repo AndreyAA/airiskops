@@ -44,12 +44,11 @@ class GenerateEventsTest(unittest.TestCase):
                 str(sessions),
                 "--agent-id",
                 "agent-risk-01",
-                    "--seed",
-                    "7",
-                    "--disable-replay-metrics",
-                    "--output-dir",
-                    str(out_dir),
-                ]
+                "--seed",
+                "7",
+                "--output-dir",
+                str(out_dir),
+            ]
             if extra_args:
                 command.extend(extra_args)
             subprocess.run(
@@ -189,7 +188,7 @@ class GenerateEventsTest(unittest.TestCase):
         self.assertTrue(errored)
         self.assertTrue(all(row["detectorLatencyMs"] >= 63 for row in errored))
 
-    def test_build_replay_metric_summary_uses_delivery_meta(self):
+    def test_build_replay_summary_uses_delivery_meta(self):
         batch = GENERATE_EVENTS.generate_event_batch(
             rng=random.Random(17),
             scenario="mixed",
@@ -213,13 +212,13 @@ class GenerateEventsTest(unittest.TestCase):
                 late_tolerance_seconds=300,
             ),
         )
-        summary = GENERATE_EVENTS.build_replay_metric_summary(batch)
-        self.assertEqual(summary.requests_generated, 20)
-        self.assertEqual(summary.responses_generated, 20)
-        self.assertEqual(summary.findings_generated, 80)
-        self.assertGreater(summary.invalid_generated, 0)
-        self.assertGreater(summary.late_generated, 0)
-        self.assertGreater(summary.detector_errors_generated, 0)
+        summary = GENERATE_EVENTS.build_replay_summary(batch)
+        self.assertEqual(summary["requestsGenerated"], 20)
+        self.assertEqual(summary["responsesGenerated"], 20)
+        self.assertEqual(summary["findingsGenerated"], 80)
+        self.assertGreater(summary["invalidGenerated"], 0)
+        self.assertGreater(summary["lateGenerated"], 0)
+        self.assertGreater(summary["detectorErrorsGenerated"], 0)
 
 
 if __name__ == "__main__":

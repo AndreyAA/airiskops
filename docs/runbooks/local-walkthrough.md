@@ -1,6 +1,6 @@
 # Локальный Walkthrough: как руками проверить AISafetyOps Flink MVP
 
-Дата актуальности: 2026-08-27
+Дата актуальности: 2026-08-30
 
 Этот документ нужен для ручной проверки локального MVP на ноутбуке через Docker. Он описывает:
 
@@ -17,7 +17,6 @@
 - `Kafka` как вход и выход для событий;
 - `Flink JobManager` и `TaskManager`;
 - `Prometheus` для метрик;
-- `Pushgateway` для replay/live control metrics;
 - `Grafana` с готовым dashboard для AISafetyOps;
 - Java/Flink job, которая:
   - читает сырые события,
@@ -93,7 +92,6 @@ bash tools/scripts/start-local.sh
 - поднимает `jobmanager`;
 - поднимает `taskmanager`;
 - поднимает `prometheus`.
-- поднимает `pushgateway`.
 - поднимает `grafana`.
 
 Что проверить:
@@ -110,7 +108,6 @@ docker compose -f deployment/local/docker-compose.yml ps
 
 - Flink UI: `http://localhost:8081`
 - Prometheus UI: `http://localhost:9090`
-- Pushgateway UI: `http://localhost:9091`
 - Grafana UI: `http://localhost:3000`
 
 Данные для входа в Grafana:
@@ -388,7 +385,6 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - dashboard `AISafetyOps Business Metrics` уже загружен автоматически;
 - dashboard `AISafetyOps Capacity And Performance` уже загружен автоматически;
 - dashboard `AISafetyOps Detector Quality` уже загружен автоматически;
-- dashboard `AISafetyOps Replay Control` уже загружен автоматически;
 - папка dashboard: `AISafetyOps`.
 
 Что смотреть в первую очередь:
@@ -558,39 +554,6 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - при replay `late-events` и `combined-chaos`;
 - при локальной нагрузке, когда надо увидеть приближение к saturation;
 - если `Business Metrics` выглядят странно и нужно отделить business effect от runtime issues.
-
-### `AISafetyOps Replay Control`
-
-Это dashboard для самого replay/live generator, а не для runtime Flink job.
-
-Панели:
-
-- `Active Replay Or Live Run`
-  - какие `scenario`, `mode`, `source_kind`, `agent_id` и `status` сейчас активны;
-- `Requests Generated`
-  - сколько synthetic requests создал текущий запуск;
-- `Findings Generated`
-  - сколько synthetic findings создал генератор;
-- `Triggered Findings Generated`
-  - сколько findings уже пришло с `triggered=true`;
-- `Current Replay RPS`
-  - какой RPS сейчас идёт у live-генератора;
-- `Generated Findings By Scenario And Mode`
-  - сравнение общего объёма findings по сценариям;
-- `Triggered Findings By Scenario And Mode`
-  - сравнение агрессивности сценариев;
-- `Invalid Payloads Generated`
-  - сколько generator специально испортил payload;
-- `Late Payloads Generated`
-  - сколько generator специально сделал late/too-late;
-- `Detector Errors Generated`
-  - сколько findings generator пометил как `detectorStatus=ERROR`.
-
-Когда смотреть:
-
-- во время demo-сценариев;
-- когда надо убедиться, что запущен нужный `businessScenario` и `deliveryMode`;
-- когда надо отделить проблему генератора от проблемы обработки во Flink.
 
 ### `AISafetyOps Detector Quality`
 
