@@ -36,8 +36,10 @@
 Если нужно понять MVP и этапы внедрения:
 
 1. [mvp/mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md)
-2. [mvp/stage-1-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-1-results.md)
-3. [mvp/stage-2-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-2-results.md)
+2. [mvp/near-term-improvement-plan.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/near-term-improvement-plan.md)
+3. [mvp/increment-3-implementation-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/increment-3-implementation-spec.md)
+4. [mvp/stage-1-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-1-results.md)
+5. [mvp/stage-2-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-2-results.md)
 
 ## Состав каталога
 
@@ -74,6 +76,12 @@
 
 - [mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md)
   - детальная спецификация MVP и инкрементов.
+- [near-term-improvement-plan.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/near-term-improvement-plan.md)
+  - ближайшие возможные улучшения проекта;
+  - приоритеты по business value, observability и operational readiness.
+- [increment-3-implementation-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/increment-3-implementation-spec.md)
+  - прикладная спецификация реализации `Increment 3`;
+  - список файлов, параметров, topics, metrics, dashboards, тестов и ожидаемого business value.
 - [stage-1-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-1-results.md)
   - результаты и бизнес-value первого этапа.
 - [stage-2-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-2-results.md)
