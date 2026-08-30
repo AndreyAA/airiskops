@@ -548,7 +548,7 @@ bash tools/scripts/run-live-generator.sh \
   --duration-seconds 300 \
   --min-requests-per-second 1 \
   --max-requests-per-second 5 \
-  --scenario mixed
+  --business-scenario mixed
 ```
 
 Что это делает:
@@ -560,7 +560,11 @@ bash tools/scripts/run-live-generator.sh \
 Полезный вариант с чуть более заметной динамикой в Grafana:
 
 ```bash
-bash tools/scripts/run-live-generator.sh --duration-seconds 300 --requests-per-second 3 --scenario mixed
+bash tools/scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --requests-per-second 3 \
+  --business-scenario mixed \
+  --delivery-mode baseline
 ```
 
 Что вы увидите:
@@ -575,6 +579,45 @@ bash tools/scripts/run-live-generator.sh --duration-seconds 300 --requests-per-s
 - для demo на живой системе;
 - для ручной проверки panel refresh в Grafana;
 - для smoke-проверки, что Kafka, Flink и Prometheus связаны корректно.
+
+Полезные сценарные варианты:
+
+```bash
+bash tools/scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --min-requests-per-second 2 \
+  --max-requests-per-second 6 \
+  --business-scenario prompt_injection_burst \
+  --delivery-mode baseline \
+  --burst-start-second 90 \
+  --burst-duration-seconds 90 \
+  --burst-multiplier 2.2
+```
+
+Ожидаемый эффект:
+
+- на business dashboard растут p50/p95 confidence для `PROMPT_INJECTION`;
+- увеличивается число triggered findings;
+- при включённой incident policy появляются новые `basic-incidents`.
+
+```bash
+bash tools/scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --requests-per-second 3 \
+  --business-scenario mixed \
+  --delivery-mode combined-chaos \
+  --late-share 0.10 \
+  --too-late-share 0.03 \
+  --invalid-share 0.03 \
+  --error-share 0.10
+```
+
+Ожидаемый эффект:
+
+- часть payload попадёт в `invalid-events`;
+- часть данных станет late/too-late;
+- часть findings будет помечена как `detectorStatus=ERROR`;
+- удобно для проверки, что мониторинг видит не только бизнес-аномалии, но и деградацию качества pipeline.
 
 ## Шаг 12. Запросы в Prometheus и что они означают
 

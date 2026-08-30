@@ -18,7 +18,12 @@ GENERATOR_DIR = Path(__file__).resolve().parent
 if str(GENERATOR_DIR) not in sys.path:
     sys.path.insert(0, str(GENERATOR_DIR))
 
-from generate_events import SCENARIOS, generate_live_tick_batch  # noqa: E402
+from generate_events import (  # noqa: E402
+    DELIVERY_MODES,
+    SCENARIOS,
+    build_replay_options,
+    generate_live_tick_batch,
+)
 
 
 TOPIC_TO_BATCH_KEY = {
@@ -41,7 +46,20 @@ COMPOSE_FILE = ROOT_DIR / "deployment" / "local" / "docker-compose.yml"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--scenario", choices=sorted(SCENARIOS), default="mixed")
+    parser.add_argument(
+        "--business-scenario",
+        "--scenario",
+        dest="business_scenario",
+        choices=sorted(SCENARIOS),
+        default="mixed",
+    )
+    parser.add_argument(
+        "--delivery-mode",
+        "--mode",
+        dest="delivery_mode",
+        choices=DELIVERY_MODES,
+        default="baseline",
+    )
     parser.add_argument("--duration-seconds", type=int, default=DEFAULT_DURATION_SECONDS)
     parser.add_argument("--requests-per-second", type=int, default=DEFAULT_REQUESTS_PER_SECOND)
     parser.add_argument("--min-requests-per-second", type=int, default=None)
@@ -49,6 +67,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sessions", type=int, default=DEFAULT_SESSIONS)
     parser.add_argument("--agent-id", default=DEFAULT_AGENT_ID)
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
+    parser.add_argument("--request-offset-seconds", type=int, default=1)
+    parser.add_argument("--burst-start-second", type=int, default=60)
+    parser.add_argument("--burst-duration-seconds", type=int, default=90)
+    parser.add_argument("--burst-multiplier", type=float, default=1.8)
+    parser.add_argument("--late-share", type=float, default=0.12)
+    parser.add_argument("--too-late-share", type=float, default=0.05)
+    parser.add_argument("--invalid-share", type=float, default=0.05)
+    parser.add_argument("--error-share", type=float, default=0.08)
+    parser.add_argument("--detector-latency-multiplier", type=float, default=6.0)
+    parser.add_argument("--out-of-orderness-seconds", type=int, default=30)
+    parser.add_argument("--late-tolerance-seconds", type=int, default=300)
     return parser.parse_args()
 
 
@@ -119,6 +148,7 @@ def main() -> None:
     args = parse_args()
     rng = random.Random(args.seed)
     min_rps, max_rps = resolve_rps_bounds(args)
+    replay_options = build_replay_options(args)
     producers = {topic: create_producer(topic) for topic in TOPIC_TO_BATCH_KEY}
     total_requests_sent = 0
 
@@ -129,12 +159,13 @@ def main() -> None:
             requests_per_second = resolve_requests_per_second(rng, min_rps, max_rps)
             batch = generate_live_tick_batch(
                 rng=rng,
-                scenario=args.scenario,
+                scenario=args.business_scenario,
                 requests_per_second=requests_per_second,
                 session_count=args.sessions,
                 agent_id=args.agent_id,
                 tick_time=tick_time,
                 tick_index=tick_index,
+                replay_options=replay_options,
             )
             for topic, batch_key in TOPIC_TO_BATCH_KEY.items():
                 write_rows(producers[topic], batch[batch_key])
@@ -147,7 +178,8 @@ def main() -> None:
 
         print(
             f"Live stream published for {args.duration_seconds} seconds, "
-            f"scenario={args.scenario}, "
+            f"scenario={args.business_scenario}, "
+            f"mode={args.delivery_mode}, "
             f"rps-range={min_rps}..{max_rps}, "
             f"total-requests={total_requests_sent}"
         )

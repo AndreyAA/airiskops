@@ -228,18 +228,68 @@ bash tools/scripts/reset-topics.sh
 
 ## 6. Запуск replay dataset
 
-### Сценарии
+### Business scenarios
 
-Поддерживаются три профиля:
+Поддерживаются сценарии:
 
 - `normal`
 - `attack`
 - `mixed`
+- `prompt_injection_burst`
+- `toxicity_campaign`
+- `looping_false_positive_check`
+- `policy_regression_case`
+
+Смысл сценариев:
+
+- `normal`
+  - в основном низкие confidence, редкие boolean-срабатывания;
+- `attack`
+  - почти постоянный высокий риск, нужен для stress/demo;
+- `mixed`
+  - базовый рабочий поток с умеренным количеством сработок;
+- `prompt_injection_burst`
+  - на ограниченном интервале времени резко растёт `PROMPT_INJECTION`;
+- `toxicity_campaign`
+  - имитирует токсичную кампанию по одному агенту;
+- `looping_false_positive_check`
+  - проверяет, не переоцениваем ли looping при низком фоне остальных рисков;
+- `policy_regression_case`
+  - создаёт пограничные confidence около policy threshold для проверки изменений правил.
+
+### Delivery modes
+
+Поддерживаются режимы доставки:
+
+- `baseline`
+- `late-events`
+- `invalid-events`
+- `detector-errors`
+- `combined-chaos`
+
+Что они имитируют:
+
+- `baseline`
+  - нормальный поток без искажений;
+- `late-events`
+  - часть событий приходит с event time в прошлом;
+  - часть попадает в допустимое опоздание, часть должна уйти в `late-events`;
+- `invalid-events`
+  - часть payload намеренно портится для проверки `invalid-events`;
+- `detector-errors`
+  - часть findings приходит с `detectorStatus=ERROR` и увеличенной latency;
+- `combined-chaos`
+  - совмещает late, invalid и detector degradation.
 
 ### Пример запуска
 
 ```bash
-./tools/scripts/run-replay.sh --scenario mixed --requests 200 --sessions 20 --agent-id agent-risk-01
+./tools/scripts/run-replay.sh \
+  --business-scenario mixed \
+  --delivery-mode baseline \
+  --requests 200 \
+  --sessions 20 \
+  --agent-id agent-risk-01
 ```
 
 Что делает:
@@ -247,6 +297,55 @@ bash tools/scripts/reset-topics.sh
 - генерирует deterministic JSON Lines dataset;
 - раскладывает события по topic-specific файлам;
 - публикует события в локальные Kafka topics.
+
+Полезные demo-команды:
+
+```bash
+./tools/scripts/run-replay.sh \
+  --business-scenario prompt_injection_burst \
+  --delivery-mode baseline \
+  --requests 240 \
+  --sessions 12 \
+  --burst-start-second 60 \
+  --burst-duration-seconds 120 \
+  --burst-multiplier 2.2
+```
+
+Что смотреть:
+
+- рост `PROMPT_INJECTION` findings и triggered findings;
+- рост `basic-incidents`, если политика разрешает emission;
+- в Grafana на business dashboard всплеск p50/p95 confidence по `PROMPT_INJECTION`.
+
+```bash
+./tools/scripts/run-replay.sh \
+  --business-scenario mixed \
+  --delivery-mode late-events \
+  --requests 240 \
+  --late-share 0.15 \
+  --too-late-share 0.05
+```
+
+Что смотреть:
+
+- рост offsets у `late-events`;
+- часть aggregate emissions будет сформирована позже из-за watermark behavior;
+- удобно проверять runtime contract по опоздавшим данным.
+
+```bash
+./tools/scripts/run-replay.sh \
+  --business-scenario mixed \
+  --delivery-mode detector-errors \
+  --requests 240 \
+  --error-share 0.20 \
+  --detector-latency-multiplier 8
+```
+
+Что смотреть:
+
+- рост findings с `detectorStatus=ERROR`;
+- деградацию detector latency metrics;
+- отсутствие ложного роста triggered findings на испорченных detector responses.
 
 ### Живой поток для Grafana и demo
 
@@ -269,13 +368,17 @@ bash tools/scripts/run-live-generator.sh \
   --duration-seconds 300 \
   --min-requests-per-second 1 \
   --max-requests-per-second 5 \
-  --scenario mixed
+  --business-scenario mixed
 ```
 
 Можно усилить динамику:
 
 ```bash
-bash tools/scripts/run-live-generator.sh --duration-seconds 300 --requests-per-second 3 --scenario attack
+bash tools/scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --requests-per-second 3 \
+  --business-scenario attack \
+  --delivery-mode baseline
 ```
 
 Назначение:
@@ -283,6 +386,30 @@ bash tools/scripts/run-live-generator.sh --duration-seconds 300 --requests-per-s
 - показать постепенное изменение дашбордов;
 - проверить NRTP-обработку на живом потоке;
 - убедиться, что окна `1m` и `5m` дают emissions не только на replay batch.
+
+Для наблюдаемого сценарного поведения:
+
+```bash
+bash tools/scripts/run-live-generator.sh \
+  --duration-seconds 300 \
+  --min-requests-per-second 2 \
+  --max-requests-per-second 6 \
+  --business-scenario prompt_injection_burst \
+  --delivery-mode combined-chaos \
+  --burst-start-second 90 \
+  --burst-duration-seconds 90 \
+  --late-share 0.10 \
+  --too-late-share 0.03 \
+  --invalid-share 0.03 \
+  --error-share 0.10
+```
+
+Это полезно для demo/обкатки, когда нужно одновременно увидеть:
+
+- всплеск по risk-сигналу;
+- рост `invalid-events`;
+- late arrivals;
+- деградацию detector quality.
 
 ## 7. Как пользоваться системой после запуска
 

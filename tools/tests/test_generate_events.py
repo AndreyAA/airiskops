@@ -21,26 +21,38 @@ def read_jsonl(path: Path):
 
 
 class GenerateEventsTest(unittest.TestCase):
-    def run_generator(self, scenario: str, requests: int = 12, sessions: int = 3):
+    def run_generator(
+        self,
+        scenario: str,
+        requests: int = 12,
+        sessions: int = 3,
+        delivery_mode: str = "baseline",
+        extra_args: list[str] | None = None,
+    ):
         with tempfile.TemporaryDirectory() as tmp:
             out_dir = Path(tmp)
+            command = [
+                "python3",
+                str(SCRIPT),
+                "--business-scenario",
+                scenario,
+                "--delivery-mode",
+                delivery_mode,
+                "--requests",
+                str(requests),
+                "--sessions",
+                str(sessions),
+                "--agent-id",
+                "agent-risk-01",
+                "--seed",
+                "7",
+                "--output-dir",
+                str(out_dir),
+            ]
+            if extra_args:
+                command.extend(extra_args)
             subprocess.run(
-                [
-                    "python3",
-                    str(SCRIPT),
-                    "--scenario",
-                    scenario,
-                    "--requests",
-                    str(requests),
-                    "--sessions",
-                    str(sessions),
-                    "--agent-id",
-                    "agent-risk-01",
-                    "--seed",
-                    "7",
-                    "--output-dir",
-                    str(out_dir),
-                ],
+                command,
                 check=True,
             )
             return {
@@ -106,6 +118,72 @@ class GenerateEventsTest(unittest.TestCase):
         self.assertTrue(all(row["requestId"].startswith("live-") for row in batch["requests"]))
         self.assertTrue(all(row["eventTime"].endswith("Z") for row in batch["requests"]))
         self.assertTrue(any("." in row["eventTime"] for row in batch["responses"]))
+
+    def test_prompt_injection_burst_boosts_prompt_trigger_rate(self):
+        data = self.run_generator(
+            "prompt_injection_burst",
+            requests=80,
+            sessions=4,
+            extra_args=[
+                "--burst-start-second",
+                "10",
+                "--burst-duration-seconds",
+                "80",
+                "--burst-multiplier",
+                "2.2",
+                "--request-offset-seconds",
+                "2",
+            ],
+        )
+        prompt_findings = [row for row in data["findings"] if row.get("guardrailName") == "PROMPT_INJECTION"]
+        triggered_count = len([row for row in prompt_findings if row.get("triggered") is True])
+        self.assertGreater(triggered_count, len(prompt_findings) // 3)
+
+    def test_invalid_events_mode_corrupts_some_rows(self):
+        data = self.run_generator(
+            "mixed",
+            requests=20,
+            sessions=4,
+            delivery_mode="invalid-events",
+            extra_args=["--invalid-share", "0.2"],
+        )
+        invalid_requests = [row for row in data["requests"] if "sessionId" not in row]
+        invalid_findings = [row for row in data["findings"] if "guardrailName" not in row]
+        self.assertTrue(invalid_requests)
+        self.assertTrue(invalid_findings)
+
+    def test_late_events_mode_shifts_event_time_backwards(self):
+        baseline = self.run_generator("mixed", requests=20, sessions=4)
+        late = self.run_generator(
+            "mixed",
+            requests=20,
+            sessions=4,
+            delivery_mode="late-events",
+            extra_args=[
+                "--late-share",
+                "0.2",
+                "--too-late-share",
+                "0.1",
+                "--out-of-orderness-seconds",
+                "30",
+                "--late-tolerance-seconds",
+                "300",
+            ],
+        )
+        self.assertLess(late["requests"][0]["eventTime"], baseline["requests"][0]["eventTime"])
+        self.assertLess(late["responses"][0]["eventTime"], baseline["responses"][0]["eventTime"])
+
+    def test_detector_errors_mode_marks_failed_findings(self):
+        data = self.run_generator(
+            "mixed",
+            requests=20,
+            sessions=4,
+            delivery_mode="detector-errors",
+            extra_args=["--error-share", "0.25", "--detector-latency-multiplier", "9"],
+        )
+        errored = [row for row in data["findings"] if row.get("detectorStatus") == "ERROR"]
+        self.assertTrue(errored)
+        self.assertTrue(all(row["detectorLatencyMs"] >= 63 for row in errored))
 
 
 if __name__ == "__main__":
