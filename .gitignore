@@ -6,5 +6,6 @@
 
 runtime/replay/latest/
 runtime/policies/
+tools/testdata/generated/
 
 .DS_Store
