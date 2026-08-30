@@ -144,6 +144,8 @@ URL:
 - datasource `Prometheus`;
 - dashboard `AISafetyOps Flink Overview`;
 - dashboard `AISafetyOps Business Metrics`;
+- dashboard `AISafetyOps Capacity And Performance`;
+- dashboard `AISafetyOps Replay Control`;
 - папка dashboard: `AISafetyOps`.
 
 Что смотреть в dashboard в первую очередь:
@@ -166,6 +168,10 @@ URL:
   - публикуются ли `1m` и `5m` aggregates;
 - `AISafetyOps Domain Counters`
   - растут ли `valid`, `invalid`, `late`, `on_time`.
+- `Runtime Contract Info`
+  - какой window type, delivery guarantee и набор aggregate windows реально активны.
+- `Busy, Backpressured, Idle Time By Task`
+  - видно ли, где pipeline уже упирается в вычисления или downstream.
 
 Как читать `Emissions` и `Findings` в business/dashboard панелях:
 
@@ -336,6 +342,85 @@ URL:
 - если business dashboard растёт, а overview показывает failed checkpoints или latency spike
   - данные пока идут, но runtime уже деградирует и может скоро упасть.
 
+### Dashboard `AISafetyOps Capacity And Performance`
+
+Это dashboard для ответа на вопросы:
+
+- какой runtime contract сейчас реально активен;
+- где pipeline начинает тормозить;
+- не приближаемся ли мы к saturation по task-level сигналам.
+
+Панели:
+
+- `Runtime Contract Info`
+  - таблично показывает `window_type`, `delivery_guarantee`, `analysis_mode`, `aggregate_windows`;
+  - нужна для быстрой проверки фактического runtime contract без чтения кода и YAML.
+- `Out Of Orderness`
+  - текущая настройка bounded disorder в секундах;
+  - влияет на watermark progress и восприимчивость к reorder на входе.
+- `Late Tolerance`
+  - сколько секунд окно ещё принимает late events после nominal close;
+  - влияет на повторные emissions и side output `late-events`.
+- `Checkpoint Interval`
+  - как часто job пытается делать snapshot state;
+  - помогает быстро увидеть, с каким operational профилем сейчас идёт запуск.
+- `Auto Watermark Interval`
+  - как часто runtime эмитит watermark ticks;
+  - влияет на реакцию event-time окон.
+- `Configured Aggregate Windows`
+  - таблица с реально активными окнами, например `1m` и `5m`;
+  - если окно отсутствует здесь, downstream `No Data` надо искать в конфиге.
+- `Open Incident Sessions`
+  - текущий объём активного keyed session state в incident layer.
+- `Last Checkpoint Duration`
+  - быстрый индикатор здоровья snapshot path.
+- `Failed Checkpoints`
+  - показывает, не деградирует ли fault tolerance.
+- `Records In Per Second By Task`
+  - где реально есть входной throughput.
+- `Records Out Per Second By Task`
+  - где поток перестаёт выходить дальше по graph.
+- `Busy, Backpressured, Idle Time By Task`
+  - основной saturation-график:
+  - `busy` показывает вычислительную загрузку;
+  - `backpressured` показывает, что downstream не успевает;
+  - `idle` показывает нехватку входного трафика.
+- `Current Input Watermark By Task`
+  - нужен для понимания, движется ли event time по веткам job.
+
+### Dashboard `AISafetyOps Replay Control`
+
+Это dashboard для replay/live generator tooling.
+
+Панели:
+
+- `Active Replay Or Live Run`
+  - показывает активные `scenario`, `mode`, `source_kind`, `agent_id`, `status`;
+  - помогает проверить, какой именно сценарий сейчас подаётся в систему.
+- `Requests Generated`
+  - сколько synthetic requests создал текущий запуск.
+- `Findings Generated`
+  - сколько synthetic findings создал генератор.
+- `Triggered Findings Generated`
+  - сколько findings пришло уже с `triggered=true`.
+- `Current Replay RPS`
+  - текущий RPS live-генератора или размер batch в replay.
+- `Generated Findings By Scenario And Mode`
+  - позволяет сравнивать объём synthetic findings по сценариям.
+- `Triggered Findings By Scenario And Mode`
+  - показывает, насколько агрессивен конкретный scenario.
+- `Invalid Payloads Generated`
+  - сколько generator специально сделал schema/validation проблем.
+- `Late Payloads Generated`
+  - сколько generator специально сдвинул в late/too-late диапазон.
+- `Detector Errors Generated`
+  - сколько findings generator пометил как `detectorStatus=ERROR`.
+
+Практический смысл:
+
+- сначала подтвердить, что генератор реально создал нужный сценарный сигнал;
+- потом уже анализировать, как этот сигнал обработала Flink job.
+
 ## 4. Что мониторить всегда
 
 ### 4.1 Job-level метрики
@@ -467,6 +552,97 @@ flink_taskmanager_job_task_currentInputWatermark{job_name="AISafetyOps_MVP_Incre
 Использование:
 
 - если watermark застыл, event-time окна не будут эмитить агрегаты.
+
+#### Какой runtime contract реально активен
+
+```promql
+flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_info{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- служебную метрику со значением `1` и labels:
+  - `window_type`
+  - `delivery_guarantee`
+  - `analysis_mode`
+  - `aggregate_windows`
+
+Использование:
+
+- проверить, что job действительно поднята с ожидаемым runtime contract;
+- быстро найти ситуацию, когда локально вы поменяли YAML, но работает старый submit/profile.
+
+#### Какие окна реально настроены
+
+```promql
+flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_window_size_seconds{job_name="AISafetyOps_MVP_Increment_1"}
+```
+
+Показывает:
+
+- активные окна и их размер в секундах через label `window`.
+
+Использование:
+
+- проверить, что ожидаемые `1m` и `5m` действительно существуют;
+- если окно отсутствует, искать проблему в конфиге, а не в Grafana.
+
+#### Какой bounded disorder и late tolerance сейчас активны
+
+```promql
+max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_out_of_orderness_seconds{job_name="AISafetyOps_MVP_Increment_1"})
+```
+
+```promql
+max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_late_tolerance_seconds{job_name="AISafetyOps_MVP_Increment_1"})
+```
+
+Показывает:
+
+- ключевые event-time параметры, влияющие на watermarking и late routing.
+
+Использование:
+
+- понять, почему late scenario попадает в окно или уходит в `late-events`;
+- объяснить observed delay между поступлением finding и emission aggregate.
+
+#### Какой scenario сейчас генерируется
+
+```promql
+aisafetyops_replay_run_info
+```
+
+Показывает:
+
+- активный `scenario`, `mode`, `source_kind`, `agent_id`, `status`.
+
+Использование:
+
+- быстро проверить, что запущен именно тот replay/live profile, который вы ожидаете;
+- удобно перед сравнением business metrics между несколькими прогонками.
+
+#### Сколько synthetic late/invalid/error событий создал генератор
+
+```promql
+aisafetyops_replay_invalid_generated_total
+```
+
+```promql
+aisafetyops_replay_late_generated_total
+```
+
+```promql
+aisafetyops_replay_detector_errors_generated_total
+```
+
+Показывает:
+
+- контрольные метрики replay/live tooling, а не Flink runtime.
+
+Использование:
+
+- если `late-events` topic не растёт, сначала проверить, что generator действительно создал late данные;
+- если detector quality не меняется, сначала проверить, что scenario реально создал `detectorStatus=ERROR`.
 
 #### Публикуются ли оконные guardrail aggregates
 

@@ -24,6 +24,7 @@ public record JobConfig(
         IncidentConfig incidentConfig,
         PolicyConfig policyConfig,
         IncidentPolicy bootstrapIncidentPolicy,
+        RuntimeContractConfig runtimeContract,
         Duration outOfOrderness,
         Duration idleTimeout,
         Duration lateTolerance,
@@ -76,6 +77,26 @@ public record JobConfig(
                         JobConfigOptions.ARG_POLICY_REJECT_OLDER_VERSIONS,
                         JobConfigOptions.DEFAULT_POLICY_REJECT_OLDER_VERSIONS
                 )
+        );
+        RuntimeContractConfig runtimeContract = new RuntimeContractConfig(
+                readString(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_WINDOW_TYPE,
+                        JobConfigOptions.DEFAULT_WINDOW_TYPE
+                ),
+                readDurationMinutesList(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_AGGREGATE_WINDOW_MINUTES,
+                        JobConfigOptions.DEFAULT_AGGREGATE_WINDOW_MINUTES
+                ),
+                PipelineDeliveryGuarantee.fromConfigValue(readString(
+                        parameters,
+                        yamlConfig,
+                        JobConfigOptions.ARG_DELIVERY_GUARANTEE,
+                        JobConfigOptions.DEFAULT_DELIVERY_GUARANTEE
+                ))
         );
 
         return new JobConfig(
@@ -166,6 +187,7 @@ public record JobConfig(
                 ),
                 policyConfig,
                 loadBootstrapIncidentPolicy(policyConfig),
+                runtimeContract,
                 Duration.ofSeconds(readLong(
                         parameters,
                         yamlConfig,
@@ -237,6 +259,36 @@ public record JobConfig(
             return List.of(value.split(JobConfigOptions.TOPIC_SEPARATOR));
         }
         return List.of(JobConfigOptions.DEFAULT_TOPICS.split(JobConfigOptions.TOPIC_SEPARATOR));
+    }
+
+    private static List<Duration> readDurationMinutesList(
+            ParameterTool parameters,
+            Map<String, Object> yamlConfig,
+            String key,
+            String defaultValue
+    ) {
+        String cliValue = parameters.get(key);
+        if (cliValue != null) {
+            return parseDurationMinutes(cliValue.split(JobConfigOptions.TOPIC_SEPARATOR));
+        }
+
+        Object yamlValue = yamlConfig.get(key);
+        if (yamlValue instanceof List<?> values) {
+            return parseDurationMinutes(values.stream().map(String::valueOf).toArray(String[]::new));
+        }
+        if (yamlValue instanceof String value) {
+            return parseDurationMinutes(value.split(JobConfigOptions.TOPIC_SEPARATOR));
+        }
+        return parseDurationMinutes(defaultValue.split(JobConfigOptions.TOPIC_SEPARATOR));
+    }
+
+    private static List<Duration> parseDurationMinutes(String[] rawValues) {
+        return List.of(rawValues).stream()
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .map(Long::parseLong)
+                .map(Duration::ofMinutes)
+                .toList();
     }
 
     private static String readString(

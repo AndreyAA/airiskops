@@ -8,6 +8,7 @@ import com.bank.aisafetyops.app.functions.ParseAndValidateFunction;
 import com.bank.aisafetyops.app.functions.ParseIncidentPolicyUpdateFunction;
 import com.bank.aisafetyops.app.functions.PolicyAwareSessionIncidentEvaluatorFunction;
 import com.bank.aisafetyops.app.functions.RouteLateEventsFunction;
+import com.bank.aisafetyops.app.functions.RuntimeContractMetricsFunction;
 import com.bank.aisafetyops.app.functions.SessionIncidentKeySelector;
 import com.bank.aisafetyops.app.functions.SerializeGuardrailAggregateFunction;
 import com.bank.aisafetyops.app.functions.SplitParseResultsFunction;
@@ -24,6 +25,10 @@ import com.bank.aisafetyops.model.IncidentPolicy;
 import com.bank.aisafetyops.model.InvalidEvent;
 import com.bank.aisafetyops.model.LateEvent;
 import com.bank.aisafetyops.model.SafetyEvent;
+import com.bank.aisafetyops.model.WindowNames;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
@@ -106,32 +111,28 @@ public final class IncrementOneTopologyBuilder {
                 .uid(JobTopology.LATE_SINK_UID)
                 .name(JobTopology.LATE_SINK_NAME);
 
+        DataStream<SafetyEvent> instrumentedOnTimeEvents = onTimeEvents
+                .map(new RuntimeContractMetricsFunction(
+                        config.runtimeContract(),
+                        config.outOfOrderness(),
+                        config.lateTolerance(),
+                        config.idleTimeout(),
+                        config.checkpointInterval(),
+                        config.autoWatermarkInterval()
+                ))
+                .uid(JobTopology.RUNTIME_CONTRACT_UID)
+                .name(JobTopology.RUNTIME_CONTRACT_NAME);
+
         // Stage 2 guardrail visibility starts only from already validated on-time
         // events, so aggregate dashboards inherit the same trust boundary as the
         // operational stream used for investigations.
-        DataStream<SafetyEvent> guardrailFindings = onTimeEvents
+        DataStream<SafetyEvent> guardrailFindings = instrumentedOnTimeEvents
                 .filter(event -> event.eventType() == EventType.GUARDRAIL_FINDING)
                 .name(JobTopology.GUARDRAIL_FILTER_NAME);
 
-        DataStream<GuardrailWindowAggregate> guardrailAggregates1m = buildGuardrailAggregates(
-                guardrailFindings,
-                config,
-                Time.minutes(1),
-                JobTopology.GUARDRAIL_WINDOW_1M_NAME,
-                JobTopology.GUARDRAIL_AGGREGATES_1M_UID,
-                JobTopology.GUARDRAIL_AGGREGATES_1M_NAME
-        );
-        DataStream<GuardrailWindowAggregate> guardrailAggregates5m = buildGuardrailAggregates(
-                guardrailFindings,
-                config,
-                Time.minutes(5),
-                JobTopology.GUARDRAIL_WINDOW_5M_NAME,
-                JobTopology.GUARDRAIL_AGGREGATES_5M_UID,
-                JobTopology.GUARDRAIL_AGGREGATES_5M_NAME
-        );
+        DataStream<GuardrailWindowAggregate> combinedAggregates = buildGuardrailAggregates(guardrailFindings, config);
 
-        guardrailAggregates1m
-                .union(guardrailAggregates5m)
+        combinedAggregates
                 .map(new SerializeGuardrailAggregateFunction())
                 .uid(JobTopology.GUARDRAIL_AGGREGATES_SERIALIZE_UID)
                 .name(JobTopology.GUARDRAIL_AGGREGATES_SERIALIZE_NAME)
@@ -184,6 +185,32 @@ public final class IncrementOneTopologyBuilder {
     }
 
     private static DataStream<GuardrailWindowAggregate> buildGuardrailAggregates(
+            DataStream<SafetyEvent> guardrailFindings,
+            JobConfig config
+    ) {
+        List<DataStream<GuardrailWindowAggregate>> aggregateStreams = new ArrayList<>();
+        for (Duration aggregateWindow : config.runtimeContract().aggregateWindows()) {
+            String windowName = WindowNames.forDuration(aggregateWindow);
+            aggregateStreams.add(buildGuardrailAggregateWindow(
+                    guardrailFindings,
+                    config,
+                    Time.milliseconds(aggregateWindow.toMillis()),
+                    windowName,
+                    "guardrail-aggregates-" + windowName,
+                    "Guardrail Aggregates " + windowName
+            ));
+        }
+        DataStream<GuardrailWindowAggregate> firstStream = aggregateStreams.get(0);
+        if (aggregateStreams.size() == 1) {
+            return firstStream;
+        }
+        DataStream<GuardrailWindowAggregate>[] remainingStreams = aggregateStreams
+                .subList(1, aggregateStreams.size())
+                .toArray(DataStream[]::new);
+        return firstStream.union(remainingStreams);
+    }
+
+    private static DataStream<GuardrailWindowAggregate> buildGuardrailAggregateWindow(
             DataStream<SafetyEvent> guardrailFindings,
             JobConfig config,
             Time windowSize,

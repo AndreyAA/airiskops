@@ -61,7 +61,8 @@
   - мониторинг Flink job;
   - как читать Grafana dashboards;
   - какие Prometheus-запросы использовать;
-  - как локализовать ошибки по этапам пайплайна.
+  - как локализовать ошибки по этапам пайплайна;
+  - где смотреть runtime contract, saturation signals и replay control metrics.
 
 ### `runbooks/`
 

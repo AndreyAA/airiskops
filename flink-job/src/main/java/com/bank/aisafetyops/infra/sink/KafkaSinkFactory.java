@@ -23,7 +23,7 @@ public final class KafkaSinkFactory {
                         .setTopic(topicName)
                         .setValueSerializationSchema(new SimpleStringSchema())
                         .build())
-                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .setDeliveryGuarantee(config.runtimeContract().deliveryGuarantee().toFlinkDeliveryGuarantee())
                 .build();
     }
 }

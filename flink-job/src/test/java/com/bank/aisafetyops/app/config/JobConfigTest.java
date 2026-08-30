@@ -51,6 +51,11 @@ class JobConfigTest {
                 lateEventsTopic: late-out
                 guardrailAggregatesTopic: guardrail-aggregates-out
                 basicIncidentsTopic: basic-incidents-out
+                windowType: tumbling-event-time
+                aggregateWindowMinutes:
+                  - 1
+                  - 5
+                deliveryGuarantee: NONE
                 outOfOrdernessSeconds: 45
                 idleTimeoutMinutes: 2
                 lateToleranceMinutes: 7
@@ -76,6 +81,7 @@ class JobConfigTest {
                 "--groupId", "cli-group",
                 "--lateToleranceMinutes", "9",
                 "--autoWatermarkIntervalSeconds", "6",
+                "--deliveryGuarantee", "AT_LEAST_ONCE",
                 "--incidentPromptInjectionBurstMinFindings", "6"
         });
 
@@ -87,6 +93,11 @@ class JobConfigTest {
         assertEquals("late-out", config.outputTopics().lateEventsTopic());
         assertEquals("guardrail-aggregates-out", config.outputTopics().guardrailAggregatesTopic());
         assertEquals("basic-incidents-out", config.outputTopics().basicIncidentsTopic());
+        assertEquals("tumbling-event-time", config.runtimeContract().windowType());
+        assertEquals(2, config.runtimeContract().aggregateWindows().size());
+        assertEquals(Duration.ofMinutes(1), config.runtimeContract().aggregateWindows().get(0));
+        assertEquals(Duration.ofMinutes(5), config.runtimeContract().aggregateWindows().get(1));
+        assertEquals(PipelineDeliveryGuarantee.AT_LEAST_ONCE, config.runtimeContract().deliveryGuarantee());
         assertEquals(Duration.ofSeconds(45), config.outOfOrderness());
         assertEquals(Duration.ofMinutes(2), config.idleTimeout());
         assertEquals(Duration.ofMinutes(9), config.lateTolerance());

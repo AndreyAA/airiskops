@@ -21,6 +21,9 @@ public final class JobConfigOptions {
     public static final String ARG_LATE_TOLERANCE_MINUTES = "lateToleranceMinutes";
     public static final String ARG_CHECKPOINT_INTERVAL_SECONDS = "checkpointIntervalSeconds";
     public static final String ARG_AUTO_WATERMARK_INTERVAL_SECONDS = "autoWatermarkIntervalSeconds";
+    public static final String ARG_WINDOW_TYPE = "windowType";
+    public static final String ARG_AGGREGATE_WINDOW_MINUTES = "aggregateWindowMinutes";
+    public static final String ARG_DELIVERY_GUARANTEE = "deliveryGuarantee";
     public static final String ARG_START_FROM_EARLIEST = "startFromEarliest";
     public static final String ARG_INCIDENT_ENABLED = "incidentEnabled";
     public static final String ARG_INCIDENT_EMIT_UPDATES = "incidentEmitUpdates";
@@ -49,6 +52,9 @@ public final class JobConfigOptions {
     public static final long DEFAULT_LATE_TOLERANCE_MINUTES = 5L;
     public static final long DEFAULT_CHECKPOINT_INTERVAL_SECONDS = 30L;
     public static final long DEFAULT_AUTO_WATERMARK_INTERVAL_SECONDS = 5L;
+    public static final String DEFAULT_WINDOW_TYPE = "tumbling-event-time";
+    public static final String DEFAULT_AGGREGATE_WINDOW_MINUTES = "1,5";
+    public static final String DEFAULT_DELIVERY_GUARANTEE = "AT_LEAST_ONCE";
     public static final boolean DEFAULT_START_FROM_EARLIEST = true;
     public static final boolean DEFAULT_INCIDENT_ENABLED = true;
     public static final boolean DEFAULT_INCIDENT_EMIT_UPDATES = false;

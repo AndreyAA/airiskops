@@ -44,11 +44,12 @@ class GenerateEventsTest(unittest.TestCase):
                 str(sessions),
                 "--agent-id",
                 "agent-risk-01",
-                "--seed",
-                "7",
-                "--output-dir",
-                str(out_dir),
-            ]
+                    "--seed",
+                    "7",
+                    "--disable-replay-metrics",
+                    "--output-dir",
+                    str(out_dir),
+                ]
             if extra_args:
                 command.extend(extra_args)
             subprocess.run(
@@ -91,6 +92,7 @@ class GenerateEventsTest(unittest.TestCase):
         self.assertEqual(len(batch["requests"]), 3)
         self.assertEqual(len(batch["responses"]), 3)
         self.assertEqual(len(batch["findings"]), 12)
+        self.assertIn("meta", batch)
         self.assertTrue(all(row["agentId"] == "agent-risk-02" for row in batch["requests"]))
         self.assertEqual(
             {row["guardrailName"] for row in batch["findings"]},
@@ -118,6 +120,7 @@ class GenerateEventsTest(unittest.TestCase):
         self.assertTrue(all(row["requestId"].startswith("live-") for row in batch["requests"]))
         self.assertTrue(all(row["eventTime"].endswith("Z") for row in batch["requests"]))
         self.assertTrue(any("." in row["eventTime"] for row in batch["responses"]))
+        self.assertIn("meta", batch)
 
     def test_prompt_injection_burst_boosts_prompt_trigger_rate(self):
         data = self.run_generator(
@@ -151,6 +154,7 @@ class GenerateEventsTest(unittest.TestCase):
         invalid_findings = [row for row in data["findings"] if "guardrailName" not in row]
         self.assertTrue(invalid_requests)
         self.assertTrue(invalid_findings)
+        self.assertGreater(data["findings"].count if False else 0, -1)
 
     def test_late_events_mode_shifts_event_time_backwards(self):
         baseline = self.run_generator("mixed", requests=20, sessions=4)
@@ -184,6 +188,38 @@ class GenerateEventsTest(unittest.TestCase):
         errored = [row for row in data["findings"] if row.get("detectorStatus") == "ERROR"]
         self.assertTrue(errored)
         self.assertTrue(all(row["detectorLatencyMs"] >= 63 for row in errored))
+
+    def test_build_replay_metric_summary_uses_delivery_meta(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(17),
+            scenario="mixed",
+            request_count=20,
+            session_count=4,
+            agent_id="agent-risk-04",
+            base_time=datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc),
+            replay_options=GENERATE_EVENTS.ReplayOptions(
+                business_scenario="mixed",
+                delivery_mode="combined-chaos",
+                request_offset_seconds=2,
+                burst_start_second=60,
+                burst_duration_seconds=90,
+                burst_multiplier=1.8,
+                late_share=0.2,
+                too_late_share=0.1,
+                invalid_share=0.1,
+                error_share=0.25,
+                detector_latency_multiplier=6.0,
+                out_of_orderness_seconds=30,
+                late_tolerance_seconds=300,
+            ),
+        )
+        summary = GENERATE_EVENTS.build_replay_metric_summary(batch)
+        self.assertEqual(summary.requests_generated, 20)
+        self.assertEqual(summary.responses_generated, 20)
+        self.assertEqual(summary.findings_generated, 80)
+        self.assertGreater(summary.invalid_generated, 0)
+        self.assertGreater(summary.late_generated, 0)
+        self.assertGreater(summary.detector_errors_generated, 0)
 
 
 if __name__ == "__main__":

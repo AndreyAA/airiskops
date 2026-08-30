@@ -81,6 +81,13 @@ services:
     depends_on:
       - jobmanager
       - taskmanager
+      - pushgateway
+
+  pushgateway:
+    image: prom/pushgateway:v1.10.0
+    container_name: aisafetyops-pushgateway
+    ports:
+      - "9091:9091"
 
   grafana:
     image: grafana/grafana:11.2.0

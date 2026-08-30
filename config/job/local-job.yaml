@@ -9,6 +9,11 @@ invalidEventsTopic: invalid-events
 lateEventsTopic: late-events
 guardrailAggregatesTopic: guardrail-aggregates
 basicIncidentsTopic: basic-incidents
+windowType: tumbling-event-time
+aggregateWindowMinutes:
+  - 1
+  - 5
+deliveryGuarantee: AT_LEAST_ONCE
 outOfOrdernessSeconds: 30
 idleTimeoutMinutes: 1
 lateToleranceMinutes: 5

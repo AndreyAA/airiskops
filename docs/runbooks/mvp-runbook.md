@@ -48,6 +48,7 @@
 - `Flink JobManager` в Docker;
 - `Flink TaskManager` в Docker;
 - `Prometheus` в Docker;
+- `Pushgateway` в Docker;
 - `Grafana` в Docker;
 - `bash`-скрипты для operational действий;
 - `Python`-генератор для replay dataset;
@@ -74,6 +75,58 @@
 - [prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/observability/prometheus/prometheus.yml)
 - [generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/generate_events.py)
 - [test_generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/tests/test_generate_events.py)
+
+## 3.1 Runtime contract и где его менять
+
+Текущий runtime contract локального MVP задается в [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+
+Ключевые поля:
+
+- `windowType`
+  - сейчас `tumbling-event-time`;
+  - определяет базовый тип оконной агрегации.
+- `aggregateWindowMinutes`
+  - сейчас `[1, 5]`;
+  - определяет, какие NRT-окна реально строятся и публикуются downstream.
+- `deliveryGuarantee`
+  - сейчас `AT_LEAST_ONCE`;
+  - определяет обязательства Kafka sink по доставке.
+- `outOfOrdernessSeconds`
+  - сейчас `30`;
+  - определяет bounded disorder для watermark strategy.
+- `idleTimeoutMinutes`
+  - сейчас `1`;
+  - определяет, через сколько бездействующий source partition считается idle.
+- `lateToleranceMinutes`
+  - сейчас `5`;
+  - определяет, сколько поздние события ещё могут обновлять уже закрытое окно.
+- `checkpointIntervalSeconds`
+  - сейчас `30`;
+  - задаёт частоту checkpointing.
+- `autoWatermarkIntervalSeconds`
+  - сейчас `5`;
+  - задаёт частоту watermark emission.
+
+Если меняете runtime contract:
+
+1. поправить `config/job/local-job.yaml`;
+2. пересобрать job:
+
+```bash
+bash tools/scripts/build-job.sh
+```
+
+3. пересабмитить job:
+
+```bash
+bash tools/scripts/submit-job.sh
+```
+
+После submit проверить новый контракт в Grafana:
+
+- dashboard `AISafetyOps Capacity And Performance`;
+- panel `Runtime Contract Info`;
+- panel `Configured Aggregate Windows`.
 
 ## 4. Topics локального MVP
 
@@ -157,7 +210,12 @@ bash tools/scripts/cleanup-local.sh
 - поднимает JobManager;
 - поднимает TaskManager;
 - поднимает Prometheus.
-- поднимает Grafana.
+- поднимает Pushgateway.
+- поднимает Grafana с dashboards:
+  - `AISafetyOps Flink Overview`;
+  - `AISafetyOps Business Metrics`;
+  - `AISafetyOps Capacity And Performance`.
+  - `AISafetyOps Replay Control`.
 
 ### Шаг 2. Инициализировать topics
 
@@ -297,6 +355,7 @@ bash tools/scripts/reset-topics.sh
 - генерирует deterministic JSON Lines dataset;
 - раскладывает события по topic-specific файлам;
 - публикует события в локальные Kafka topics.
+- публикует replay control metrics в `Pushgateway`, если он доступен.
 
 Полезные demo-команды:
 
@@ -410,6 +469,34 @@ bash tools/scripts/run-live-generator.sh \
 - рост `invalid-events`;
 - late arrivals;
 - деградацию detector quality.
+
+### Replay control metrics
+
+После запуска `run-replay.sh` или `run-live-generator.sh` генератор публикует технические control-plane метрики:
+
+- `aisafetyops_replay_run_info`
+- `aisafetyops_replay_events_generated_total`
+- `aisafetyops_replay_triggered_findings_generated_total`
+- `aisafetyops_replay_invalid_generated_total`
+- `aisafetyops_replay_late_generated_total`
+- `aisafetyops_replay_detector_errors_generated_total`
+- `aisafetyops_replay_current_rps`
+
+Где смотреть:
+
+- Grafana dashboard `AISafetyOps Replay Control`;
+- Prometheus UI `http://localhost:9090`;
+- Pushgateway UI `http://localhost:9091`.
+
+Если эти метрики не нужны:
+
+```bash
+./tools/scripts/run-replay.sh --disable-replay-metrics
+```
+
+```bash
+bash tools/scripts/run-live-generator.sh --disable-replay-metrics
+```
 
 ## 7. Как пользоваться системой после запуска
 

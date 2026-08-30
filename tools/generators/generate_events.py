@@ -5,11 +5,23 @@
 import argparse
 import json
 import random
+import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List
 
+GENERATOR_DIR = Path(__file__).resolve().parent
+if str(GENERATOR_DIR) not in sys.path:
+    sys.path.insert(0, str(GENERATOR_DIR))
+
+from replay_metrics import (
+    DEFAULT_PUSHGATEWAY_URL,
+    DEFAULT_REPLAY_METRICS_JOB,
+    ReplayMetricSummary,
+    build_metrics_payload,
+    safe_push_metrics,
+)
 
 PROMPT_INJECTION = "PROMPT_INJECTION"
 TOXICITY = "TOXICITY"
@@ -70,6 +82,16 @@ class ReplayOptions:
     late_tolerance_seconds: int
 
 
+@dataclass(frozen=True)
+class DeliveryMutationStats:
+    invalid_requests: int
+    invalid_responses: int
+    invalid_findings: int
+    late_requests: int
+    too_late_requests: int
+    detector_error_findings: int
+
+
 SCENARIOS: Dict[str, ScenarioProfile] = {
     "normal": ScenarioProfile((0.01, 0.35), (0.01, 0.40), 0.02, 0.005, 0.0),
     "attack": ScenarioProfile((0.72, 0.99), (0.55, 0.98), 0.20, 0.08, 1.0),
@@ -124,6 +146,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--out-of-orderness-seconds", type=int, default=DEFAULT_OUT_OF_ORDERNESS_SECONDS)
     parser.add_argument("--late-tolerance-seconds", type=int, default=DEFAULT_LATE_TOLERANCE_SECONDS)
+    parser.add_argument("--pushgateway-url", default=DEFAULT_PUSHGATEWAY_URL)
+    parser.add_argument("--replay-metrics-job", default=DEFAULT_REPLAY_METRICS_JOB)
+    parser.add_argument("--disable-replay-metrics", action="store_true")
     return parser.parse_args()
 
 
@@ -404,8 +429,12 @@ def shift_event_time(row: dict, delta_seconds: int) -> dict:
 
 
 def apply_delivery_mode(batch: Dict[str, List[dict]], options: ReplayOptions) -> Dict[str, List[dict]]:
+    mutation_stats = DeliveryMutationStats(0, 0, 0, 0, 0, 0)
     if options.delivery_mode == "baseline":
-        return batch
+        return {
+            **batch,
+            "meta": build_batch_meta(batch, mutation_stats),
+        }
 
     requests = list(batch["requests"])
     responses = list(batch["responses"])
@@ -440,6 +469,14 @@ def apply_delivery_mode(batch: Dict[str, List[dict]], options: ReplayOptions) ->
         )
         apply_late_rows(0, late_count, late_delta_seconds)
         apply_late_rows(late_count, too_late_count, too_late_delta_seconds)
+        mutation_stats = DeliveryMutationStats(
+            mutation_stats.invalid_requests,
+            mutation_stats.invalid_responses,
+            mutation_stats.invalid_findings,
+            late_count,
+            too_late_count,
+            mutation_stats.detector_error_findings,
+        )
 
     if options.delivery_mode in ("invalid-events", "combined-chaos"):
         for request_index in request_indexes[-invalid_count:]:
@@ -447,6 +484,14 @@ def apply_delivery_mode(batch: Dict[str, List[dict]], options: ReplayOptions) ->
             responses[request_index] = mutate_invalid_row(responses[request_index])
             for finding_index in request_index_to_findings.get(request_index, []):
                 findings[finding_index] = mutate_invalid_row(findings[finding_index])
+        mutation_stats = DeliveryMutationStats(
+            invalid_count,
+            invalid_count,
+            invalid_count * len(GUARDRAILS),
+            mutation_stats.late_requests,
+            mutation_stats.too_late_requests,
+            mutation_stats.detector_error_findings,
+        )
 
     if options.delivery_mode in ("detector-errors", "combined-chaos"):
         for finding in findings[:error_count]:
@@ -457,12 +502,64 @@ def apply_delivery_mode(batch: Dict[str, List[dict]], options: ReplayOptions) ->
             if "confidence" in finding:
                 finding["confidence"] = clamp_confidence(finding["confidence"] * 0.55)
                 finding["triggered"] = False
+        mutation_stats = DeliveryMutationStats(
+            mutation_stats.invalid_requests,
+            mutation_stats.invalid_responses,
+            mutation_stats.invalid_findings,
+            mutation_stats.late_requests,
+            mutation_stats.too_late_requests,
+            error_count,
+        )
 
     return {
         "requests": requests,
         "responses": responses,
         "findings": findings,
+        "meta": build_batch_meta(
+            {
+                "requests": requests,
+                "responses": responses,
+                "findings": findings,
+            },
+            mutation_stats,
+        ),
     }
+
+
+def build_batch_meta(batch: Dict[str, List[dict]], mutation_stats: DeliveryMutationStats) -> dict:
+    return {
+        "invalidRequests": mutation_stats.invalid_requests,
+        "invalidResponses": mutation_stats.invalid_responses,
+        "invalidFindings": mutation_stats.invalid_findings,
+        "lateRequests": mutation_stats.late_requests,
+        "tooLateRequests": mutation_stats.too_late_requests,
+        "detectorErrorFindings": mutation_stats.detector_error_findings,
+        "triggeredFindings": len([row for row in batch["findings"] if row.get("triggered") is True]),
+        "totalRequests": len(batch["requests"]),
+        "totalResponses": len(batch["responses"]),
+        "totalFindings": len(batch["findings"]),
+    }
+
+
+def build_replay_metric_summary(batch: Dict[str, List[dict]]) -> ReplayMetricSummary:
+    meta = batch.get("meta", {})
+    return ReplayMetricSummary(
+        requests_generated=meta.get("totalRequests", len(batch["requests"])),
+        responses_generated=meta.get("totalResponses", len(batch["responses"])),
+        findings_generated=meta.get("totalFindings", len(batch["findings"])),
+        triggered_findings_generated=meta.get(
+            "triggeredFindings",
+            len([row for row in batch["findings"] if row.get("triggered") is True]),
+        ),
+        invalid_generated=(
+            meta.get("invalidRequests", 0)
+            + meta.get("invalidResponses", 0)
+            + meta.get("invalidFindings", 0)
+        ),
+        late_generated=meta.get("lateRequests", 0) + meta.get("tooLateRequests", 0),
+        detector_errors_generated=meta.get("detectorErrorFindings", 0),
+        current_rps=meta.get("totalRequests", len(batch["requests"])),
+    )
 
 
 def generate_event_batch(
@@ -622,6 +719,21 @@ def main() -> None:
     write_jsonl(out_dir / "agent-requests.jsonl", batch["requests"])
     write_jsonl(out_dir / "agent-responses.jsonl", batch["responses"])
     write_jsonl(out_dir / "guardrail-findings.jsonl", batch["findings"])
+    if not args.disable_replay_metrics:
+        push_error = safe_push_metrics(
+            args.pushgateway_url,
+            args.replay_metrics_job,
+            build_metrics_payload(
+                scenario=args.business_scenario,
+                delivery_mode=args.delivery_mode,
+                source_kind="replay",
+                agent_id=args.agent_id,
+                summary=build_replay_metric_summary(batch),
+                status="completed",
+            ),
+        )
+        if push_error is not None:
+            print(f"{push_error}. Status: не исправлено")
 
 
 if __name__ == "__main__":
