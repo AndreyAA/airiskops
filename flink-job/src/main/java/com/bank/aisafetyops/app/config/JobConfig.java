@@ -133,6 +133,12 @@ public record JobConfig(
                                 yamlConfig,
                                 JobConfigOptions.ARG_BASIC_INCIDENTS_TOPIC,
                                 JobConfigOptions.DEFAULT_BASIC_INCIDENTS_TOPIC
+                        ),
+                        readString(
+                                parameters,
+                                yamlConfig,
+                                JobConfigOptions.ARG_GUARDRAIL_QUALITY_METRICS_TOPIC,
+                                JobConfigOptions.DEFAULT_GUARDRAIL_QUALITY_METRICS_TOPIC
                         )
                 ),
                 new IncidentConfig(

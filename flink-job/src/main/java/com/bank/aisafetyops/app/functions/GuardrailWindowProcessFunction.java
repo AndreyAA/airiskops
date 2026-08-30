@@ -89,6 +89,7 @@ public final class GuardrailWindowProcessFunction extends
                 aggregate.systemPromptLeakageTriggeredCount(),
                 aggregate.inputTokens(),
                 aggregate.outputTokens(),
+                aggregate.confidenceCount(),
                 aggregate.minConfidence(),
                 aggregate.avgConfidence(),
                 aggregate.maxConfidence(),

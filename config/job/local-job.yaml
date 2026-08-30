@@ -9,6 +9,7 @@ invalidEventsTopic: invalid-events
 lateEventsTopic: late-events
 guardrailAggregatesTopic: guardrail-aggregates
 basicIncidentsTopic: basic-incidents
+guardrailQualityMetricsTopic: guardrail-quality-metrics
 windowType: tumbling-event-time
 aggregateWindowMinutes:
   - 1

@@ -192,6 +192,10 @@ public final class GuardrailAggregateAccumulator implements Serializable {
         return List.copyOf(triggeredConfidenceValues);
     }
 
+    public long confidenceCount() {
+        return confidenceCount;
+    }
+
     private static String firstNonBlank(String left, String right) {
         if (left != null && !left.isBlank()) {
             return left;

@@ -2,6 +2,7 @@ package com.bank.aisafetyops.app.usecase;
 
 import com.bank.aisafetyops.app.config.JobConfig;
 import com.bank.aisafetyops.app.functions.GuardrailAggregateKeySelector;
+import com.bank.aisafetyops.app.functions.GuardrailQualityMetricFunction;
 import com.bank.aisafetyops.app.functions.GuardrailWindowAggregateFunction;
 import com.bank.aisafetyops.app.functions.GuardrailWindowProcessFunction;
 import com.bank.aisafetyops.app.functions.ParseAndValidateFunction;
@@ -20,6 +21,7 @@ import com.bank.aisafetyops.infra.source.KafkaSourceFactory;
 import com.bank.aisafetyops.model.BasicIncident;
 import com.bank.aisafetyops.model.EventType;
 import com.bank.aisafetyops.model.GuardrailAggregateKey;
+import com.bank.aisafetyops.model.GuardrailQualityMetric;
 import com.bank.aisafetyops.model.GuardrailWindowAggregate;
 import com.bank.aisafetyops.model.IncidentPolicy;
 import com.bank.aisafetyops.model.InvalidEvent;
@@ -139,6 +141,17 @@ public final class IncrementOneTopologyBuilder {
                 .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().guardrailAggregatesTopic()))
                 .uid(JobTopology.GUARDRAIL_AGGREGATES_SINK_UID)
                 .name(JobTopology.GUARDRAIL_AGGREGATES_SINK_NAME);
+
+        DataStream<GuardrailQualityMetric> qualityMetrics = combinedAggregates
+                .map(new GuardrailQualityMetricFunction())
+                .uid(JobTopology.GUARDRAIL_QUALITY_UID)
+                .name(JobTopology.GUARDRAIL_QUALITY_NAME);
+
+        qualityMetrics
+                .map(JsonSerde::toJson)
+                .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().guardrailQualityMetricsTopic()))
+                .uid(JobTopology.GUARDRAIL_QUALITY_SINK_UID)
+                .name(JobTopology.GUARDRAIL_QUALITY_SINK_NAME);
 
         if (config.incidentConfig().enabled()) {
             BroadcastStream<IncidentPolicy> policyUpdates = env

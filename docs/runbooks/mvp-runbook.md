@@ -163,7 +163,7 @@ bash tools/scripts/submit-job.sh
 - один пользовательский запрос = набор связанных событий;
 - связь строится по `agentId`, `sessionId`, `requestId`;
 - для одного `requestId` обычно есть `AGENT_REQUEST`, `AGENT_RESPONSE` и до 4 `GUARDRAIL_FINDING`;
-- основные выходные topics для текущего MVP: `normalized-events`, `invalid-events`, `late-events`, `guardrail-aggregates`, `basic-incidents`.
+- основные выходные topics для текущего MVP: `normalized-events`, `invalid-events`, `late-events`, `guardrail-aggregates`, `basic-incidents`, `guardrail-quality-metrics`.
 
 ## 5. Старт локального стенда
 
@@ -215,6 +215,7 @@ bash tools/scripts/cleanup-local.sh
   - `AISafetyOps Flink Overview`;
   - `AISafetyOps Business Metrics`;
   - `AISafetyOps Capacity And Performance`.
+  - `AISafetyOps Detector Quality`.
   - `AISafetyOps Replay Control`.
 
 ### Шаг 2. Инициализировать topics

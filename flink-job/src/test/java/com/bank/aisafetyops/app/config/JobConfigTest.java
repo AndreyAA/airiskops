@@ -51,6 +51,7 @@ class JobConfigTest {
                 lateEventsTopic: late-out
                 guardrailAggregatesTopic: guardrail-aggregates-out
                 basicIncidentsTopic: basic-incidents-out
+                guardrailQualityMetricsTopic: quality-out
                 windowType: tumbling-event-time
                 aggregateWindowMinutes:
                   - 1
@@ -93,6 +94,7 @@ class JobConfigTest {
         assertEquals("late-out", config.outputTopics().lateEventsTopic());
         assertEquals("guardrail-aggregates-out", config.outputTopics().guardrailAggregatesTopic());
         assertEquals("basic-incidents-out", config.outputTopics().basicIncidentsTopic());
+        assertEquals("quality-out", config.outputTopics().guardrailQualityMetricsTopic());
         assertEquals("tumbling-event-time", config.runtimeContract().windowType());
         assertEquals(2, config.runtimeContract().aggregateWindows().size());
         assertEquals(Duration.ofMinutes(1), config.runtimeContract().aggregateWindows().get(0));

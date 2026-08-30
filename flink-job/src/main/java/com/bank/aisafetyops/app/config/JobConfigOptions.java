@@ -16,6 +16,7 @@ public final class JobConfigOptions {
     public static final String ARG_LATE_EVENTS_TOPIC = "lateEventsTopic";
     public static final String ARG_GUARDRAIL_AGGREGATES_TOPIC = "guardrailAggregatesTopic";
     public static final String ARG_BASIC_INCIDENTS_TOPIC = "basicIncidentsTopic";
+    public static final String ARG_GUARDRAIL_QUALITY_METRICS_TOPIC = "guardrailQualityMetricsTopic";
     public static final String ARG_OUT_OF_ORDERNESS_SECONDS = "outOfOrdernessSeconds";
     public static final String ARG_IDLE_TIMEOUT_MINUTES = "idleTimeoutMinutes";
     public static final String ARG_LATE_TOLERANCE_MINUTES = "lateToleranceMinutes";
@@ -47,6 +48,7 @@ public final class JobConfigOptions {
     public static final String DEFAULT_LATE_EVENTS_TOPIC = "late-events";
     public static final String DEFAULT_GUARDRAIL_AGGREGATES_TOPIC = "guardrail-aggregates";
     public static final String DEFAULT_BASIC_INCIDENTS_TOPIC = "basic-incidents";
+    public static final String DEFAULT_GUARDRAIL_QUALITY_METRICS_TOPIC = "guardrail-quality-metrics";
     public static final long DEFAULT_OUT_OF_ORDERNESS_SECONDS = 30L;
     public static final long DEFAULT_IDLE_TIMEOUT_MINUTES = 1L;
     public static final long DEFAULT_LATE_TOLERANCE_MINUTES = 5L;

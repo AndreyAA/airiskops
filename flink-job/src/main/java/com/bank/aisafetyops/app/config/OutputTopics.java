@@ -11,6 +11,7 @@ public record OutputTopics(
         String invalidEventsTopic,
         String lateEventsTopic,
         String guardrailAggregatesTopic,
-        String basicIncidentsTopic
+        String basicIncidentsTopic,
+        String guardrailQualityMetricsTopic
 ) {
 }

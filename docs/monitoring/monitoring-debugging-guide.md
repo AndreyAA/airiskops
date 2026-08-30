@@ -145,6 +145,7 @@ URL:
 - dashboard `AISafetyOps Flink Overview`;
 - dashboard `AISafetyOps Business Metrics`;
 - dashboard `AISafetyOps Capacity And Performance`;
+- dashboard `AISafetyOps Detector Quality`;
 - dashboard `AISafetyOps Replay Control`;
 - папка dashboard: `AISafetyOps`.
 
@@ -420,6 +421,39 @@ URL:
 
 - сначала подтвердить, что генератор реально создал нужный сценарный сигнал;
 - потом уже анализировать, как этот сигнал обработала Flink job.
+
+### Dashboard `AISafetyOps Detector Quality`
+
+Это dashboard для ответа на вопрос:
+
+- растёт ли реальный risk signal;
+- или деградирует качество самих guardrail detectors.
+
+Панели:
+
+- `1m Quality Emissions`
+  - сколько quality snapshots было выпущено за минутное окно;
+- `Max Detector Error Rate 1m`
+  - максимальная доля detector errors по guardrail-ам в последнем 1m срезе;
+- `Max Missing Confidence Rate 1m`
+  - максимальная доля отсутствующего `confidence` для confidence-based guardrail-ов;
+- `Max Detector Latency 1m`
+  - верхний хвост detector latency по последнему минутному quality snapshot;
+- `Last Detector Error Rate By Guardrail Window`
+  - quality деградация по каждому guardrail и окну;
+- `Last Trigger Rate By Guardrail Window`
+  - помогает отличать всплеск атак от системной деградации;
+- `Last Confidence Coverage Rate By Guardrail Window`
+  - показывает полноту confidence telemetry;
+- `Detector Latency By Guardrail Window`
+  - средняя и максимальная latency детекторов по каждому окну.
+
+Практический смысл:
+
+- если `triggerRate` растёт, а `detectorErrorRate` и `missingConfidenceRate` низкие
+  - вероятнее всего, вы видите реальный риск-сигнал;
+- если одновременно растут `detectorErrorRate`, `missingConfidenceRate` или latency
+  - сначала надо проверить качество detector-а и ingest path.
 
 ## 4. Что мониторить всегда
 

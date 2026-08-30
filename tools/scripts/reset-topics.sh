@@ -16,6 +16,7 @@ TOPICS=(
   "late-events"
   "guardrail-aggregates"
   "basic-incidents"
+  "guardrail-quality-metrics"
 )
 
 cd "$ROOT_DIR"

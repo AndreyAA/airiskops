@@ -50,6 +50,10 @@ public final class JobTopology {
     public static final String GUARDRAIL_AGGREGATES_SERIALIZE_NAME = "Serialize Guardrail Aggregates";
     public static final String GUARDRAIL_AGGREGATES_SINK_UID = "kafka-guardrail-aggregates";
     public static final String GUARDRAIL_AGGREGATES_SINK_NAME = "Kafka Guardrail Aggregates";
+    public static final String GUARDRAIL_QUALITY_UID = "derive-guardrail-quality";
+    public static final String GUARDRAIL_QUALITY_NAME = "Derive Guardrail Quality";
+    public static final String GUARDRAIL_QUALITY_SINK_UID = "kafka-guardrail-quality";
+    public static final String GUARDRAIL_QUALITY_SINK_NAME = "Kafka Guardrail Quality";
     public static final String RUNTIME_CONTRACT_UID = "runtime-contract-metrics";
     public static final String RUNTIME_CONTRACT_NAME = "Runtime Contract Metrics";
     public static final String INCIDENT_EVALUATOR_UID = "session-incident-evaluator";

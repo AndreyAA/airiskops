@@ -331,10 +331,59 @@
 
 ### 5.1 `guardrail-quality-metrics`
 
-Потенциальное назначение:
+Назначение:
 
 - отдельный поток quality-сигналов по работе детекторов;
-- метрики полноты, ошибок, нестабильности и дрейфа.
+- отделение качества guardrail-ов от основного business risk signal;
+- отдельная витрина для monitoring, rollout и quality review правил.
+
+Что сейчас публикуется:
+
+- window-level quality snapshot по каждому `guardrail` и `windowName`;
+- `triggerRate`;
+- `detectorErrorRate`;
+- `missingConfidenceRate` для confidence-based guardrail-ов;
+- `confidenceCoverageRate`;
+- `avg/max detector latency`.
+
+Пример сообщения:
+
+```json
+{
+  "tenantId": "agent-risk-01",
+  "agentId": "agent-risk-01",
+  "guardrailName": "PROMPT_INJECTION",
+  "guardrailVersion": "pi-v1",
+  "policyVersion": "policy-v1",
+  "modelName": "gpt-4.1-mini",
+  "windowName": "1m",
+  "windowStartMillis": 1724673600000,
+  "windowEndMillis": 1724673660000,
+  "guardrailFindingCount": 20,
+  "triggeredCount": 7,
+  "triggerRate": 0.35,
+  "detectorErrorCount": 1,
+  "detectorErrorRate": 0.05,
+  "missingConfidenceCount": 2,
+  "missingConfidenceRate": 0.1,
+  "confidenceCoverageRate": 0.9,
+  "confidenceCount": 18,
+  "minDetectorLatencyMs": 12,
+  "avgDetectorLatencyMs": 27.4,
+  "maxDetectorLatencyMs": 95
+}
+```
+
+Как это читать:
+
+- рост `triggerRate` при нормальном `detectorErrorRate`
+  - чаще означает реальный рост risk pattern;
+- рост `detectorErrorRate`
+  - чаще означает деградацию detector-а или нормализации;
+- рост `missingConfidenceRate`
+  - обычно означает дефект confidence-based detector-а или schema drift;
+- рост `avg/max detector latency`
+  - сигнал перегрузки detector-а или деградации upstream/downstream path.
 
 ### 5.2 `policy-updates`
 
@@ -342,14 +391,13 @@
 
 - поток обновлений policy для будущего dynamic rules / broadcast state сценария.
 
-### 5.3 `guardrail-quality-metrics`
+### 5.2 `policy-updates`
 
 Потенциальное назначение:
 
-- отдельный поток quality-сигналов по работе детекторов;
-- агрегаты по invalid/late/error degradation вне основного incident stream.
+- поток обновлений policy для будущего dynamic rules / broadcast state сценария.
 
-### 5.4 `debug-incidents`
+### 5.3 `debug-incidents`
 
 Потенциальное назначение:
 

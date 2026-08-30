@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bank.aisafetyops.model.BasicIncident;
 import com.bank.aisafetyops.model.EventType;
+import com.bank.aisafetyops.model.GuardrailQualityMetric;
 import com.bank.aisafetyops.model.IncidentSeverity;
 import com.bank.aisafetyops.model.InvalidEvent;
 import com.bank.aisafetyops.model.LateEvent;
 import com.bank.aisafetyops.model.SafetyEvent;
+import com.bank.aisafetyops.model.WindowNames;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -74,5 +76,35 @@ class JsonSerdeTest {
         assertTrue(json.contains("\"incidentId\":\"incident-1\""));
         assertTrue(json.contains("\"severity\":\"HIGH\""));
         assertTrue(json.contains("\"appliedPolicyVersion\":\"policy-v2\""));
+    }
+
+    @Test
+    void serializesGuardrailQualityMetricToJson() {
+        String json = JsonSerde.toJson(new GuardrailQualityMetric(
+                "agent-risk-01",
+                "agent-risk-01",
+                "PROMPT_INJECTION",
+                "pi-v1",
+                "policy-v1",
+                "gpt-4.1-mini",
+                WindowNames.WINDOW_1_MINUTE,
+                1_000L,
+                61_000L,
+                10L,
+                4L,
+                0.4d,
+                1L,
+                0.1d,
+                2L,
+                0.2d,
+                0.8d,
+                8L,
+                10L,
+                20.0d,
+                80L
+        ));
+        assertTrue(json.contains("\"guardrailName\":\"PROMPT_INJECTION\""));
+        assertTrue(json.contains("\"detectorErrorRate\":0.1"));
+        assertTrue(json.contains("\"confidenceCoverageRate\":0.8"));
     }
 }

@@ -387,6 +387,7 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - dashboard `AISafetyOps Flink Overview` уже загружен автоматически;
 - dashboard `AISafetyOps Business Metrics` уже загружен автоматически;
 - dashboard `AISafetyOps Capacity And Performance` уже загружен автоматически;
+- dashboard `AISafetyOps Detector Quality` уже загружен автоматически;
 - dashboard `AISafetyOps Replay Control` уже загружен автоматически;
 - папка dashboard: `AISafetyOps`.
 
@@ -590,6 +591,26 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - во время demo-сценариев;
 - когда надо убедиться, что запущен нужный `businessScenario` и `deliveryMode`;
 - когда надо отделить проблему генератора от проблемы обработки во Flink.
+
+### `AISafetyOps Detector Quality`
+
+Это dashboard для качества самих guardrail detectors.
+
+Что показывает:
+
+- `detectorErrorRate`;
+- `triggerRate`;
+- `missingConfidenceRate`;
+- `confidenceCoverageRate`;
+- `avg/max detector latency`;
+- разрез по `guardrail` и по окнам `1m` и `5m`.
+
+Когда смотреть:
+
+- при сценарии `detector-errors`;
+- после обновления detector rules или parser logic;
+- когда нужно отличить реальный всплеск атак от деградации телеметрии/детектора;
+- при rollout новых версий guardrail-ов.
 
 Когда смотреть:
 

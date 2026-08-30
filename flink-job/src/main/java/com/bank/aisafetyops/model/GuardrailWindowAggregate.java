@@ -23,6 +23,7 @@ public record GuardrailWindowAggregate(
         long systemPromptLeakageTriggeredCount,
         long inputTokens,
         long outputTokens,
+        long confidenceCount,
         Double minConfidence,
         Double avgConfidence,
         Double maxConfidence,
