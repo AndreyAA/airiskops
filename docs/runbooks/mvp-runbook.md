@@ -54,6 +54,21 @@
 - `JSON` как стартовый транспортный формат событий;
 - `YAML` для policy/config defaults.
 
+## 2.1 Версия Flink в MVP
+
+Текущая версия Flink в этом репозитории: `Apache Flink 1.20.2`.
+
+Где это зафиксировано:
+
+- Maven property `flink.version=1.20.2` в [flink-job/pom.xml](../../flink-job/pom.xml);
+- Docker image `flink:1.20.2-scala_2.12-java17` для `jobmanager` и `taskmanager` в [docker-compose.yml](../../deployment/local/docker-compose.yml).
+
+Почему это важно:
+
+- ветка `Flink 2.x` уже существует;
+- текущий локальный MVP пока не переводится на `2.x` автоматически;
+- для этого MVP базовый приоритет сейчас не "самая новая версия", а воспроизводимость стенда, стабильность локального demo-сценария и предсказуемость Kafka/Flink runtime behavior.
+
 ## 3. Структура файлов
 
 - [docker-compose.yml](../../deployment/local/docker-compose.yml)

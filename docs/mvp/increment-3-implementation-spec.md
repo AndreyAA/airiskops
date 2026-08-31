@@ -541,7 +541,8 @@
 
 ##### Runtime contract visibility
 
-- `airiskops_runtime_contract_info{window_type=...,window_sizes=...,delivery_guarantee=...}`
+- Prometheus-exported runtime contract info metric:
+  `flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_type_delivery_guarantee_analysis_mode_aggregate_windows_info{window_type=...,aggregate_windows=...,delivery_guarantee=...,analysis_mode="nrtp"}`
 - `airiskops_runtime_out_of_orderness_seconds`
 - `airiskops_runtime_late_tolerance_minutes`
 - `airiskops_runtime_checkpoint_interval_seconds`

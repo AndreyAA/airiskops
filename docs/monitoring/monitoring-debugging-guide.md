@@ -556,7 +556,7 @@ flink_taskmanager_job_task_currentInputWatermark{job_name="AIRiskOps_MVP_Increme
 #### Какой runtime contract реально активен
 
 ```promql
-flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name="AIRiskOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_type_delivery_guarantee_analysis_mode_aggregate_windows_info{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -575,7 +575,7 @@ flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name="AI
 #### Какие окна реально настроены
 
 ```promql
-flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_size_seconds{job_name="AIRiskOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_window_size_seconds{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:

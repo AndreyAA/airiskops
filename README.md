@@ -56,6 +56,21 @@
 - текущие команды и runbook ориентированы именно на локальную машину, а не на Kubernetes или managed Flink;
 - Grafana credentials `admin/admin` предназначены только для локального стенда.
 
+## Flink Version
+
+Текущий MVP использует `Apache Flink 1.20.2`.
+
+Это зафиксировано в двух местах:
+
+- Maven runtime и test dependencies в [flink-job/pom.xml](flink-job/pom.xml);
+- Docker images `jobmanager` и `taskmanager` в [deployment/local/docker-compose.yml](deployment/local/docker-compose.yml).
+
+Что важно:
+
+- в экосистеме уже существует ветка `Flink 2.x`;
+- этот репозиторий пока намеренно остается на `1.20.2`;
+- причина прагматическая: для MVP важнее стабильный локальный стенд, предсказуемая совместимость коннекторов и воспроизводимый demo/runtime path.
+
 ## Quick Start
 
 ### Быстрый локальный старт

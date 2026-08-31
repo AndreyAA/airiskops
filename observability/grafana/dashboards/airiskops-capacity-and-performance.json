@@ -48,7 +48,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name=\"AIRiskOps_MVP_Increment_1\"}",
+          "expr": "flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_type_delivery_guarantee_analysis_mode_aggregate_windows_info{job_name=\"AIRiskOps_MVP_Increment_1\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "{{window_type}} / {{delivery_guarantee}} / {{aggregate_windows}}",
@@ -278,7 +278,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_size_seconds{job_name=\"AIRiskOps_MVP_Increment_1\"}",
+          "expr": "flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_window_size_seconds{job_name=\"AIRiskOps_MVP_Increment_1\"}",
           "format": "table",
           "instant": true,
           "legendFormat": "{{window}}",

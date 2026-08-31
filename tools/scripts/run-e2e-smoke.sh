@@ -387,7 +387,7 @@ assert_prometheus_query_nonzero \
   "sum(flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name=\"AIRiskOps_MVP_Increment_1\"})"
 assert_prometheus_query_nonzero \
   "Runtime contract info metric is present" \
-  "count(flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name=\"AIRiskOps_MVP_Increment_1\"})"
+  "count(flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_type_delivery_guarantee_analysis_mode_aggregate_windows_info{job_name=\"AIRiskOps_MVP_Increment_1\"})"
 assert_prometheus_query_nonzero \
   "Incident open sessions metric is present" \
   "count(flink_taskmanager_job_task_operator_airiskops_incident_open_sessions{job_name=\"AIRiskOps_MVP_Increment_1\"})"
