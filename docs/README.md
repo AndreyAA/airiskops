@@ -87,6 +87,11 @@
   - результаты и бизнес-value первого этапа.
 - [stage-2-results.md](mvp/stage-2-results.md)
   - результаты и бизнес-value второго этапа.
+- `rules/`
+  - точечные спецификации отдельных incident rules и шаблоны для следующих правил.
+- [rules/pi-and-toxic-requirements.md](mvp/rules/pi-and-toxic-requirements.md)
+  - нормативная спецификация rule `PI_AND_TOXIC`;
+  - edge cases, config semantics, payload requirements и test matrix.
 
 ## Принцип именования
 
