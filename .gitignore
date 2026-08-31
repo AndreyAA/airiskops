@@ -3,6 +3,8 @@
 
 .idea/
 *.iml
+__pycache__/
+*.pyc
 
 runtime/replay/latest/
 runtime/policies/
