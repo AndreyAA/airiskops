@@ -22,6 +22,98 @@
 - `LOOPING`
 - `SYSTEM_PROMPT_LEAKAGE`
 
+## Prerequisites
+
+Для локального запуска и проверки репозитория нужны:
+
+- `Linux` или совместимая Unix-like среда с `bash`
+- `Docker` с поддержкой `docker compose`
+- `Java 17`
+- `Maven`
+- `Python 3`
+- доступ к локальным портам `3000`, `8081`, `9090`, `9092`, `9249`, `9250`
+
+Что используется на практике:
+
+- `Docker` и `docker compose` нужны для Kafka, Flink, Prometheus и Grafana
+- `Maven` нужен для сборки `flink-job`
+- `Python 3` нужен для replay/live generators и их локальных тестов
+
+## Supported Setup
+
+На текущем этапе официально поддерживается такой сценарий:
+
+- локальный запуск на одной машине;
+- single-node Docker-based контур;
+- `Kafka`, `Flink JobManager`, `Flink TaskManager`, `Prometheus`, `Grafana` в `docker compose`;
+- локальная сборка job через `Maven`;
+- локальные replay и live generators через `Python 3`.
+
+Что важно понимать:
+
+- это `local MVP`, а не production deployment;
+- контур рассчитан на локальную разработку, demo и инженерную валидацию;
+- текущие команды и runbook ориентированы именно на локальную машину, а не на Kubernetes или managed Flink;
+- Grafana credentials `admin/admin` предназначены только для локального стенда.
+
+## Quick Start
+
+### Быстрый локальный старт
+
+Если нужно быстро поднять локальный контур без очистки существующего state:
+
+```bash
+bash tools/scripts/init.sh
+```
+
+Что делает скрипт:
+
+- поднимает Kafka, Flink, Prometheus и Grafana;
+- создает Kafka topics;
+- загружает bootstrap policy;
+- собирает job jar;
+- отправляет Flink job в локальный кластер.
+
+После этого можно загрузить данные:
+
+```bash
+bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 --agent-id agent-risk-01
+```
+
+Быстрая проверка результатов:
+
+```bash
+bash tools/scripts/check-output-topics.sh
+```
+
+Интерфейсы локального стенда:
+
+- Flink UI: `http://localhost:8081`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3000`
+
+### Полная проверка с нуля
+
+Если нужен полный destructive end-to-end smoke test с очисткой локального state:
+
+```bash
+bash tools/scripts/run-e2e-smoke.sh
+```
+
+Для неинтерактивного запуска:
+
+```bash
+bash tools/scripts/run-e2e-smoke.sh --yes
+```
+
+Этот сценарий:
+
+- очищает локальное Docker и runtime state;
+- поднимает стенд заново;
+- собирает и отправляет job;
+- публикует стартовый replay dataset;
+- проверяет Kafka outputs, Prometheus и Grafana.
+
 ## Архитектура репозитория
 
 Репозиторий разделён по зонам ответственности, чтобы runtime-код Flink не смешивался с observability, tooling и документацией.
