@@ -1,10 +1,10 @@
-# Flink для AISafetyOps: локальный MVP runbook
+# Flink для AIRiskOps: локальный MVP runbook
 
 Дата актуальности: 2026-08-31
 
 ## Глоссарий
 
-- **Apache Flink** — distributed stream processing engine, на котором исполняется локальный AISafetyOps MVP.
+- **Apache Flink** — distributed stream processing engine, на котором исполняется локальный AIRiskOps MVP.
 - **Job** — логический Flink-пайплайн, который вы собираете и отправляете в кластер.
 - **JobManager** — координатор Flink job: scheduling, recovery, checkpoints.
 - **TaskManager** — worker-процесс Flink, который исполняет subtasks.
@@ -125,7 +125,7 @@ bash tools/scripts/submit-job.sh
 
 После submit проверить новый контракт в Grafana:
 
-- dashboard `AISafetyOps Capacity And Performance`;
+- dashboard `AIRiskOps Capacity And Performance`;
 - panel `Runtime Contract Info`;
 - panel `Configured Aggregate Windows`.
 
@@ -212,10 +212,10 @@ bash tools/scripts/cleanup-local.sh
 - поднимает TaskManager;
 - поднимает Prometheus.
 - поднимает Grafana с dashboards:
-  - `AISafetyOps Flink Overview`;
-  - `AISafetyOps Business Metrics`;
-  - `AISafetyOps Capacity And Performance`.
-  - `AISafetyOps Detector Quality`.
+  - `AIRiskOps Flink Overview`;
+  - `AIRiskOps Business Metrics`;
+  - `AIRiskOps Capacity And Performance`.
+  - `AIRiskOps Detector Quality`.
 
 ### Шаг 2. Инициализировать topics
 
@@ -280,7 +280,7 @@ bash tools/scripts/reset-topics.sh
 
 Что делает:
 
-- собирает актуальный fat jar локального AISafetyOps MVP;
+- собирает актуальный fat jar локального AIRiskOps MVP;
 - отправляет job в локальный Flink cluster;
 - job начинает читать `agent-requests`, `agent-responses`, `guardrail-findings`.
 

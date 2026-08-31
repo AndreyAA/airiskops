@@ -1,4 +1,4 @@
-# Flink для AISafetyOps: мониторинг, наблюдаемость и отладка
+# Flink для AIRiskOps: мониторинг, наблюдаемость и отладка
 
 ## Глоссарий
 
@@ -45,7 +45,7 @@
 
 Этот файл дополняет основной manual и отвечает на три практических вопроса:
 
-1. Что именно мониторить в Flink job под AISafetyOps.
+1. Что именно мониторить в Flink job под AIRiskOps.
 2. Как понять, на каком этапе пайплайна проблема.
 3. Как отлаживать ошибки и деградации без гадания по логам.
 
@@ -126,7 +126,7 @@ Flink нельзя эффективно мониторить только по �
 - для проверки Kafka sink сначала смотреть topic offsets и Flink metrics;
 - `console-consumer` на локальном стенде может давать ложный `TimeoutException`, даже когда сообщения уже записаны в topic.
 
-## 3.1 Локальная Grafana для AISafetyOps
+## 3.1 Локальная Grafana для AIRiskOps
 
 В локальном контуре Grafana поднимается вместе с остальными сервисами.
 
@@ -142,11 +142,11 @@ URL:
 Что уже настроено:
 
 - datasource `Prometheus`;
-- dashboard `AISafetyOps Flink Overview`;
-- dashboard `AISafetyOps Business Metrics`;
-- dashboard `AISafetyOps Capacity And Performance`;
-- dashboard `AISafetyOps Detector Quality`;
-- папка dashboard: `AISafetyOps`.
+- dashboard `AIRiskOps Flink Overview`;
+- dashboard `AIRiskOps Business Metrics`;
+- dashboard `AIRiskOps Capacity And Performance`;
+- dashboard `AIRiskOps Detector Quality`;
+- папка dashboard: `AIRiskOps`.
 
 Что смотреть в dashboard в первую очередь:
 
@@ -166,7 +166,7 @@ URL:
   - движется ли event time;
 - `Guardrail Aggregate Emissions`
   - публикуются ли `1m` и `5m` aggregates;
-- `AISafetyOps Domain Counters`
+- `AIRiskOps Domain Counters`
   - растут ли `valid`, `invalid`, `late`, `on_time`.
 - `Runtime Contract Info`
   - какой window type, delivery guarantee и набор aggregate windows реально активны.
@@ -212,7 +212,7 @@ URL:
 
 Ниже описание всех готовых dashboards и панелей, которые уже provisioned в локальном стенде.
 
-### Dashboard `AISafetyOps Flink Overview`
+### Dashboard `AIRiskOps Flink Overview`
 
 Это operational dashboard для ответа на вопрос:
 
@@ -258,12 +258,12 @@ URL:
   - показывает, сколько агрегатов Flink уже выпустил по окнам `1m` и `5m`;
   - полезна для ответа на вопрос, закрываются ли окна вообще;
   - если `1m` растёт, а `5m` нет, это нормально на коротком горизонте наблюдения.
-- `AISafetyOps Domain Counters`
+- `AIRiskOps Domain Counters`
   - показывает доменные counters по типам обработки: `valid`, `invalid`, `late`, `on_time`;
   - рост `invalid` означает проблемы со schema/validation;
   - рост `late` означает слишком поздние события или неверные ожидания по event time.
 
-### Dashboard `AISafetyOps Business Metrics`
+### Dashboard `AIRiskOps Business Metrics`
 
 Это business/analytical dashboard для ответа на вопрос:
 
@@ -333,16 +333,16 @@ URL:
 
 Как использовать оба dashboard вместе:
 
-- сначала открыть `AISafetyOps Flink Overview`
+- сначала открыть `AIRiskOps Flink Overview`
   - проверить, что job жива и метрики runtime выглядят здоровыми;
-- затем открыть `AISafetyOps Business Metrics`
+- затем открыть `AIRiskOps Business Metrics`
   - убедиться, что бизнес-сигналы действительно текут и агрегируются;
 - если business dashboard пустой, а overview живой
   - обычно проблема в topic data, watermark, окнах или том, что вы смотрите слишком рано;
 - если business dashboard растёт, а overview показывает failed checkpoints или latency spike
   - данные пока идут, но runtime уже деградирует и может скоро упасть.
 
-### Dashboard `AISafetyOps Capacity And Performance`
+### Dashboard `AIRiskOps Capacity And Performance`
 
 Это dashboard для ответа на вопросы:
 
@@ -388,7 +388,7 @@ URL:
 - `Current Input Watermark By Task`
   - нужен для понимания, движется ли event time по веткам job.
 
-### Dashboard `AISafetyOps Detector Quality`
+### Dashboard `AIRiskOps Detector Quality`
 
 Это dashboard для ответа на вопрос:
 
@@ -444,7 +444,7 @@ URL:
 - watermark перестал двигаться;
 - incidents/output events внезапно стали почти нулевыми.
 
-### 4.4 Минимальный набор Prometheus-запросов для AISafetyOps
+### 4.4 Минимальный набор Prometheus-запросов для AIRiskOps
 
 Ниже приведён набор запросов, которые стоит запускать вручную даже при наличии Grafana.
 
@@ -466,7 +466,7 @@ flink_jobmanager_numRunningJobs
 #### Сколько checkpoint завершилось
 
 ```promql
-flink_jobmanager_job_numberOfCompletedCheckpoints{job_name="AISafetyOps_MVP_Increment_1"}
+flink_jobmanager_job_numberOfCompletedCheckpoints{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -481,7 +481,7 @@ flink_jobmanager_job_numberOfCompletedCheckpoints{job_name="AISafetyOps_MVP_Incr
 #### Есть ли failed checkpoints
 
 ```promql
-flink_jobmanager_job_numberOfFailedCheckpoints{job_name="AISafetyOps_MVP_Increment_1"}
+flink_jobmanager_job_numberOfFailedCheckpoints{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -496,7 +496,7 @@ flink_jobmanager_job_numberOfFailedCheckpoints{job_name="AISafetyOps_MVP_Increme
 #### Сколько длился последний checkpoint
 
 ```promql
-flink_jobmanager_job_lastCheckpointDuration{job_name="AISafetyOps_MVP_Increment_1"}
+flink_jobmanager_job_lastCheckpointDuration{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -511,7 +511,7 @@ flink_jobmanager_job_lastCheckpointDuration{job_name="AISafetyOps_MVP_Increment_
 
 ```promql
 sum by (task_name) (
-  rate(flink_taskmanager_job_task_numRecordsInPerSecond{job_name="AISafetyOps_MVP_Increment_1"}[1m])
+  rate(flink_taskmanager_job_task_numRecordsInPerSecond{job_name="AIRiskOps_MVP_Increment_1"}[1m])
 )
 ```
 
@@ -527,7 +527,7 @@ sum by (task_name) (
 
 ```promql
 sum by (task_name) (
-  rate(flink_taskmanager_job_task_numRecordsOutPerSecond{job_name="AISafetyOps_MVP_Increment_1"}[1m])
+  rate(flink_taskmanager_job_task_numRecordsOutPerSecond{job_name="AIRiskOps_MVP_Increment_1"}[1m])
 )
 ```
 
@@ -542,7 +542,7 @@ sum by (task_name) (
 #### Движется ли watermark
 
 ```promql
-flink_taskmanager_job_task_currentInputWatermark{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_currentInputWatermark{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -556,7 +556,7 @@ flink_taskmanager_job_task_currentInputWatermark{job_name="AISafetyOps_MVP_Incre
 #### Какой runtime contract реально активен
 
 ```promql
-flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_info{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -575,7 +575,7 @@ flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_info{job_name="
 #### Какие окна реально настроены
 
 ```promql
-flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_window_size_seconds{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_airiskops_runtime_contract_window_size_seconds{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -590,11 +590,11 @@ flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_window_size_sec
 #### Какой bounded disorder и late tolerance сейчас активны
 
 ```promql
-max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_out_of_orderness_seconds{job_name="AISafetyOps_MVP_Increment_1"})
+max(flink_taskmanager_job_task_operator_airiskops_runtime_contract_out_of_orderness_seconds{job_name="AIRiskOps_MVP_Increment_1"})
 ```
 
 ```promql
-max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_late_tolerance_seconds{job_name="AISafetyOps_MVP_Increment_1"})
+max(flink_taskmanager_job_task_operator_airiskops_runtime_contract_late_tolerance_seconds{job_name="AIRiskOps_MVP_Increment_1"})
 ```
 
 Показывает:
@@ -609,11 +609,11 @@ max(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_late_tolera
 #### Публикуются ли оконные guardrail aggregates
 
 ```promql
-flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 ```promql
-flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -628,19 +628,19 @@ flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_5m{job_nam
 #### Растут ли бизнес-счётчики pipeline
 
 ```promql
-flink_taskmanager_job_task_operator_valid_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_valid_events_total{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 ```promql
-flink_taskmanager_job_task_operator_invalid_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_invalid_events_total{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 ```promql
-flink_taskmanager_job_task_operator_late_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_late_events_total{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 ```promql
-flink_taskmanager_job_task_operator_on_time_events_total{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_on_time_events_total{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -656,7 +656,7 @@ flink_taskmanager_job_task_operator_on_time_events_total{job_name="AISafetyOps_M
 #### Жив ли Kafka sink path
 
 ```promql
-flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AISafetyOps_MVP_Increment_1"}
+flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AIRiskOps_MVP_Increment_1"}
 ```
 
 Показывает:
@@ -671,8 +671,8 @@ flink_taskmanager_job_task_operator_KafkaProducer_select_rate{job_name="AISafety
 
 ```promql
 max by (guardrail, window) (
-  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p50_confidence{
-    job_name="AISafetyOps_MVP_Increment_1",
+  flink_taskmanager_job_task_operator_airiskops_window_guardrail_last_p50_confidence{
+    job_name="AIRiskOps_MVP_Increment_1",
     guardrail=~"PROMPT_INJECTION|TOXICITY"
   }
 )
@@ -691,8 +691,8 @@ max by (guardrail, window) (
 
 ```promql
 max by (guardrail, window) (
-  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_p95_confidence{
-    job_name="AISafetyOps_MVP_Increment_1",
+  flink_taskmanager_job_task_operator_airiskops_window_guardrail_last_p95_confidence{
+    job_name="AIRiskOps_MVP_Increment_1",
     guardrail=~"PROMPT_INJECTION|TOXICITY"
   }
 )
@@ -710,8 +710,8 @@ max by (guardrail, window) (
 
 ```promql
 max by (guardrail, window) (
-  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p50_confidence{
-    job_name="AISafetyOps_MVP_Increment_1",
+  flink_taskmanager_job_task_operator_airiskops_window_guardrail_last_triggered_p50_confidence{
+    job_name="AIRiskOps_MVP_Increment_1",
     guardrail=~"PROMPT_INJECTION|TOXICITY"
   }
 )
@@ -729,8 +729,8 @@ max by (guardrail, window) (
 
 ```promql
 max by (guardrail, window) (
-  flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_last_triggered_p95_confidence{
-    job_name="AISafetyOps_MVP_Increment_1",
+  flink_taskmanager_job_task_operator_airiskops_window_guardrail_last_triggered_p95_confidence{
+    job_name="AIRiskOps_MVP_Increment_1",
     guardrail=~"PROMPT_INJECTION|TOXICITY"
   }
 )
@@ -1172,7 +1172,7 @@ max by (guardrail, window) (
 
 ### 8.3 Что нужно обязательно логировать в коде
 
-Для stateful AISafetyOps operators полезно логировать:
+Для stateful AIRiskOps operators полезно логировать:
 
 - operator name;
 - tenantId;
@@ -1322,7 +1322,7 @@ max by (guardrail, window) (
 - traceable `policyVersion`;
 - sampled diagnostic logging без утечки чувствительных данных.
 
-Для AISafetyOps особенно полезны отдельные счетчики:
+Для AIRiskOps особенно полезны отдельные счетчики:
 
 - `prompt_injection_hits_total`;
 - `toxicity_hits_total`;

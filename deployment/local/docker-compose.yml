@@ -3,7 +3,7 @@ name: flink
 services:
   kafka:
     image: apache/kafka:3.8.1
-    container_name: aisafetyops-kafka
+    container_name: airiskops-kafka
     ports:
       - "9092:9092"
     environment:
@@ -29,7 +29,7 @@ services:
 
   jobmanager:
     image: flink:1.20.2-scala_2.12-java17
-    container_name: aisafetyops-jobmanager
+    container_name: airiskops-jobmanager
     command: jobmanager
     ports:
       - "8081:8081"
@@ -50,7 +50,7 @@ services:
 
   taskmanager:
     image: flink:1.20.2-scala_2.12-java17
-    container_name: aisafetyops-taskmanager
+    container_name: airiskops-taskmanager
     command: taskmanager
     ports:
       - "9250:9250"
@@ -70,7 +70,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.54.1
-    container_name: aisafetyops-prometheus
+    container_name: airiskops-prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
@@ -84,7 +84,7 @@ services:
 
   grafana:
     image: grafana/grafana:11.2.0
-    container_name: aisafetyops-grafana
+    container_name: airiskops-grafana
     ports:
       - "3000:3000"
     environment:

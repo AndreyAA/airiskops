@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Streams live AISafetyOps traffic into local Kafka with configurable scenario and chaos modes.
+# Streams live AIRiskOps traffic into local Kafka with configurable scenario and chaos modes.
 # Use when you want a multi-minute moving signal for Grafana/Prometheus,
 # including bursts, late arrivals, invalid payloads, or detector degradation.
 set -euo pipefail

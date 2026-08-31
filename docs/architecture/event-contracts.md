@@ -1,10 +1,10 @@
-# Kafka Event Contracts для AISafetyOps Flink MVP
+# Kafka Event Contracts для AIRiskOps Flink MVP
 
 Дата актуальности: 2026-08-29
 
 ## Назначение
 
-Этот документ фиксирует текущий Kafka event contract локального AISafetyOps MVP:
+Этот документ фиксирует текущий Kafka event contract локального AIRiskOps MVP:
 
 - какие topics используются;
 - какие JSON-сообщения по ним ходят;
@@ -405,7 +405,7 @@
 
 ## 6. Почему не одно большое сообщение на весь запрос
 
-Для AISafetyOps tempting-подход выглядит так:
+Для AIRiskOps tempting-подход выглядит так:
 
 - взять один `requestId`;
 - собрать в одном JSON и запрос, и ответ, и все findings.

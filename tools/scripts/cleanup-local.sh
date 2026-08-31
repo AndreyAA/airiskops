@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fully resets the local AISafetyOps environment.
+# Fully resets the local AIRiskOps environment.
 # Use when you need a clean start: it removes the Docker stack, runtime data,
 # and build artifacts, then recreates the required local directories.
 set -euo pipefail

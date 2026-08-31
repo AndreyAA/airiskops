@@ -1,8 +1,8 @@
-# Flink для AISafetyOps: MVP и детальная спецификация реализации
+# Flink для AIRiskOps: MVP и детальная спецификация реализации
 
 ## Глоссарий
 
-- **AISafetyOps** — операционная функция наблюдения, контроля и улучшения безопасности AI-агентов и LLM workflows.
+- **AIRiskOps** — операционная функция наблюдения, контроля и улучшения безопасности AI-агентов и LLM workflows.
 - **Apache Flink** — distributed stream processing engine для обработки событий в near real time и bounded/replay-сценариях.
 - **Guardrail** — детектор или правило, которое оценивает запрос, ответ, диалог или поведение агента на предмет риска.
 - **Finding** — отдельный результат срабатывания guardrail-а.
@@ -365,7 +365,7 @@ MVP должен дать не просто поток метрик, а **пер
 
 Если свернуть все в одну фразу:
 
-**MVP для AISafetyOps в операционных рисках — это trusted NRTP pipeline, который не только считает сработки guardrail-ов, но и дает version-aware visibility, session-aware basic incidenting и контроль качества самих guardrail-ов.**
+**MVP для AIRiskOps в операционных рисках — это trusted NRTP pipeline, который не только считает сработки guardrail-ов, но и дает version-aware visibility, session-aware basic incidenting и контроль качества самих guardrail-ов.**
 
 ## 7. Детальная спецификация реализации
 

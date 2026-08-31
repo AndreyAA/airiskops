@@ -1,4 +1,4 @@
-# AISafetyOps Flink MVP: Stage 2 Results
+# AIRiskOps Flink MVP: Stage 2 Results
 
 Дата фиксации: 2026-08-27
 
@@ -58,7 +58,7 @@ Stage 2 добавляет оконную агрегацию по события
 
 Shaded artifact собран успешно:
 
-- `flink-job/target/flink-aisafetyops-1.0.0-SNAPSHOT-all.jar`
+- `flink-job/target/flink-airiskops-1.0.0-SNAPSHOT-all.jar`
 
 ### Живая проверка
 

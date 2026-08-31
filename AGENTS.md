@@ -4,7 +4,7 @@
 
 ## Назначение
 
-Этот файл задаёт общие правила для изменений в репозитории `AISafetyOps Flink MVP`.
+Этот файл задаёт общие правила для изменений в репозитории `AIRiskOps Flink MVP`.
 
 Детальные правила вынесены в локальные файлы:
 
@@ -19,9 +19,9 @@
 
 - Не смешивать production-код Flink job, tooling, observability и документацию в одном изменении без необходимости.
 - Сохранять каноническую Java-структуру:
-  - `com.bank.aisafetyops.model`
-  - `com.bank.aisafetyops.app`
-  - `com.bank.aisafetyops.infra`
+  - `com.bank.airiskops.model`
+  - `com.bank.airiskops.app`
+  - `com.bank.airiskops.infra`
 - Не менять event semantics, window semantics, Kafka topics или contracts молча.
 - После изменения команд, путей, метрик, dashboards или pipeline semantics обновлять документацию.
 - После каждого этапа должно быть ясно:

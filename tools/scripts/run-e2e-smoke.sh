@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ATTENTION: This script destroys the current local AISafetyOps state and then
+# ATTENTION: This script destroys the current local AIRiskOps state and then
 # runs a full end-to-end smoke test of the local stack.
 # Use when you need a clean reset, fresh job submission, replay bootstrap, and
 # automated checks for Kafka outputs, Prometheus, and Grafana.
@@ -22,6 +22,22 @@ STEP_NUMBER=0
 CURRENT_STEP_TITLE=""
 CURRENT_STEP_STARTED_AT=0
 
+if [[ -t 1 ]]; then
+  COLOR_RESET=$'\033[0m'
+  COLOR_STEP=$'\033[1;37m'
+  COLOR_PASS=$'\033[1;32m'
+  COLOR_FAIL=$'\033[1;31m'
+  COLOR_COMMAND=$'\033[0;37m'
+  COLOR_BORDER=$'\033[1;37m'
+else
+  COLOR_RESET=''
+  COLOR_STEP=''
+  COLOR_PASS=''
+  COLOR_FAIL=''
+  COLOR_COMMAND=''
+  COLOR_BORDER=''
+fi
+
 timestamp() {
   date '+%Y-%m-%dT%H:%M:%S%z'
 }
@@ -35,7 +51,20 @@ log() {
 status() {
   local state="$1"
   shift
-  printf '[e2e][%s][status][%s] %s\n' "$(timestamp)" "$state" "$*"
+  local color="$COLOR_RESET"
+  case "$state" in
+    pass) color="$COLOR_PASS" ;;
+    fail) color="$COLOR_FAIL" ;;
+  esac
+  printf '%s[e2e][%s][status][%s] %s%s\n' "$color" "$(timestamp)" "$state" "$*" "$COLOR_RESET"
+}
+
+print_step_banner() {
+  local title="$1"
+  printf '\n%s============================================================%s\n' "$COLOR_BORDER" "$COLOR_RESET"
+  printf '%s[e2e][%s][step] STEP %s started: %s%s\n' \
+    "$COLOR_STEP" "$(timestamp)" "$STEP_NUMBER" "$title" "$COLOR_RESET"
+  printf '%s============================================================%s\n' "$COLOR_BORDER" "$COLOR_RESET"
 }
 
 step() {
@@ -43,7 +72,7 @@ step() {
   STEP_NUMBER=$((STEP_NUMBER + 1))
   CURRENT_STEP_TITLE="$title"
   CURRENT_STEP_STARTED_AT="$(date +%s)"
-  log step "STEP $STEP_NUMBER started: $title"
+  print_step_banner "$title"
 }
 
 finish_step() {
@@ -59,10 +88,15 @@ format_command() {
   printf '%q ' "$@"
 }
 
+log_command() {
+  printf '%s[e2e][%s][command] %s%s\n' \
+    "$COLOR_COMMAND" "$(timestamp)" "$*" "$COLOR_RESET"
+}
+
 usage() {
   cat <<'EOF'
 ATTENTION:
-  This script deletes the current local AISafetyOps Docker state, runtime data,
+  This script deletes the current local AIRiskOps Docker state, runtime data,
   and build artifacts before running a full end-to-end smoke test.
 
 Purpose:
@@ -156,10 +190,10 @@ wait_until() {
   local started_at
   started_at="$(date +%s)"
   log check "Checking: $description"
-  log check "Command: $command"
+  log_command "$command"
 
   while true; do
-    if bash -lc "$command" >/tmp/aisafetyops-e2e-check.out 2>/tmp/aisafetyops-e2e-check.err; then
+    if bash -lc "$command" >/tmp/airiskops-e2e-check.out 2>/tmp/airiskops-e2e-check.err; then
       status pass "$description"
       return 0
     fi
@@ -167,8 +201,8 @@ wait_until() {
     now="$(date +%s)"
     if (( now - started_at >= timeout_seconds )); then
       status fail "$description"
-      if [[ -s /tmp/aisafetyops-e2e-check.err ]]; then
-        log error "$(tr '\n' ' ' < /tmp/aisafetyops-e2e-check.err)"
+      if [[ -s /tmp/airiskops-e2e-check.err ]]; then
+        log error "$(tr '\n' ' ' < /tmp/airiskops-e2e-check.err)"
       fi
       return 1
     fi
@@ -180,7 +214,7 @@ run_checked() {
   local description="$1"
   shift
   log info "$description"
-  log command "$(format_command "$@")"
+  log_command "$(format_command "$@")"
   if "$@"; then
     status pass "$description"
   else
@@ -295,7 +329,7 @@ run_checked "Building Flink job artifact" bash tools/scripts/build-job.sh
 finish_step
 
 step "8. Submit Flink job"
-run_checked "Submitting AISafetyOps job to local Flink cluster" bash tools/scripts/submit-job.sh
+run_checked "Submitting AIRiskOps job to local Flink cluster" bash tools/scripts/submit-job.sh
 finish_step
 
 step "9. Wait for job and metrics to appear"
@@ -347,19 +381,19 @@ assert_prometheus_query_equals \
   "\"1\""
 assert_prometheus_query_nonzero \
   "Completed checkpoints metric is present and non-zero" \
-  "flink_jobmanager_job_numberOfCompletedCheckpoints{job_name=\"AISafetyOps_MVP_Increment_1\"}"
+  "flink_jobmanager_job_numberOfCompletedCheckpoints{job_name=\"AIRiskOps_MVP_Increment_1\"}"
 assert_prometheus_query_nonzero \
   "Guardrail aggregate emissions metric is present and non-zero" \
-  "sum(flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name=\"AISafetyOps_MVP_Increment_1\"})"
+  "sum(flink_taskmanager_job_task_operator_guardrail_aggregate_records_total_1m{job_name=\"AIRiskOps_MVP_Increment_1\"})"
 assert_prometheus_query_nonzero \
   "Runtime contract info metric is present" \
-  "count(flink_taskmanager_job_task_operator_aisafetyops_runtime_contract_info{job_name=\"AISafetyOps_MVP_Increment_1\"})"
+  "count(flink_taskmanager_job_task_operator_airiskops_runtime_contract_info{job_name=\"AIRiskOps_MVP_Increment_1\"})"
 assert_prometheus_query_nonzero \
   "Incident open sessions metric is present" \
-  "count(flink_taskmanager_job_task_operator_aisafetyops_incident_open_sessions{job_name=\"AISafetyOps_MVP_Increment_1\"})"
+  "count(flink_taskmanager_job_task_operator_airiskops_incident_open_sessions{job_name=\"AIRiskOps_MVP_Increment_1\"})"
 assert_prometheus_query_nonzero \
   "Detector quality emission metric is present and non-zero" \
-  "sum(flink_taskmanager_job_task_operator_aisafetyops_quality_window_guardrail_emitted_total{job_name=\"AISafetyOps_MVP_Increment_1\",window=\"1m\"})"
+  "sum(flink_taskmanager_job_task_operator_airiskops_quality_window_guardrail_emitted_total{job_name=\"AIRiskOps_MVP_Increment_1\",window=\"1m\"})"
 finish_step
 
 step "13. Verify Grafana health, datasource, and dashboards"
@@ -373,20 +407,20 @@ assert_grafana_contains \
   "\"type\":\"prometheus\""
 assert_grafana_contains \
   "Grafana dashboard search includes Flink Overview" \
-  "$GRAFANA_URL/api/search?query=AISafetyOps" \
-  "AISafetyOps Flink Overview"
+  "$GRAFANA_URL/api/search?query=AIRiskOps" \
+  "AIRiskOps Flink Overview"
 assert_grafana_contains \
   "Grafana dashboard search includes Business Metrics" \
-  "$GRAFANA_URL/api/search?query=AISafetyOps" \
-  "AISafetyOps Business Metrics"
+  "$GRAFANA_URL/api/search?query=AIRiskOps" \
+  "AIRiskOps Business Metrics"
 assert_grafana_contains \
   "Grafana dashboard search includes Capacity And Performance" \
-  "$GRAFANA_URL/api/search?query=AISafetyOps" \
-  "AISafetyOps Capacity And Performance"
+  "$GRAFANA_URL/api/search?query=AIRiskOps" \
+  "AIRiskOps Capacity And Performance"
 assert_grafana_contains \
   "Grafana dashboard search includes Detector Quality" \
-  "$GRAFANA_URL/api/search?query=AISafetyOps" \
-  "AISafetyOps Detector Quality"
+  "$GRAFANA_URL/api/search?query=AIRiskOps" \
+  "AIRiskOps Detector Quality"
 finish_step
 
 step "14. Final summary"

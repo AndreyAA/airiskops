@@ -7,6 +7,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/deployment/local/docker-compose.yml"
 KAFKA_BIN="/opt/kafka/bin"
+SAMPLE_TIMEOUT_MS=5000
 TOPICS=(
   "normalized-events"
   "invalid-events"
@@ -18,6 +19,23 @@ TOPICS=(
 
 cd "$ROOT_DIR"
 
+print_topic_sample() {
+  local topic="$1"
+  local sample_output
+  echo "== $topic sample =="
+  if sample_output="$(docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
+    --bootstrap-server kafka:9092 \
+    --topic "$topic" \
+    --partition 0 \
+    --offset 0 \
+    --max-messages 1 \
+    --timeout-ms "$SAMPLE_TIMEOUT_MS")"; then
+    printf '%s\n' "$sample_output"
+  else
+    echo "No sample message received within ${SAMPLE_TIMEOUT_MS}ms for topic $topic"
+  fi
+}
+
 for topic in "${TOPICS[@]}"; do
   echo "== $topic offsets =="
   docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-get-offsets.sh" \
@@ -25,34 +43,7 @@ for topic in "${TOPICS[@]}"; do
     --topic "$topic"
 done
 
-echo "== normalized-events sample =="
-docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
-  --bootstrap-server kafka:9092 \
-  --topic normalized-events \
-  --partition 0 \
-  --offset 0 \
-  --max-messages 1
-
-echo "== guardrail-aggregates sample =="
-docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
-  --bootstrap-server kafka:9092 \
-  --topic guardrail-aggregates \
-  --partition 0 \
-  --offset 0 \
-  --max-messages 3
-
-echo "== basic-incidents sample =="
-docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
-  --bootstrap-server kafka:9092 \
-  --topic basic-incidents \
-  --partition 0 \
-  --offset 0 \
-  --max-messages 3
-
-echo "== guardrail-quality-metrics sample =="
-docker compose -f "$COMPOSE_FILE" exec -T kafka "${KAFKA_BIN}/kafka-console-consumer.sh" \
-  --bootstrap-server kafka:9092 \
-  --topic guardrail-quality-metrics \
-  --partition 0 \
-  --offset 0 \
-  --max-messages 3
+print_topic_sample "normalized-events"
+print_topic_sample "guardrail-aggregates"
+print_topic_sample "basic-incidents"
+print_topic_sample "guardrail-quality-metrics"

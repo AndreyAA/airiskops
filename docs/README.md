@@ -1,10 +1,10 @@
-# Документация AISafetyOps Flink
+# Документация AIRiskOps Flink
 
 Дата актуальности: 2026-08-30
 
 ## Назначение
 
-Этот каталог содержит всю проектную документацию по локальному AISafetyOps MVP на Apache Flink.
+Этот каталог содержит всю проектную документацию по локальному AIRiskOps MVP на Apache Flink.
 
 Документы разложены по четырём группам:
 
@@ -18,7 +18,7 @@
 Если нужно быстро понять проект с нуля:
 
 1. [README.md](../README.md)
-2. [architecture/aisafetyops-manual.md](architecture/aisafetyops-manual.md)
+2. [architecture/airiskops-manual.md](architecture/airiskops-manual.md)
 3. [runbooks/local-walkthrough.md](runbooks/local-walkthrough.md)
 4. [monitoring/monitoring-debugging-guide.md](monitoring/monitoring-debugging-guide.md)
 
@@ -29,7 +29,7 @@
 
 Если нужно понять архитектуру и границы модулей:
 
-1. [architecture/aisafetyops-manual.md](architecture/aisafetyops-manual.md)
+1. [architecture/airiskops-manual.md](architecture/airiskops-manual.md)
 2. [architecture/event-contracts.md](architecture/event-contracts.md)
 3. [architecture/adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
 
@@ -45,8 +45,8 @@
 
 ### `architecture/`
 
-- [aisafetyops-manual.md](architecture/aisafetyops-manual.md)
-  - основной manual по Flink для кейса AISafetyOps;
+- [airiskops-manual.md](architecture/airiskops-manual.md)
+  - основной manual по Flink для кейса AIRiskOps;
   - архитектура пайплайна, runtime, deployment, data model, increments.
 - [event-contracts.md](architecture/event-contracts.md)
   - Kafka topics и JSON-контракты локального MVP;

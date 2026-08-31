@@ -6,7 +6,7 @@
 
 Этот документ превращает идеи `Increment 3` из [near-term-improvement-plan.md](near-term-improvement-plan.md) в прикладную спецификацию реализации.
 
-Фокус именно на том, что нужно сделать в текущем репозитории для следующего инкремента AISafetyOps MVP:
+Фокус именно на том, что нужно сделать в текущем репозитории для следующего инкремента AIRiskOps MVP:
 
 - какие файлы менять;
 - какие параметры добавить;
@@ -46,10 +46,10 @@
 
 - `window type`
   - текущее значение: `Tumbling Event-Time Window`;
-  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
+  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java).
 - `window sizes`
   - текущее значение: `1m` и `5m`;
-  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
+  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java).
 - `outOfOrdernessSeconds`
   - текущее значение: `30`;
   - где задается: [local-job.yaml](../../config/job/local-job.yaml).
@@ -67,7 +67,7 @@
   - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `delivery guarantee`
   - текущее значение: `AT_LEAST_ONCE`;
-  - где задается: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java).
+  - где задается: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/airiskops/infra/sink/KafkaSinkFactory.java).
 
 ### 2.2 Что важно не сломать
 
@@ -130,34 +130,34 @@
 
 #### Новые model classes
 
-- `flink-job/src/main/java/com/bank/aisafetyops/model/BasicIncident.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/BasicIncidentRule.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/IncidentSeverity.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/IncidentStatus.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/SessionIncidentKey.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/SessionRiskSnapshot.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/BasicIncident.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/BasicIncidentRule.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/IncidentSeverity.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/IncidentStatus.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/SessionIncidentKey.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/SessionRiskSnapshot.java`
 
 #### Новые app classes
 
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/SessionIncidentEvaluatorFunction.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/SerializeBasicIncidentFunction.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/SessionIncidentMetricsFunction.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/SessionIncidentKeySelector.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/SessionIncidentEvaluatorFunction.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/SerializeBasicIncidentFunction.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/SessionIncidentMetricsFunction.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/SessionIncidentKeySelector.java`
 
 #### Изменяемые app/config classes
 
-- [JobConfig.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
-- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
-- [OutputTopics.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
-- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
-- [JobTopology.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/support/JobTopology.java)
-- [AiSafetyOpsMvpJob.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/job/AiSafetyOpsMvpJob.java)
+- [JobConfig.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/JobConfig.java)
+- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/JobConfigOptions.java)
+- [OutputTopics.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/OutputTopics.java)
+- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java)
+- [JobTopology.java](../../flink-job/src/main/java/com/bank/airiskops/app/support/JobTopology.java)
+- [AiRiskOpsMvpJob.java](../../flink-job/src/main/java/com/bank/airiskops/app/job/AiRiskOpsMvpJob.java)
 
 #### Возможные infra changes
 
-- [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java)
+- [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/airiskops/infra/sink/KafkaSinkFactory.java)
   - добавить sink для `BasicIncident`.
-- [JsonSerde.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/serde/JsonSerde.java)
+- [JsonSerde.java](../../flink-job/src/main/java/com/bank/airiskops/infra/serde/JsonSerde.java)
   - убедиться, что новая incident model сериализуется без ad-hoc JSON logic.
 
 ### 4.5 Какие параметры добавить в YAML и CLI
@@ -214,24 +214,24 @@
 
 #### Prometheus metrics
 
-- `aisafetyops_incidents_emitted_total`
+- `airiskops_incidents_emitted_total`
   - число выпущенных incidents.
-- `aisafetyops_incidents_by_severity_total{severity=...}`
+- `airiskops_incidents_by_severity_total{severity=...}`
   - распределение по severity.
-- `aisafetyops_incident_rule_hits_total{rule=...}`
+- `airiskops_incident_rule_hits_total{rule=...}`
   - какие correlation rules реально срабатывают.
-- `aisafetyops_incident_open_sessions_gauge`
+- `airiskops_incident_open_sessions_gauge`
   - сколько session states сейчас живет.
-- `aisafetyops_incident_findings_per_session_gauge`
+- `airiskops_incident_findings_per_session_gauge`
   - last observed size текущих сессионных накоплений.
-- `aisafetyops_incident_updates_total`
+- `airiskops_incident_updates_total`
   - сколько раз incident переэмитился после новых findings.
 
 #### Grafana
 
 Добавить новый dashboard:
 
-- `observability/grafana/dashboards/aisafetyops-incidents.json`
+- `observability/grafana/dashboards/airiskops-incidents.json`
 
 Минимальные панели:
 
@@ -299,23 +299,23 @@
 
 #### Новые model classes
 
-- `flink-job/src/main/java/com/bank/aisafetyops/model/PolicyUpdateEvent.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/IncidentPolicy.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/model/SeverityRuleSet.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/PolicyUpdateEvent.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/IncidentPolicy.java`
+- `flink-job/src/main/java/com/bank/airiskops/model/SeverityRuleSet.java`
 
 #### Новые app classes
 
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/PolicyBroadcastProcessFunction.java`
-- `flink-job/src/main/java/com/bank/aisafetyops/app/functions/PolicyAwareIncidentEvaluatorFunction.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/PolicyBroadcastProcessFunction.java`
+- `flink-job/src/main/java/com/bank/airiskops/app/functions/PolicyAwareIncidentEvaluatorFunction.java`
 
 #### Изменяемые classes
 
-- [JobConfig.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
-- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
-- [OutputTopics.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
-- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
-- [KafkaSourceFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/source/KafkaSourceFactory.java)
-- [YamlJobConfigLoader.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/config/YamlJobConfigLoader.java)
+- [JobConfig.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/JobConfig.java)
+- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/JobConfigOptions.java)
+- [OutputTopics.java](../../flink-job/src/main/java/com/bank/airiskops/app/config/OutputTopics.java)
+- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java)
+- [KafkaSourceFactory.java](../../flink-job/src/main/java/com/bank/airiskops/infra/source/KafkaSourceFactory.java)
+- [YamlJobConfigLoader.java](../../flink-job/src/main/java/com/bank/airiskops/infra/config/YamlJobConfigLoader.java)
 
 #### Config and tooling
 
@@ -358,18 +358,18 @@
 
 #### Prometheus metrics
 
-- `aisafetyops_policy_updates_total`
-- `aisafetyops_policy_active_version_info{policy_version=...}`
-- `aisafetyops_policy_rejected_updates_total`
-- `aisafetyops_policy_last_update_epoch_ms`
-- `aisafetyops_incident_policy_miss_total`
+- `airiskops_policy_updates_total`
+- `airiskops_policy_active_version_info{policy_version=...}`
+- `airiskops_policy_rejected_updates_total`
+- `airiskops_policy_last_update_epoch_ms`
+- `airiskops_incident_policy_miss_total`
 
 #### Grafana
 
 Расширить:
 
-- `observability/grafana/dashboards/aisafetyops-incidents.json`
-- `observability/grafana/dashboards/aisafetyops-flink-overview.json`
+- `observability/grafana/dashboards/airiskops-incidents.json`
+- `observability/grafana/dashboards/airiskops-flink-overview.json`
 
 Добавить панели:
 
@@ -460,10 +460,10 @@
 
 #### Observability
 
-- `observability/grafana/dashboards/aisafetyops-business-metrics.json`
-- `observability/grafana/dashboards/aisafetyops-flink-overview.json`
+- `observability/grafana/dashboards/airiskops-business-metrics.json`
+- `observability/grafana/dashboards/airiskops-flink-overview.json`
 - новый dashboard:
-  - `observability/grafana/dashboards/aisafetyops-capacity-and-performance.json`
+  - `observability/grafana/dashboards/airiskops-capacity-and-performance.json`
 
 ### 6.4 Какие параметры добавить в YAML и CLI
 
@@ -541,37 +541,37 @@
 
 ##### Runtime contract visibility
 
-- `aisafetyops_runtime_contract_info{window_type=...,window_sizes=...,delivery_guarantee=...}`
-- `aisafetyops_runtime_out_of_orderness_seconds`
-- `aisafetyops_runtime_late_tolerance_minutes`
-- `aisafetyops_runtime_checkpoint_interval_seconds`
+- `airiskops_runtime_contract_info{window_type=...,window_sizes=...,delivery_guarantee=...}`
+- `airiskops_runtime_out_of_orderness_seconds`
+- `airiskops_runtime_late_tolerance_minutes`
+- `airiskops_runtime_checkpoint_interval_seconds`
 
 ##### Performance and saturation
 
-- `aisafetyops_source_records_in_total`
-- `aisafetyops_aggregate_records_out_total`
-- `aisafetyops_incident_records_out_total`
-- `aisafetyops_operator_busy_ratio_gauge`
-- `aisafetyops_operator_backpressure_proxy_gauge`
-- `aisafetyops_checkpoint_duration_ms`
-- `aisafetyops_checkpoint_failures_total`
-- `aisafetyops_taskmanager_heap_used_ratio`
-- `aisafetyops_taskmanager_cpu_used_ratio`
-- `aisafetyops_kafka_consumer_lag`
+- `airiskops_source_records_in_total`
+- `airiskops_aggregate_records_out_total`
+- `airiskops_incident_records_out_total`
+- `airiskops_operator_busy_ratio_gauge`
+- `airiskops_operator_backpressure_proxy_gauge`
+- `airiskops_checkpoint_duration_ms`
+- `airiskops_checkpoint_failures_total`
+- `airiskops_taskmanager_heap_used_ratio`
+- `airiskops_taskmanager_cpu_used_ratio`
+- `airiskops_kafka_consumer_lag`
 
 #### Grafana
 
 ##### Existing dashboards to extend
 
-- `AISafetyOps Business Metrics`
+- `AIRiskOps Business Metrics`
   - добавить annotation/variables для scenario mode;
   - показать эффект burst и late events.
-- `AISafetyOps Flink Overview`
+- `AIRiskOps Flink Overview`
   - добавить checkpoint, lag, restart и runtime contract panels.
 
 ##### New dashboard
 
-- `AISafetyOps Capacity And Performance`
+- `AIRiskOps Capacity And Performance`
 
 Минимальные панели:
 

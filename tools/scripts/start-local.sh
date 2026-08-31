@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Starts the full local AISafetyOps stack in Docker.
+# Starts the full local AIRiskOps stack in Docker.
 # Use when you already have a built JAR and want to bring up Kafka, Flink,
 # Prometheus, and Grafana for local development or verification.
 set -euo pipefail

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Stops and removes the local AISafetyOps Docker stack.
+# Stops and removes the local AIRiskOps Docker stack.
 # Use when you want to shut down the local environment without keeping
 # containers, volumes, or compose state.
 set -euo pipefail

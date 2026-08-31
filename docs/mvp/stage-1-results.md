@@ -1,8 +1,8 @@
-# AISafetyOps на Flink: результаты этапа 1
+# AIRiskOps на Flink: результаты этапа 1
 
 ## 1. Назначение этапа
 
-Этап 1 зафиксирован как базовый MVP foundation для локального NRTP-контура AISafetyOps:
+Этап 1 зафиксирован как базовый MVP foundation для локального NRTP-контура AIRiskOps:
 
 - нормализация и валидация входных событий;
 - потоковая обработка событий от LLM-агентов и гардрейлов;
@@ -275,7 +275,7 @@ Flink job пишет результаты в Kafka topics:
 
 Основные файлы результата:
 
-- [aisafetyops-manual.md](../architecture/aisafetyops-manual.md)
+- [airiskops-manual.md](../architecture/airiskops-manual.md)
 - [mvp-spec.md](mvp-spec.md)
 - [mvp-runbook.md](../runbooks/mvp-runbook.md)
 - [monitoring-debugging-guide.md](../monitoring/monitoring-debugging-guide.md)

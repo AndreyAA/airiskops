@@ -1,10 +1,10 @@
-# AISafetyOps Flink MVP: ближайшие планы развития
+# AIRiskOps Flink MVP: ближайшие планы развития
 
 Дата актуальности: 2026-08-30
 
 ## Назначение
 
-Этот документ фиксирует ближайшие возможные улучшения текущего AISafetyOps Flink MVP с точки зрения:
+Этот документ фиксирует ближайшие возможные улучшения текущего AIRiskOps Flink MVP с точки зрения:
 
 - business value для подразделения операционных рисков;
 - технической целесообразности;
@@ -131,7 +131,7 @@
   - `trigger_rate`;
   - `version_skew`;
 - сделать отдельный dashboard:
-  - `AISafetyOps Detector Quality`.
+  - `AIRiskOps Detector Quality`.
 
 #### Business value
 
@@ -372,11 +372,11 @@ Replay должен моделировать не только разные би
 
 - `window type`
   - текущее значение: `Tumbling Event-Time Window`;
-  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
+  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java);
   - на что влияет: как группируются события и как часто появляются aggregates.
 - `window sizes`
   - текущее значение: `1m`, `5m`;
-  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
+  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/airiskops/app/usecase/IncrementOneTopologyBuilder.java);
   - на что влияет: скорость реакции и устойчивость aggregate signal.
 - `outOfOrdernessSeconds`
   - текущее значение: `30`;
@@ -400,7 +400,7 @@ Replay должен моделировать не только разные би
   - на что влияет: как часто runtime публикует watermark progress.
 - `delivery guarantee`
   - текущее значение: `AT_LEAST_ONCE`;
-  - где задаётся: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java);
+  - где задаётся: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/airiskops/infra/sink/KafkaSinkFactory.java);
   - на что влияет: downstream должен быть готов к duplicate emissions после recovery и late updates.
 
 ##### Почему это важно для бизнеса и эксплуатации
@@ -476,7 +476,7 @@ Replay должен моделировать не только разные би
 
 ##### Что стоит добавить в dashboards
 
-В observability стоит выделить отдельный runtime/performance экран или расширить `AISafetyOps Flink Overview` такими панелями:
+В observability стоит выделить отдельный runtime/performance экран или расширить `AIRiskOps Flink Overview` такими панелями:
 
 - `Kafka Consumer Lag By Topic`;
 - `Operator Busy Time`;

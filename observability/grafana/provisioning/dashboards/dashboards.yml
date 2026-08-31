@@ -1,9 +1,9 @@
 apiVersion: 1
 
 providers:
-  - name: AISafetyOps
+  - name: AIRiskOps
     orgId: 1
-    folder: AISafetyOps
+    folder: AIRiskOps
     type: file
     disableDeletion: false
     updateIntervalSeconds: 10

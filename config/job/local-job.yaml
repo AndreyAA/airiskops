@@ -3,7 +3,7 @@ topics:
   - agent-requests
   - agent-responses
   - guardrail-findings
-groupId: aisafetyops-mvp
+groupId: airiskops-mvp
 normalizedEventsTopic: normalized-events
 invalidEventsTopic: invalid-events
 lateEventsTopic: late-events

@@ -1,10 +1,10 @@
-# AISafetyOps Flink MVP
+# AIRiskOps Flink MVP
 
 Дата актуальности: 2026-08-31
 
 ## Назначение
 
-Этот репозиторий содержит локальный MVP для NRTP-обработки событий AISafetyOps на Apache Flink.
+Этот репозиторий содержит локальный MVP для NRTP-обработки событий AIRiskOps на Apache Flink.
 
 Система предназначена для:
 
@@ -171,7 +171,7 @@ Java-модуль с production-кодом Flink job.
 
 - хранить `prometheus.yml`;
 - хранить provisioning Grafana;
-- хранить dashboards AISafetyOps;
+- хранить dashboards AIRiskOps;
 - отделять observability-артефакты от runtime-кода job.
 
 ## Скриншоты Observability
@@ -188,7 +188,7 @@ Java-модуль с production-кодом Flink job.
 - общее число findings, попавших в оконную аналитику;
 - разрез по guardrail для triggered и all findings.
 
-![AISafetyOps Business Metrics Top](docs/images/grafana1.png)
+![AIRiskOps Business Metrics Top](docs/images/grafana1.png)
 
 ### Business Dashboard: доли и токены
 
@@ -201,7 +201,7 @@ Java-модуль с production-кодом Flink job.
 
 Это полезно для понимания чувствительности правил и объёма трафика, который проходит через detectors.
 
-![AISafetyOps Business Metrics Shares And Tokens](docs/images/grafana2.png)
+![AIRiskOps Business Metrics Shares And Tokens](docs/images/grafana2.png)
 
 ### Business Dashboard: confidence percentiles
 
@@ -214,7 +214,7 @@ Java-модуль с production-кодом Flink job.
 
 Этот экран нужен для контроля типичного и хвостового confidence по окнам `1m` и `5m`.
 
-![AISafetyOps Business Metrics Confidence Percentiles](docs/images/grafana3.png)
+![AIRiskOps Business Metrics Confidence Percentiles](docs/images/grafana3.png)
 
 ### Flink Overview: runtime summary
 
@@ -228,7 +228,7 @@ Java-модуль с production-кодом Flink job.
 
 Это первый экран для проверки, что job жива и поток реально проходит через topology.
 
-![AISafetyOps Flink Overview Runtime](docs/images/grafana4.png)
+![AIRiskOps Flink Overview Runtime](docs/images/grafana4.png)
 
 ### Flink Overview: watermarks и emissions
 
@@ -237,11 +237,11 @@ Java-модуль с production-кодом Flink job.
 - `Mailbox Latency Samples By Task`;
 - `Current Input Watermark By Task`;
 - `Guardrail Aggregate Emissions By Window`;
-- `AISafetyOps Domain Counters`.
+- `AIRiskOps Domain Counters`.
 
 Этот экран помогает понять, движется ли event time, закрываются ли окна и не деградирует ли pipeline на runtime-уровне.
 
-![AISafetyOps Flink Overview Watermarks And Emissions](docs/images/grafana5.png)
+![AIRiskOps Flink Overview Watermarks And Emissions](docs/images/grafana5.png)
 
 ### `tools/`
 
@@ -281,7 +281,7 @@ Java-модуль с production-кодом Flink job.
 
 Назначение:
 
-- manual по Flink и AISafetyOps;
+- manual по Flink и AIRiskOps;
 - monitoring/debugging guides;
 - local walkthrough и runbooks;
 - MVP spec и результаты инкрементов.
@@ -322,7 +322,7 @@ Java-модуль с production-кодом Flink job.
 
 Это основной корпоративный layout для развития проекта.
 
-### `com.bank.aisafetyops.model`
+### `com.bank.airiskops.model`
 
 Доменная модель и общие константы.
 
@@ -342,7 +342,7 @@ Java-модуль с production-кодом Flink job.
 - хранить модели, не завязанные на конкретный source/sink;
 - держать domain vocabulary в одном месте.
 
-### `com.bank.aisafetyops.app`
+### `com.bank.airiskops.app`
 
 Application layer: orchestration и бизнес-логика Flink job.
 
@@ -360,7 +360,7 @@ Application layer: orchestration и бизнес-логика Flink job.
 
 Сейчас:
 
-- `AiSafetyOpsMvpJob`
+- `AiRiskOpsMvpJob`
 
 Назначение:
 
@@ -434,7 +434,7 @@ Application layer: orchestration и бизнес-логика Flink job.
 - хранить `uid`, `name`, output tags и runtime defaults;
 - обеспечивать стабильность topology для UI, metrics и future savepoint compatibility.
 
-### `com.bank.aisafetyops.infra`
+### `com.bank.airiskops.infra`
 
 Infrastructure adapters для внешнего мира.
 
@@ -525,7 +525,7 @@ Parsing входного JSON и промежуточные parse-result объ�
 7. Для findings считаются tumbling event-time окна `1m` и `5m`.
 8. `GuardrailWindowProcessFunction`:
    - формирует `GuardrailWindowAggregate`;
-   - обновляет AISafetyOps metrics;
+   - обновляет AIRiskOps metrics;
    - эмитит агрегаты downstream.
 9. Агрегаты сериализуются и пишутся в `guardrail-aggregates`.
 10. Из агрегатов вычисляются `GuardrailQualityMetric` и публикуются в `guardrail-quality-metrics`.
@@ -603,7 +603,7 @@ bash tools/scripts/cleanup-local.sh
 ## Где смотреть дальше
 
 - Архитектурный manual:
-  - [docs/architecture/aisafetyops-manual.md](docs/architecture/aisafetyops-manual.md)
+  - [docs/architecture/airiskops-manual.md](docs/architecture/airiskops-manual.md)
 - Manual по добавлению новых агрегированных метрик:
   - [docs/architecture/adding-n-minute-metrics.md](docs/architecture/adding-n-minute-metrics.md)
 - Monitoring и debugging:

@@ -1,4 +1,4 @@
-# Flink для AISafetyOps: как правильно добавить новую метрику с агрегированием за N минут
+# Flink для AIRiskOps: как правильно добавить новую метрику с агрегированием за N минут
 
 Дата актуальности: 2026-08-29
 
@@ -18,7 +18,7 @@
 
 ## 1. Назначение документа
 
-Этот документ объясняет, как в вашем AISafetyOps-пайплайне правильно добавить новую метрику, которая отражает агрегированное значение за `N` минут.
+Этот документ объясняет, как в вашем AIRiskOps-пайплайне правильно добавить новую метрику, которая отражает агрегированное значение за `N` минут.
 
 Фокус на практическом кейсе:
 
@@ -41,7 +41,7 @@
 - где в pipeline рождается корректный оконный бизнес-результат;
 - как его безопасно и интерпретируемо отразить в метриках.
 
-Для AISafetyOps это особенно важно, потому что:
+Для AIRiskOps это особенно важно, потому что:
 
 - одно сырое событие может породить несколько findings;
 - окна работают по event time, а не по wall clock;
@@ -185,7 +185,7 @@
 - для Prometheus-метрик не выводить в labels сущности уровня отдельного запроса;
 - drill-down по `requestId` делать через Kafka, lake, incident store или логи, а не через Prometheus.
 
-## 5. Рекомендуемый шаблон для AISafetyOps
+## 5. Рекомендуемый шаблон для AIRiskOps
 
 Для вашей системы правильная цепочка обычно такая:
 
@@ -206,11 +206,11 @@
 
 Сейчас в проекте метрики агрегатов обновляются в:
 
-- [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java)
+- [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/airiskops/app/functions/GuardrailWindowProcessFunction.java)
 
 Там уже есть разрез:
 
-- `aisafetyops/window=<window>/guardrail=<guardrail>`
+- `airiskops/window=<window>/guardrail=<guardrail>`
 
 И уже публикуются counters:
 
@@ -324,7 +324,7 @@
 
 То есть лучше иметь что-то вроде:
 
-- `flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_triggered_total`
+- `flink_taskmanager_job_task_operator_airiskops_window_guardrail_triggered_total`
 
 чем слишком сложную и нестабильную схему имён.
 
@@ -420,11 +420,11 @@ return new GuardrailMetricSet(
 
 ```promql
 sum by (guardrail) (
-  increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_confidence_sum_total{window="5m"}[5m])
+  increase(flink_taskmanager_job_task_operator_airiskops_window_guardrail_confidence_sum_total{window="5m"}[5m])
 )
 /
 sum by (guardrail) (
-  increase(flink_taskmanager_job_task_operator_aisafetyops_window_guardrail_events_total{window="5m"}[5m])
+  increase(flink_taskmanager_job_task_operator_airiskops_window_guardrail_events_total{window="5m"}[5m])
 )
 /
 1000
@@ -474,13 +474,13 @@ private transient Map<String, DoubleGaugeValue> avgConfidenceGaugeValues;
 @Override
 public void open(Configuration parameters) {
     emittedAggregateCounter = getRuntimeContext().getMetricGroup().counter(METRIC_PREFIX + windowName);
-    aisafetyOpsMetricGroup = getRuntimeContext().getMetricGroup().addGroup(AISAFETYOPS_GROUP);
+    airiskOpsMetricGroup = getRuntimeContext().getMetricGroup().addGroup(AIRISKOPS_GROUP);
     guardrailMetricSets = new ConcurrentHashMap<>();
     avgConfidenceGaugeValues = new ConcurrentHashMap<>();
 }
 
 private GuardrailMetricSet createMetricSet(String guardrailName) {
-    MetricGroup metricGroup = aisafetyOpsMetricGroup
+    MetricGroup metricGroup = airiskOpsMetricGroup
             .addGroup(WINDOW_GROUP, windowName)
             .addGroup(GUARDRAIL_GROUP, guardrailName);
 
@@ -537,7 +537,7 @@ Gauge хранит только последнее значение, а не и�
 
 ## 10. Пример 3. Добавление новой оконной метрики "affected sessions per 5m"
 
-Это уже более интересный AISafetyOps-кейс.
+Это уже более интересный AIRiskOps-кейс.
 
 Предположим, вам нужна метрика:
 
@@ -661,7 +661,7 @@ public final class GuardrailAggregateAccumulator {
 
 ## 13. Рекомендуемый порядок внедрения в этом проекте
 
-Если вам нужно добавить новую метрику в текущий AISafetyOps MVP, я бы рекомендовал такой порядок:
+Если вам нужно добавить новую метрику в текущий AIRiskOps MVP, я бы рекомендовал такой порядок:
 
 1. Сначала проверить, хватает ли уже существующих counters:
    - `events_total`
@@ -669,7 +669,7 @@ public final class GuardrailAggregateAccumulator {
    - `detector_errors_total`
    - `input_tokens_total`
    - `output_tokens_total`
-2. Если не хватает, добавлять метрику в [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java).
+2. Если не хватает, добавлять метрику в [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/airiskops/app/functions/GuardrailWindowProcessFunction.java).
 3. Не добавлять `agentId` в labels на уровне Prometheus.
 4. Сначала валидировать на окне `1m`.
 5. Потом смотреть, нужен ли тот же сигнал для `5m`.
@@ -677,7 +677,7 @@ public final class GuardrailAggregateAccumulator {
 
 ## 14. Что в вашем кейсе особенно полезно добавить дальше
 
-Для AISafetyOps с фокусом на operational risk я бы в первую очередь рассматривал такие новые метрики:
+Для AIRiskOps с фокусом на operational risk я бы в первую очередь рассматривал такие новые метрики:
 
 - `last_avg_confidence`
   - отдельно по `PROMPT_INJECTION` и `TOXICITY`;
@@ -703,7 +703,7 @@ public final class GuardrailAggregateAccumulator {
 - что происходит при late events;
 - не создаём ли мы лишнюю cardinality и ложную интерпретацию.
 
-Для вашего AISafetyOps-проекта базовое правило такое:
+Для вашего AIRiskOps-проекта базовое правило такое:
 
 - если метрика должна отражать смысл оконного risk aggregate, добавляйте её на этапе `ProcessWindowFunction`;
 - если это просто производная от уже существующих counters, сначала попробуйте решить задачу в PromQL;

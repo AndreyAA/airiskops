@@ -10,9 +10,9 @@
 
 Использовать только канонические пакеты:
 
-- `com.bank.aisafetyops.model`
-- `com.bank.aisafetyops.app`
-- `com.bank.aisafetyops.infra`
+- `com.bank.airiskops.model`
+- `com.bank.airiskops.app`
+- `com.bank.airiskops.infra`
 
 Назначение слоёв:
 
