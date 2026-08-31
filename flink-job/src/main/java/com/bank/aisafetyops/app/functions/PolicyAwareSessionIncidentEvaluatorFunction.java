@@ -1,7 +1,6 @@
 package com.bank.aisafetyops.app.functions;
 
 import com.bank.aisafetyops.app.config.IncidentConfig;
-import com.bank.aisafetyops.app.config.PolicyConfig;
 import com.bank.aisafetyops.app.support.IncidentEmissionPlanner;
 import com.bank.aisafetyops.app.support.IncidentPolicyUpdateDecider;
 import com.bank.aisafetyops.model.BasicIncident;
@@ -46,7 +45,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
     private static final String POLICY_STATE_KEY = "active";
 
     private final IncidentConfig incidentConfig;
-    private final PolicyConfig policyConfig;
+    private final boolean rejectOlderVersions;
     private final IncidentPolicy bootstrapPolicy;
     private final MapStateDescriptor<String, IncidentPolicy> broadcastStateDescriptor;
 
@@ -63,12 +62,12 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
 
     public PolicyAwareSessionIncidentEvaluatorFunction(
             IncidentConfig incidentConfig,
-            PolicyConfig policyConfig,
+            boolean rejectOlderVersions,
             IncidentPolicy bootstrapPolicy,
             MapStateDescriptor<String, IncidentPolicy> broadcastStateDescriptor
     ) {
         this.incidentConfig = incidentConfig;
-        this.policyConfig = policyConfig;
+        this.rejectOlderVersions = rejectOlderVersions;
         this.bootstrapPolicy = bootstrapPolicy;
         this.broadcastStateDescriptor = broadcastStateDescriptor;
     }
@@ -136,7 +135,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
         IncidentPolicyUpdateDecider.PolicyUpdateDecision decision = IncidentPolicyUpdateDecider.decide(
                 currentPolicy,
                 candidatePolicy,
-                policyConfig.rejectOlderVersions()
+                rejectOlderVersions
         );
         if (!decision.accepted()) {
             rejectedPolicyUpdatesCounter.inc();

@@ -16,6 +16,7 @@ import com.bank.aisafetyops.app.functions.SplitParseResultsFunction;
 import com.bank.aisafetyops.app.support.JobTopology;
 import com.bank.aisafetyops.infra.parser.ParseResult;
 import com.bank.aisafetyops.infra.serde.JsonSerde;
+import com.bank.aisafetyops.infra.serde.JsonSerializeFunction;
 import com.bank.aisafetyops.infra.sink.KafkaSinkFactory;
 import com.bank.aisafetyops.infra.source.KafkaSourceFactory;
 import com.bank.aisafetyops.model.BasicIncident;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -95,8 +97,7 @@ public final class IncrementOneTopologyBuilder {
         // Kafka output topics make the MVP inspectable and reusable outside Flink:
         // downstream readers, replay checks and manual incident analysis can all
         // consume the same normalized/invalid/late contracts.
-        onTimeEvents
-                .map(JsonSerde::toJson)
+        serializeToJson(onTimeEvents)
                 .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().normalizedEventsTopic()))
                 .uid(JobTopology.NORMALIZED_SINK_UID)
                 .name(JobTopology.NORMALIZED_SINK_NAME);
@@ -147,8 +148,7 @@ public final class IncrementOneTopologyBuilder {
                 .uid(JobTopology.GUARDRAIL_QUALITY_UID)
                 .name(JobTopology.GUARDRAIL_QUALITY_NAME);
 
-        qualityMetrics
-                .map(JsonSerde::toJson)
+        serializeToJson(qualityMetrics)
                 .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().guardrailQualityMetricsTopic()))
                 .uid(JobTopology.GUARDRAIL_QUALITY_SINK_UID)
                 .name(JobTopology.GUARDRAIL_QUALITY_SINK_NAME);
@@ -182,19 +182,24 @@ public final class IncrementOneTopologyBuilder {
                     // without changing the existing NRT window contracts.
                     .process(new PolicyAwareSessionIncidentEvaluatorFunction(
                             config.incidentConfig(),
-                            config.policyConfig(),
+                            config.policyConfig().rejectOlderVersions(),
                             config.bootstrapIncidentPolicy(),
                             JobTopology.INCIDENT_POLICY_BROADCAST_STATE
                     ))
                     .uid(JobTopology.INCIDENT_EVALUATOR_UID)
                     .name(JobTopology.INCIDENT_EVALUATOR_NAME);
 
-            incidents
-                    .map(JsonSerde::toJson)
+            serializeToJson(incidents)
                     .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().basicIncidentsTopic()))
                     .uid(JobTopology.INCIDENT_SINK_UID)
                     .name(JobTopology.INCIDENT_SINK_NAME);
         }
+    }
+
+    static <T> SingleOutputStreamOperator<String> serializeToJson(DataStream<T> stream) {
+        return stream
+                .map(new JsonSerializeFunction<>())
+                .returns(Types.STRING);
     }
 
     private static DataStream<GuardrailWindowAggregate> buildGuardrailAggregates(

@@ -1,6 +1,8 @@
 package com.bank.aisafetyops.app.config;
 
 import com.bank.aisafetyops.model.WindowNames;
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.List;
 
@@ -15,7 +17,10 @@ public record RuntimeContractConfig(
         String windowType,
         List<Duration> aggregateWindows,
         PipelineDeliveryGuarantee deliveryGuarantee
-) {
+) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public RuntimeContractConfig {
         if (windowType == null || windowType.isBlank()) {
             throw new IllegalArgumentException("windowType must not be blank");

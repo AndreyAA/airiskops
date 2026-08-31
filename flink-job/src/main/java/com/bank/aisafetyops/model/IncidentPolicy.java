@@ -1,5 +1,7 @@
 package com.bank.aisafetyops.model;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.util.Map;
 
 /**
@@ -13,7 +15,10 @@ public record IncidentPolicy(
         String updatedAt,
         IncidentPolicyDefaults defaults,
         Map<String, AgentIncidentPolicyOverride> agents
-) {
+) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public EffectiveIncidentPolicy resolveForAgent(String agentId) {
         AgentIncidentPolicyOverride override = agents == null ? null : agents.get(agentId);
         return new EffectiveIncidentPolicy(

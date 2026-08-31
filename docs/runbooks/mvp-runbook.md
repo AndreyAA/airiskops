@@ -61,6 +61,7 @@
 - [start-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/start-local.sh)
 - [stop-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/stop-local.sh)
 - [cleanup-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/cleanup-local.sh)
+- [init.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init.sh)
 - [init-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init-topics.sh)
 - [reset-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/reset-topics.sh)
 - [build-job.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/build-job.sh)
@@ -69,6 +70,7 @@
 - [load-policies.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/load-policies.sh)
 - [run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-replay.sh)
 - [run-live-generator.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-live-generator.sh)
+- [run-e2e-smoke.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-e2e-smoke.sh)
 - [stream_live_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/stream_live_events.py)
 - [run-regression.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-regression.sh)
 - [prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/observability/prometheus/prometheus.yml)
@@ -481,6 +483,68 @@ bash tools/scripts/run-live-generator.sh \
 - число `detector errors`
 
 Это нужно, чтобы сверить ожидаемый профиль сценария с тем, что потом видно в Kafka topics и на Flink/Grafana dashboards.
+
+## 6.1 Полный destructive e2e smoke test
+
+ATTENTION:
+
+- `bash tools/scripts/run-e2e-smoke.sh` удаляет текущее локальное Docker state, runtime state и build artifacts;
+- использовать его нужно только там, где полный reset локального стенда допустим.
+
+Назначение:
+
+- прогнать локальный контур с нуля до конца;
+- проверить cleanup, старт сервисов, submit job, replay, Kafka outputs, Prometheus и Grafana;
+- получить понятный лог по шагам и статусам.
+
+Запуск:
+
+```bash
+bash tools/scripts/run-e2e-smoke.sh
+```
+
+Для неинтерактивного запуска:
+
+```bash
+bash tools/scripts/run-e2e-smoke.sh --yes
+```
+
+Что делает:
+
+- запрашивает подтверждение перед уничтожением локальных данных;
+- выполняет `cleanup-local.sh`;
+- поднимает локальные сервисы;
+- инициализирует topics;
+- загружает bootstrap policy;
+- собирает и отправляет job;
+- публикует стартовый replay dataset;
+- проверяет Kafka outputs;
+- проверяет ключевые метрики в Prometheus;
+- проверяет datasource и dashboards в Grafana.
+
+## 6.2 Неразрушающая начальная инициализация
+
+Если нужен старт локального контура без cleanup и без загрузки replay-данных, использовать:
+
+```bash
+bash tools/scripts/init.sh
+```
+
+Назначение:
+
+- поднять локальные сервисы;
+- создать topics;
+- загрузить bootstrap policy;
+- собрать job;
+- отправить job в локальный Flink cluster;
+- оставить текущие локальные данные нетронутыми.
+
+Что делает:
+
+- не вызывает `cleanup-local.sh`;
+- не удаляет контейнеры, volumes, runtime state или build artifacts;
+- не публикует replay dataset;
+- печатает timestamp, `STEP N` и длительность каждого шага.
 
 ## 7. Как пользоваться системой после запуска
 

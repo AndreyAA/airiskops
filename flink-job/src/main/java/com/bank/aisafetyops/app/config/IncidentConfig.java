@@ -1,5 +1,7 @@
 package com.bank.aisafetyops.app.config;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.Duration;
 
 /**
@@ -19,5 +21,7 @@ public record IncidentConfig(
         int promptInjectionBurstMinFindings,
         int toxicityCampaignMinFindings,
         int loopingMinOccurrences
-) {
+) implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
 }

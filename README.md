@@ -1,6 +1,6 @@
 # AISafetyOps Flink MVP
 
-Дата актуальности: 2026-08-29
+Дата актуальности: 2026-08-30
 
 ## Назначение
 
@@ -457,6 +457,12 @@ bash tools/scripts/run-regression.sh
 bash tools/scripts/start-local.sh
 ```
 
+Неразрушающе инициализировать локальный контур и job:
+
+```bash
+bash tools/scripts/init.sh
+```
+
 Инициализировать topics:
 
 ```bash
@@ -485,6 +491,12 @@ bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 -
 
 ```bash
 bash tools/scripts/run-live-generator.sh --duration-seconds 300 --min-requests-per-second 1 --max-requests-per-second 5
+```
+
+Запустить destructive e2e smoke:
+
+```bash
+bash tools/scripts/run-e2e-smoke.sh
 ```
 
 Остановить и очистить локальный контур:

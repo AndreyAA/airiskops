@@ -71,7 +71,7 @@
   - что запускать, куда смотреть, как интерпретировать.
 - [mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
   - эксплуатационный runbook для локального MVP;
-  - запуск, replay, live generator, reset, regression.
+  - запуск, replay, live generator, destructive e2e smoke, reset, regression.
 
 ### `mvp/`
 
