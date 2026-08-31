@@ -41,7 +41,7 @@
 Рабочая директория:
 
 ```bash
-cd /home/bob/old_bob/IdeaProjects/flink
+cd <repo-root>
 ```
 
 Если хотите начать с полностью чистого состояния:

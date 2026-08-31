@@ -4,7 +4,7 @@
 
 ## Назначение
 
-Этот документ превращает идеи `Increment 3` из [near-term-improvement-plan.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/near-term-improvement-plan.md) в прикладную спецификацию реализации.
+Этот документ превращает идеи `Increment 3` из [near-term-improvement-plan.md](near-term-improvement-plan.md) в прикладную спецификацию реализации.
 
 Фокус именно на том, что нужно сделать в текущем репозитории для следующего инкремента AISafetyOps MVP:
 
@@ -46,28 +46,28 @@
 
 - `window type`
   - текущее значение: `Tumbling Event-Time Window`;
-  - где задается: [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
+  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
 - `window sizes`
   - текущее значение: `1m` и `5m`;
-  - где задается: [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
+  - где задается: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java).
 - `outOfOrdernessSeconds`
   - текущее значение: `30`;
-  - где задается: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+  - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `idleTimeoutMinutes`
   - текущее значение: `1`;
-  - где задается: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+  - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `lateToleranceMinutes`
   - текущее значение: `5`;
-  - где задается: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+  - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `checkpointIntervalSeconds`
   - текущее значение: `30`;
-  - где задается: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+  - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `autoWatermarkIntervalSeconds`
   - текущее значение: `5`;
-  - где задается: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+  - где задается: [local-job.yaml](../../config/job/local-job.yaml).
 - `delivery guarantee`
   - текущее значение: `AT_LEAST_ONCE`;
-  - где задается: [KafkaSinkFactory.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java).
+  - где задается: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java).
 
 ### 2.2 Что важно не сломать
 
@@ -146,18 +146,18 @@
 
 #### Изменяемые app/config classes
 
-- [JobConfig.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
-- [JobConfigOptions.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
-- [OutputTopics.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
-- [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
-- [JobTopology.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/support/JobTopology.java)
-- [AiSafetyOpsMvpJob.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/job/AiSafetyOpsMvpJob.java)
+- [JobConfig.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
+- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
+- [OutputTopics.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
+- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
+- [JobTopology.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/support/JobTopology.java)
+- [AiSafetyOpsMvpJob.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/job/AiSafetyOpsMvpJob.java)
 
 #### Возможные infra changes
 
-- [KafkaSinkFactory.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java)
+- [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java)
   - добавить sink для `BasicIncident`.
-- [JsonSerde.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/serde/JsonSerde.java)
+- [JsonSerde.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/serde/JsonSerde.java)
   - убедиться, что новая incident model сериализуется без ad-hoc JSON logic.
 
 ### 4.5 Какие параметры добавить в YAML и CLI
@@ -310,20 +310,20 @@
 
 #### Изменяемые classes
 
-- [JobConfig.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
-- [JobConfigOptions.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
-- [OutputTopics.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
-- [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
-- [KafkaSourceFactory.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/source/KafkaSourceFactory.java)
-- [YamlJobConfigLoader.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/config/YamlJobConfigLoader.java)
+- [JobConfig.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfig.java)
+- [JobConfigOptions.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/JobConfigOptions.java)
+- [OutputTopics.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/config/OutputTopics.java)
+- [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java)
+- [KafkaSourceFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/source/KafkaSourceFactory.java)
+- [YamlJobConfigLoader.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/config/YamlJobConfigLoader.java)
 
 #### Config and tooling
 
 - `config/job/local-job.yaml`
 - новый policy file, например `config/policies/local-incident-policy.yaml`
-- [load-policies.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/load-policies.sh)
-- [init-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init-topics.sh)
-- [reset-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/reset-topics.sh)
+- [load-policies.sh](../../tools/scripts/load-policies.sh)
+- [init-topics.sh](../../tools/scripts/init-topics.sh)
+- [reset-topics.sh](../../tools/scripts/reset-topics.sh)
 
 ### 5.4 Какие параметры добавить в YAML и CLI
 
@@ -438,10 +438,10 @@
 
 #### Tooling
 
-- [generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/generate_events.py)
-- [stream_live_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/stream_live_events.py)
-- [run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-replay.sh)
-- [run-live-generator.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-live-generator.sh)
+- [generate_events.py](../../tools/generators/generate_events.py)
+- [stream_live_events.py](../../tools/generators/stream_live_events.py)
+- [run-replay.sh](../../tools/scripts/run-replay.sh)
+- [run-live-generator.sh](../../tools/scripts/run-live-generator.sh)
 - опционально новый файл:
   - `tools/generators/scenario_profiles.py`
 
@@ -453,10 +453,10 @@
 
 #### Docs
 
-- [monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md)
-- [mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
-- [local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
-- [event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+- [monitoring-debugging-guide.md](../monitoring/monitoring-debugging-guide.md)
+- [mvp-runbook.md](../runbooks/mvp-runbook.md)
+- [local-walkthrough.md](../runbooks/local-walkthrough.md)
+- [event-contracts.md](../architecture/event-contracts.md)
 
 #### Observability
 

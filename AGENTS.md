@@ -41,11 +41,11 @@
 
 ## Источники истины
 
-- обзор репозитория: [README.md](/home/bob/old_bob/IdeaProjects/flink/README.md)
-- карта документации: [docs/README.md](/home/bob/old_bob/IdeaProjects/flink/docs/README.md)
-- локальный regression path: [tools/scripts/run-regression.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-regression.sh)
-- Maven build job-модуля: [flink-job/pom.xml](/home/bob/old_bob/IdeaProjects/flink/flink-job/pom.xml)
-- локальный deployment: [deployment/local/docker-compose.yml](/home/bob/old_bob/IdeaProjects/flink/deployment/local/docker-compose.yml)
+- обзор репозитория: [README.md](README.md)
+- карта документации: [docs/README.md](docs/README.md)
+- локальный regression path: [tools/scripts/run-regression.sh](tools/scripts/run-regression.sh)
+- Maven build job-модуля: [flink-job/pom.xml](flink-job/pom.xml)
+- локальный deployment: [deployment/local/docker-compose.yml](deployment/local/docker-compose.yml)
 
 ## Минимальные проверки
 
@@ -63,5 +63,5 @@ bash tools/scripts/build-job.sh
 
 Если менялись deployment, observability, generators или runbooks, желательно дополнительно проверить локальный сценарий из:
 
-- [docs/runbooks/local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
-- [docs/runbooks/mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
+- [docs/runbooks/local-walkthrough.md](docs/runbooks/local-walkthrough.md)
+- [docs/runbooks/mvp-runbook.md](docs/runbooks/mvp-runbook.md)

@@ -11,7 +11,7 @@
 - последовательности внедрения;
 - готовности к переносу из локального Docker-контура в банковскую инфраструктуру.
 
-Документ не заменяет [mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md), а дополняет её как список следующих практических шагов после уже собранного MVP.
+Документ не заменяет [mvp-spec.md](mvp-spec.md), а дополняет её как список следующих практических шагов после уже собранного MVP.
 
 ## 1. Текущая ценность проекта
 
@@ -240,10 +240,10 @@ Replay должен моделировать не только разные би
 
 Нужно расширить:
 
-- [generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/generate_events.py);
-- [stream_live_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/stream_live_events.py);
-- [run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-replay.sh);
-- [run-live-generator.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-live-generator.sh).
+- [generate_events.py](../../tools/generators/generate_events.py);
+- [stream_live_events.py](../../tools/generators/stream_live_events.py);
+- [run-replay.sh](../../tools/scripts/run-replay.sh);
+- [run-live-generator.sh](../../tools/scripts/run-live-generator.sh).
 
 Минимальный набор новых флагов:
 
@@ -372,35 +372,35 @@ Replay должен моделировать не только разные би
 
 - `window type`
   - текущее значение: `Tumbling Event-Time Window`;
-  - где задаётся: [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
+  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
   - на что влияет: как группируются события и как часто появляются aggregates.
 - `window sizes`
   - текущее значение: `1m`, `5m`;
-  - где задаётся: [IncrementOneTopologyBuilder.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
+  - где задаётся: [IncrementOneTopologyBuilder.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/usecase/IncrementOneTopologyBuilder.java);
   - на что влияет: скорость реакции и устойчивость aggregate signal.
 - `outOfOrdernessSeconds`
   - текущее значение: `30`;
-  - где задаётся: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml);
+  - где задаётся: [local-job.yaml](../../config/job/local-job.yaml);
   - на что влияет: сколько event-time disorder job считает нормальным до продвижения watermark.
 - `idleTimeoutMinutes`
   - текущее значение: `1`;
-  - где задаётся: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml);
+  - где задаётся: [local-job.yaml](../../config/job/local-job.yaml);
   - на что влияет: когда молчащий source partition перестаёт тормозить watermark всего потока.
 - `lateToleranceMinutes`
   - текущее значение: `5`;
-  - где задаётся: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml);
+  - где задаётся: [local-job.yaml](../../config/job/local-job.yaml);
   - на что влияет: как долго позднее событие ещё может обновить уже эмитированное окно.
 - `checkpointIntervalSeconds`
   - текущее значение: `30`;
-  - где задаётся: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml);
+  - где задаётся: [local-job.yaml](../../config/job/local-job.yaml);
   - на что влияет: частота recovery snapshots и стоимость fault tolerance.
 - `autoWatermarkIntervalSeconds`
   - текущее значение: `5`;
-  - где задаётся: [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml);
+  - где задаётся: [local-job.yaml](../../config/job/local-job.yaml);
   - на что влияет: как часто runtime публикует watermark progress.
 - `delivery guarantee`
   - текущее значение: `AT_LEAST_ONCE`;
-  - где задаётся: [KafkaSinkFactory.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java);
+  - где задаётся: [KafkaSinkFactory.java](../../flink-job/src/main/java/com/bank/aisafetyops/infra/sink/KafkaSinkFactory.java);
   - на что влияет: downstream должен быть готов к duplicate emissions после recovery и late updates.
 
 ##### Почему это важно для бизнеса и эксплуатации
@@ -510,9 +510,9 @@ Replay должен моделировать не только разные би
 
 Нужно завести отдельный runtime contract doc или явно выделенный раздел в:
 
-- [mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md);
-- [local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md);
-- [monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md).
+- [mvp-runbook.md](../runbooks/mvp-runbook.md);
+- [local-walkthrough.md](../runbooks/local-walkthrough.md);
+- [monitoring-debugging-guide.md](../monitoring/monitoring-debugging-guide.md).
 
 ##### Business value
 
@@ -548,7 +548,7 @@ Replay должен моделировать не только разные би
 ##### Где их настраивать
 
 - runtime job semantics:
-  - через [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml) и `JobConfig`;
+  - через [local-job.yaml](../../config/job/local-job.yaml) и `JobConfig`;
 - generator semantics:
   - через CLI аргументы скриптов и, при необходимости, отдельный YAML profile для replay scenarios;
 - business scenario presets:

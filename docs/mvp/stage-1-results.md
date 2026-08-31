@@ -275,14 +275,14 @@ Flink job пишет результаты в Kafka topics:
 
 Основные файлы результата:
 
-- [aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
-- [mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md)
-- [mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
-- [monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md)
-- [docker-compose.yml](/home/bob/old_bob/IdeaProjects/flink/deployment/local/docker-compose.yml)
-- [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml)
-- [prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/observability/prometheus/prometheus.yml)
-- [check-output-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/check-output-topics.sh)
+- [aisafetyops-manual.md](../architecture/aisafetyops-manual.md)
+- [mvp-spec.md](mvp-spec.md)
+- [mvp-runbook.md](../runbooks/mvp-runbook.md)
+- [monitoring-debugging-guide.md](../monitoring/monitoring-debugging-guide.md)
+- [docker-compose.yml](../../deployment/local/docker-compose.yml)
+- [local-job.yaml](../../config/job/local-job.yaml)
+- [prometheus.yml](../../observability/prometheus/prometheus.yml)
+- [check-output-topics.sh](../../tools/scripts/check-output-topics.sh)
 
 ## 11. Итог
 

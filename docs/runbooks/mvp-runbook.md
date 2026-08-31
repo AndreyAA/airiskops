@@ -56,30 +56,30 @@
 
 ## 3. Структура файлов
 
-- [docker-compose.yml](/home/bob/old_bob/IdeaProjects/flink/deployment/local/docker-compose.yml)
-- [default-policy.yaml](/home/bob/old_bob/IdeaProjects/flink/config/policies/default-policy.yaml)
-- [start-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/start-local.sh)
-- [stop-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/stop-local.sh)
-- [cleanup-local.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/cleanup-local.sh)
-- [init.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init.sh)
-- [init-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/init-topics.sh)
-- [reset-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/reset-topics.sh)
-- [build-job.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/build-job.sh)
-- [submit-job.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/submit-job.sh)
-- [check-output-topics.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/check-output-topics.sh)
-- [load-policies.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/load-policies.sh)
-- [run-replay.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-replay.sh)
-- [run-live-generator.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-live-generator.sh)
-- [run-e2e-smoke.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-e2e-smoke.sh)
-- [stream_live_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/stream_live_events.py)
-- [run-regression.sh](/home/bob/old_bob/IdeaProjects/flink/tools/scripts/run-regression.sh)
-- [prometheus.yml](/home/bob/old_bob/IdeaProjects/flink/observability/prometheus/prometheus.yml)
-- [generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/generators/generate_events.py)
-- [test_generate_events.py](/home/bob/old_bob/IdeaProjects/flink/tools/tests/test_generate_events.py)
+- [docker-compose.yml](../../deployment/local/docker-compose.yml)
+- [default-policy.yaml](../../config/policies/default-policy.yaml)
+- [start-local.sh](../../tools/scripts/start-local.sh)
+- [stop-local.sh](../../tools/scripts/stop-local.sh)
+- [cleanup-local.sh](../../tools/scripts/cleanup-local.sh)
+- [init.sh](../../tools/scripts/init.sh)
+- [init-topics.sh](../../tools/scripts/init-topics.sh)
+- [reset-topics.sh](../../tools/scripts/reset-topics.sh)
+- [build-job.sh](../../tools/scripts/build-job.sh)
+- [submit-job.sh](../../tools/scripts/submit-job.sh)
+- [check-output-topics.sh](../../tools/scripts/check-output-topics.sh)
+- [load-policies.sh](../../tools/scripts/load-policies.sh)
+- [run-replay.sh](../../tools/scripts/run-replay.sh)
+- [run-live-generator.sh](../../tools/scripts/run-live-generator.sh)
+- [run-e2e-smoke.sh](../../tools/scripts/run-e2e-smoke.sh)
+- [stream_live_events.py](../../tools/generators/stream_live_events.py)
+- [run-regression.sh](../../tools/scripts/run-regression.sh)
+- [prometheus.yml](../../observability/prometheus/prometheus.yml)
+- [generate_events.py](../../tools/generators/generate_events.py)
+- [test_generate_events.py](../../tools/tests/test_generate_events.py)
 
 ## 3.1 Runtime contract и где его менять
 
-Текущий runtime contract локального MVP задается в [local-job.yaml](/home/bob/old_bob/IdeaProjects/flink/config/job/local-job.yaml).
+Текущий runtime contract локального MVP задается в [local-job.yaml](../../config/job/local-job.yaml).
 
 Ключевые поля:
 
@@ -156,7 +156,7 @@ bash tools/scripts/submit-job.sh
 
 Подробный контракт по topics и JSON-сообщениям вынесен в отдельный документ:
 
-- [event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+- [event-contracts.md](../architecture/event-contracts.md)
 
 Коротко для runbook:
 

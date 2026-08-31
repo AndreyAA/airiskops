@@ -206,7 +206,7 @@
 
 Сейчас в проекте метрики агрегатов обновляются в:
 
-- [GuardrailWindowProcessFunction.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java)
+- [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java)
 
 Там уже есть разрез:
 
@@ -669,7 +669,7 @@ public final class GuardrailAggregateAccumulator {
    - `detector_errors_total`
    - `input_tokens_total`
    - `output_tokens_total`
-2. Если не хватает, добавлять метрику в [GuardrailWindowProcessFunction.java](/home/bob/old_bob/IdeaProjects/flink/flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java).
+2. Если не хватает, добавлять метрику в [GuardrailWindowProcessFunction.java](../../flink-job/src/main/java/com/bank/aisafetyops/app/functions/GuardrailWindowProcessFunction.java).
 3. Не добавлять `agentId` в labels на уровне Prometheus.
 4. Сначала валидировать на окне `1m`.
 5. Потом смотреть, нужен ли тот же сигнал для `5m`.

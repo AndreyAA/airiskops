@@ -17,47 +17,47 @@
 
 Если нужно быстро понять проект с нуля:
 
-1. [README.md](/home/bob/old_bob/IdeaProjects/flink/README.md)
-2. [architecture/aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
-3. [runbooks/local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
-4. [monitoring/monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md)
+1. [README.md](../README.md)
+2. [architecture/aisafetyops-manual.md](architecture/aisafetyops-manual.md)
+3. [runbooks/local-walkthrough.md](runbooks/local-walkthrough.md)
+4. [monitoring/monitoring-debugging-guide.md](monitoring/monitoring-debugging-guide.md)
 
 Если нужно запустить локальный стенд:
 
-1. [runbooks/mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
-2. [runbooks/local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
+1. [runbooks/mvp-runbook.md](runbooks/mvp-runbook.md)
+2. [runbooks/local-walkthrough.md](runbooks/local-walkthrough.md)
 
 Если нужно понять архитектуру и границы модулей:
 
-1. [architecture/aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
-2. [architecture/event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
-3. [architecture/adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
+1. [architecture/aisafetyops-manual.md](architecture/aisafetyops-manual.md)
+2. [architecture/event-contracts.md](architecture/event-contracts.md)
+3. [architecture/adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
 
 Если нужно понять MVP и этапы внедрения:
 
-1. [mvp/mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md)
-2. [mvp/near-term-improvement-plan.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/near-term-improvement-plan.md)
-3. [mvp/increment-3-implementation-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/increment-3-implementation-spec.md)
-4. [mvp/stage-1-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-1-results.md)
-5. [mvp/stage-2-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-2-results.md)
+1. [mvp/mvp-spec.md](mvp/mvp-spec.md)
+2. [mvp/near-term-improvement-plan.md](mvp/near-term-improvement-plan.md)
+3. [mvp/increment-3-implementation-spec.md](mvp/increment-3-implementation-spec.md)
+4. [mvp/stage-1-results.md](mvp/stage-1-results.md)
+5. [mvp/stage-2-results.md](mvp/stage-2-results.md)
 
 ## Состав каталога
 
 ### `architecture/`
 
-- [aisafetyops-manual.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/aisafetyops-manual.md)
+- [aisafetyops-manual.md](architecture/aisafetyops-manual.md)
   - основной manual по Flink для кейса AISafetyOps;
   - архитектура пайплайна, runtime, deployment, data model, increments.
-- [event-contracts.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/event-contracts.md)
+- [event-contracts.md](architecture/event-contracts.md)
   - Kafka topics и JSON-контракты локального MVP;
   - обязательные поля, связи между событиями и смысл каждого потока.
-- [adding-n-minute-metrics.md](/home/bob/old_bob/IdeaProjects/flink/docs/architecture/adding-n-minute-metrics.md)
+- [adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
   - как правильно добавлять новые агрегированные метрики за `N` минут;
   - принципы, типовые ошибки, примеры кода.
 
 ### `monitoring/`
 
-- [monitoring-debugging-guide.md](/home/bob/old_bob/IdeaProjects/flink/docs/monitoring/monitoring-debugging-guide.md)
+- [monitoring-debugging-guide.md](monitoring/monitoring-debugging-guide.md)
   - мониторинг Flink job;
   - как читать Grafana dashboards;
   - какие Prometheus-запросы использовать;
@@ -66,26 +66,26 @@
 
 ### `runbooks/`
 
-- [local-walkthrough.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/local-walkthrough.md)
+- [local-walkthrough.md](runbooks/local-walkthrough.md)
   - ручная проверка локального контура;
   - что запускать, куда смотреть, как интерпретировать.
-- [mvp-runbook.md](/home/bob/old_bob/IdeaProjects/flink/docs/runbooks/mvp-runbook.md)
+- [mvp-runbook.md](runbooks/mvp-runbook.md)
   - эксплуатационный runbook для локального MVP;
   - запуск, replay, live generator, destructive e2e smoke, reset, regression.
 
 ### `mvp/`
 
-- [mvp-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/mvp-spec.md)
+- [mvp-spec.md](mvp/mvp-spec.md)
   - детальная спецификация MVP и инкрементов.
-- [near-term-improvement-plan.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/near-term-improvement-plan.md)
+- [near-term-improvement-plan.md](mvp/near-term-improvement-plan.md)
   - ближайшие возможные улучшения проекта;
   - приоритеты по business value, observability и operational readiness.
-- [increment-3-implementation-spec.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/increment-3-implementation-spec.md)
+- [increment-3-implementation-spec.md](mvp/increment-3-implementation-spec.md)
   - прикладная спецификация реализации `Increment 3`;
   - список файлов, параметров, topics, metrics, dashboards, тестов и ожидаемого business value.
-- [stage-1-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-1-results.md)
+- [stage-1-results.md](mvp/stage-1-results.md)
   - результаты и бизнес-value первого этапа.
-- [stage-2-results.md](/home/bob/old_bob/IdeaProjects/flink/docs/mvp/stage-2-results.md)
+- [stage-2-results.md](mvp/stage-2-results.md)
   - результаты и бизнес-value второго этапа.
 
 ## Принцип именования
