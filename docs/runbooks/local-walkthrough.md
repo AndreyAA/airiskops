@@ -1,6 +1,6 @@
 # Локальный Walkthrough: как руками проверить AISafetyOps Flink MVP
 
-Дата актуальности: 2026-08-30
+Дата актуальности: 2026-08-31
 
 Этот документ нужен для ручной проверки локального MVP на ноутбуке через Docker. Он описывает:
 
@@ -133,6 +133,9 @@ docker compose -f deployment/local/docker-compose.yml ps
 - `late-events`
 - `guardrail-aggregates`
 - `basic-incidents`
+- `guardrail-quality-metrics`
+- `policy-updates`
+- `debug-incidents`
 
 Проверка:
 
@@ -207,8 +210,12 @@ bash tools/scripts/submit-job.sh
 - filter `GUARDRAIL_FINDING`;
 - `Guardrail Aggregates 1m`;
 - `Guardrail Aggregates 5m`;
+- `Derive Guardrail Quality`;
+- sink в `guardrail-quality-metrics`;
+- `Kafka Policy Updates`;
+- `Parse Policy Updates`;
 - `Session Incident Evaluator`;
-- sink в `guardrail-aggregates`.
+- sink в `guardrail-aggregates`;
 - sink в `basic-incidents`.
 
 Что это означает:
@@ -251,14 +258,16 @@ bash tools/scripts/check-output-topics.sh
 
 - offsets по output topics;
 - sample из `normalized-events`;
-- sample из `guardrail-aggregates`.
-- sample из `basic-incidents`.
+- sample из `guardrail-aggregates`;
+- sample из `basic-incidents`;
+- sample из `guardrail-quality-metrics`.
 
 Как интерпретировать:
 
 - если `normalized-events` не пустой, intake/validation/main flow работает;
-- если `guardrail-aggregates` не пустой, Stage 2 оконной агрегации работает.
+- если `guardrail-aggregates` не пустой, Stage 2 оконной агрегации работает;
 - если `basic-incidents` не пустой, минимальный session correlation layer работает.
+- если `guardrail-quality-metrics` не пустой, quality-ветка агрегатов работает.
 
 ## Шаг 8. Посмотреть Kafka output вручную
 

@@ -1,6 +1,6 @@
 # AISafetyOps Flink MVP
 
-Дата актуальности: 2026-08-30
+Дата актуальности: 2026-08-31
 
 ## Назначение
 
@@ -436,6 +436,9 @@ Parsing входного JSON и промежуточные parse-result объ�
    - обновляет AISafetyOps metrics;
    - эмитит агрегаты downstream.
 9. Агрегаты сериализуются и пишутся в `guardrail-aggregates`.
+10. Из агрегатов вычисляются `GuardrailQualityMetric` и публикуются в `guardrail-quality-metrics`.
+11. Triggered findings соединяются с runtime policy updates через broadcast state.
+12. `PolicyAwareSessionIncidentEvaluatorFunction` формирует `BasicIncident` и публикует его в `basic-incidents`.
 
 ## Основные команды
 

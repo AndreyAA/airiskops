@@ -1,6 +1,6 @@
 # Flink для AISafetyOps: локальный MVP runbook
 
-Дата актуальности: 2026-08-30
+Дата актуальности: 2026-08-31
 
 ## Глоссарий
 
@@ -280,7 +280,7 @@ bash tools/scripts/reset-topics.sh
 
 Что делает:
 
-- собирает fat jar c `Increment 1`;
+- собирает актуальный fat jar локального AISafetyOps MVP;
 - отправляет job в локальный Flink cluster;
 - job начинает читать `agent-requests`, `agent-responses`, `guardrail-findings`.
 
