@@ -1,6 +1,6 @@
 # Flink для AIRiskOps: локальный MVP runbook
 
-Дата актуальности: 2026-08-31
+Дата актуальности: 2026-09-01
 
 ## Глоссарий
 
@@ -667,7 +667,14 @@ curl -s http://localhost:9250/metrics | head -40
 
 - unit/smoke tests для Python-генератора;
 - синтаксическая проверка shell-скриптов;
-- базовая целостность generated datasets.
+- базовая целостность generated datasets;
+- unit tests для `flink-job`;
+- line coverage для `flink-job` с порогом не ниже `80%`.
+
+После успешного прогона скрипт печатает:
+
+- итоговое `flink-job line coverage` в консоль;
+- путь к HTML-отчёту `flink-job/target/site/jacoco/index.html`.
 
 ## 9. Типовой цикл работы
 

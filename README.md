@@ -1,6 +1,6 @@
 # AIRiskOps Flink MVP
 
-Дата актуальности: 2026-08-31
+Дата актуальности: 2026-09-01
 
 ## Назначение
 
@@ -157,6 +157,12 @@ Java-модуль с production-кодом Flink job.
 - `pom.xml` — Maven build для shaded job jar.
 
 Собирать и тестировать нужно именно этот модуль.
+
+Покрытие тестами для `flink-job` собирается через `JaCoCo`:
+
+- регрессия печатает итоговое `line coverage` в консоль при каждом запуске `bash tools/scripts/run-regression.sh`;
+- минимальный порог для `flink-job` зафиксирован на уровне `80%`;
+- HTML-отчёт доступен в `flink-job/target/site/jacoco/index.html`.
 
 ### `deployment/`
 

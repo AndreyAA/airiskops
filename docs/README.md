@@ -1,6 +1,6 @@
 # Документация AIRiskOps Flink
 
-Дата актуальности: 2026-08-30
+Дата актуальности: 2026-09-01
 
 ## Назначение
 
@@ -26,6 +26,11 @@
 
 1. [runbooks/mvp-runbook.md](runbooks/mvp-runbook.md)
 2. [runbooks/local-walkthrough.md](runbooks/local-walkthrough.md)
+
+Если нужно проверить локальную регрессию и покрытие `flink-job`:
+
+1. [README.md](../README.md)
+2. [runbooks/mvp-runbook.md](runbooks/mvp-runbook.md)
 
 Если нужно понять архитектуру и границы модулей:
 

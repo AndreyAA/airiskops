@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.snakeyaml.engine.v2.exceptions.YamlEngineException;
 import org.snakeyaml.engine.v2.api.Load;
 import org.snakeyaml.engine.v2.api.LoadSettings;
 
@@ -63,7 +64,7 @@ public final class YamlJobConfigLoader {
                 throw new IllegalArgumentException("Job config root must be a YAML map: " + path);
             }
             return new LinkedHashMap<>((Map<String, Object>) rawMap);
-        } catch (IOException e) {
+        } catch (IOException | YamlEngineException e) {
             throw new IllegalArgumentException("Failed to read job config file: " + path, e);
         }
     }
