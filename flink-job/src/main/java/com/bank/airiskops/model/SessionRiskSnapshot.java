@@ -2,7 +2,9 @@ package com.bank.airiskops.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.time.Duration;
 
 /**
  * Mutable keyed-state snapshot used by the minimal incident evaluator.
@@ -39,8 +41,12 @@ public final class SessionRiskSnapshot implements Serializable {
     private int toxicityCampaignRevision;
     private int leakageWithInjectionRevision;
     private int loopingPersistenceRevision;
+    private boolean piAndToxicEmitted;
+    private int piAndToxicRevision;
+    private final List<WindowFindingEvidence> promptInjectionWindowEvidence = new ArrayList<>();
+    private final List<WindowFindingEvidence> toxicityWindowEvidence = new ArrayList<>();
 
-    public void recordFinding(SafetyEvent event, int maxRequestIdsPerIncident) {
+    public void recordFinding(SafetyEvent event, int maxRequestIdsPerIncident, Duration piAndToxicWindow) {
         tenantId = event.tenantId();
         agentId = event.agentId();
         sessionId = event.sessionId();
@@ -57,11 +63,15 @@ public final class SessionRiskSnapshot implements Serializable {
         if (GuardrailNames.PROMPT_INJECTION.equals(event.guardrailName())) {
             promptInjectionCount++;
             maxPromptInjectionConfidence = Math.max(maxPromptInjectionConfidence, safeConfidence(event.confidence()));
+            promptInjectionWindowEvidence.add(new WindowFindingEvidence(event.eventTimeMillis(), event.confidence()));
+            pruneWindowEvidence(piAndToxicWindow);
             return;
         }
         if (GuardrailNames.TOXICITY.equals(event.guardrailName())) {
             toxicityCount++;
             maxToxicityConfidence = Math.max(maxToxicityConfidence, safeConfidence(event.confidence()));
+            toxicityWindowEvidence.add(new WindowFindingEvidence(event.eventTimeMillis(), event.confidence()));
+            pruneWindowEvidence(piAndToxicWindow);
             return;
         }
         if (GuardrailNames.LOOPING.equals(event.guardrailName())) {
@@ -181,8 +191,89 @@ public final class SessionRiskSnapshot implements Serializable {
         return ++loopingPersistenceRevision;
     }
 
+    public boolean piAndToxicEmitted() {
+        return piAndToxicEmitted;
+    }
+
+    public int incrementPiAndToxicRevision() {
+        piAndToxicEmitted = true;
+        return ++piAndToxicRevision;
+    }
+
+    public PiAndToxicWindowStats piAndToxicWindowStats(
+            long referenceTimeMillis,
+            Duration window,
+            Double minPromptInjectionConfidence,
+            Double minToxicityConfidence
+    ) {
+        return new PiAndToxicWindowStats(
+                countQualified(promptInjectionWindowEvidence, referenceTimeMillis, window, minPromptInjectionConfidence),
+                maxQualifiedConfidence(promptInjectionWindowEvidence, referenceTimeMillis, window, minPromptInjectionConfidence),
+                countQualified(toxicityWindowEvidence, referenceTimeMillis, window, minToxicityConfidence),
+                maxQualifiedConfidence(toxicityWindowEvidence, referenceTimeMillis, window, minToxicityConfidence)
+        );
+    }
+
     private static double safeConfidence(Double confidence) {
         return confidence == null ? NO_CONFIDENCE : confidence;
+    }
+
+    private void pruneWindowEvidence(Duration piAndToxicWindow) {
+        long minimumEventTimeMillis = lastEventTimeMillis - piAndToxicWindow.toMillis();
+        pruneBefore(promptInjectionWindowEvidence, minimumEventTimeMillis);
+        pruneBefore(toxicityWindowEvidence, minimumEventTimeMillis);
+    }
+
+    private static void pruneBefore(List<WindowFindingEvidence> evidence, long minimumEventTimeMillis) {
+        Iterator<WindowFindingEvidence> iterator = evidence.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().eventTimeMillis() < minimumEventTimeMillis) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private static int countQualified(
+            List<WindowFindingEvidence> evidence,
+            long referenceTimeMillis,
+            Duration window,
+            Double minConfidence
+    ) {
+        int qualifiedCount = 0;
+        for (WindowFindingEvidence finding : evidence) {
+            if (isInsideWindow(finding.eventTimeMillis(), referenceTimeMillis, window)
+                    && passesConfidenceThreshold(finding.confidence(), minConfidence)) {
+                qualifiedCount++;
+            }
+        }
+        return qualifiedCount;
+    }
+
+    private static double maxQualifiedConfidence(
+            List<WindowFindingEvidence> evidence,
+            long referenceTimeMillis,
+            Duration window,
+            Double minConfidence
+    ) {
+        double maxConfidence = NO_CONFIDENCE;
+        for (WindowFindingEvidence finding : evidence) {
+            if (isInsideWindow(finding.eventTimeMillis(), referenceTimeMillis, window)
+                    && passesConfidenceThreshold(finding.confidence(), minConfidence)) {
+                maxConfidence = Math.max(maxConfidence, safeConfidence(finding.confidence()));
+            }
+        }
+        return maxConfidence;
+    }
+
+    private static boolean isInsideWindow(long eventTimeMillis, long referenceTimeMillis, Duration window) {
+        return eventTimeMillis >= referenceTimeMillis - window.toMillis() && eventTimeMillis <= referenceTimeMillis;
+    }
+
+    private static boolean passesConfidenceThreshold(Double confidence, Double minConfidence) {
+        if (minConfidence == null) {
+            return true;
+        }
+        return confidence != null && confidence >= minConfidence;
     }
 
     private static void appendDistinct(List<String> values, String nextValue, int maxSize) {
@@ -190,5 +281,19 @@ public final class SessionRiskSnapshot implements Serializable {
             return;
         }
         values.add(nextValue);
+    }
+
+    /**
+     * Qualified PI_AND_TOXIC evidence inside the active event-time window.
+     */
+    public record PiAndToxicWindowStats(
+            int promptInjectionCount,
+            double maxPromptInjectionConfidence,
+            int toxicityCount,
+            double maxToxicityConfidence
+    ) implements Serializable {
+    }
+
+    private record WindowFindingEvidence(long eventTimeMillis, Double confidence) implements Serializable {
     }
 }

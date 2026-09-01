@@ -668,6 +668,7 @@
       ],
       "title": "Current Input Watermark By Task",
       "type": "timeseries"
+    },
     }
   ],
   "refresh": "10s",

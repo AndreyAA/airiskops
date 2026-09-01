@@ -107,7 +107,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
             context.timerService().deleteEventTimeTimer(snapshot.cleanupDeadlineMillis());
         }
 
-        snapshot.recordFinding(event, incidentConfig.maxRequestIdsPerIncident());
+        snapshot.recordFinding(event, incidentConfig.maxRequestIdsPerIncident(), incidentConfig.piAndToxic().window());
         long cleanupDeadlineMillis = event.eventTimeMillis() + incidentConfig.sessionInactivityTimeout().toMillis();
         snapshot.setCleanupDeadlineMillis(cleanupDeadlineMillis);
         context.timerService().registerEventTimeTimer(cleanupDeadlineMillis);

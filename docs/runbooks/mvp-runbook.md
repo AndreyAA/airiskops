@@ -229,7 +229,8 @@ bash tools/scripts/cleanup-local.sh
 - поднимает Grafana с dashboards:
   - `AIRiskOps Flink Overview`;
   - `AIRiskOps Business Metrics`;
-  - `AIRiskOps Capacity And Performance`.
+  - `AIRiskOps Capacity And Performance`;
+  - `AIRiskOps Incidents`.
   - `AIRiskOps Detector Quality`.
 
 ### Шаг 2. Инициализировать topics

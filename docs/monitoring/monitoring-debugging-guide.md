@@ -388,6 +388,37 @@ URL:
 - `Current Input Watermark By Task`
   - нужен для понимания, движется ли event time по веткам job.
 
+### Dashboard `AIRiskOps Incidents`
+
+Это dashboard для ответа на вопросы:
+
+- какие incident rules сейчас реально срабатывают;
+- растёт ли поток `basic-incidents`;
+- какой severity mix у текущих incidents.
+
+Панели:
+
+- `Open Incident Sessions`
+  - текущий объём активного keyed session state в incident layer.
+- `Incidents Emitted 5m`
+  - суммарный объём incidents, выпущенных за последние `5m`;
+  - это самый быстрый прокси для активности потока `basic-incidents`.
+- `PI_AND_TOXIC Incidents 5m`
+  - число incidents по rule `PI_AND_TOXIC` за последние `5m`;
+  - использовать, когда нужно быстро подтвердить, что новая session-комбинация реально сработала.
+- `Prompt Injection Burst Incidents 5m`
+  - число incidents по rule `PROMPT_INJECTION_BURST`.
+- `Toxicity Campaign Incidents 5m`
+  - число incidents по rule `TOXICITY_CAMPAIGN`.
+- `Leakage With Injection Incidents 5m`
+  - число incidents по rule `LEAKAGE_WITH_INJECTION`.
+- `Incidents By Rule 5m`
+  - разрез incident emission по `rule`;
+  - позволяет увидеть, какой именно rule создаёт текущий рост `basic-incidents`.
+- `Incident Severity Mix 5m`
+  - разрез incident emission по `severity`;
+  - помогает быстро понять, это всплеск `HIGH`, `MEDIUM` или `CRITICAL` incidents.
+
 ### Dashboard `AIRiskOps Detector Quality`
 
 Это dashboard для ответа на вопрос:

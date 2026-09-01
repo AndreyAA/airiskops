@@ -20,7 +20,8 @@ public record IncidentConfig(
         int maxRequestIdsPerIncident,
         int promptInjectionBurstMinFindings,
         int toxicityCampaignMinFindings,
-        int loopingMinOccurrences
+        int loopingMinOccurrences,
+        PiAndToxicRuleConfig piAndToxic
 ) implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

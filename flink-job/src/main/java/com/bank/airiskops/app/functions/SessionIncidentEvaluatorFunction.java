@@ -87,7 +87,7 @@ public final class SessionIncidentEvaluatorFunction
             context.timerService().deleteEventTimeTimer(snapshot.cleanupDeadlineMillis());
         }
 
-        snapshot.recordFinding(event, config.maxRequestIdsPerIncident());
+        snapshot.recordFinding(event, config.maxRequestIdsPerIncident(), config.piAndToxic().window());
         long cleanupDeadlineMillis = event.eventTimeMillis() + config.sessionInactivityTimeout().toMillis();
         snapshot.setCleanupDeadlineMillis(cleanupDeadlineMillis);
         context.timerService().registerEventTimeTimer(cleanupDeadlineMillis);

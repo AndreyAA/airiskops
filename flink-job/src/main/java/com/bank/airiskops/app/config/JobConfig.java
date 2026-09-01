@@ -3,6 +3,7 @@ package com.bank.airiskops.app.config;
 import com.bank.airiskops.infra.config.IncidentPolicyLoader;
 import com.bank.airiskops.infra.config.YamlJobConfigLoader;
 import com.bank.airiskops.model.IncidentPolicy;
+import com.bank.airiskops.model.IncidentSeverity;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -189,6 +190,48 @@ public record JobConfig(
                                 yamlConfig,
                                 JobConfigOptions.ARG_LOOPING_MIN_OCCURRENCES,
                                 JobConfigOptions.DEFAULT_LOOPING_MIN_OCCURRENCES
+                        ),
+                        new PiAndToxicRuleConfig(
+                                readBoolean(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_ENABLED,
+                                        JobConfigOptions.DEFAULT_PI_AND_TOXIC_ENABLED
+                                ),
+                                Duration.ofMinutes(readLong(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_WINDOW_MINUTES,
+                                        JobConfigOptions.DEFAULT_PI_AND_TOXIC_WINDOW_MINUTES
+                                )),
+                                IncidentSeverity.valueOf(readString(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_SEVERITY,
+                                        JobConfigOptions.DEFAULT_PI_AND_TOXIC_SEVERITY
+                                ).toUpperCase()),
+                                readInt(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_MIN_PROMPT_INJECTION_TRIGGERED_COUNT,
+                                        JobConfigOptions.DEFAULT_PI_AND_TOXIC_MIN_PROMPT_INJECTION_TRIGGERED_COUNT
+                                ),
+                                readInt(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_MIN_TOXICITY_TRIGGERED_COUNT,
+                                        JobConfigOptions.DEFAULT_PI_AND_TOXIC_MIN_TOXICITY_TRIGGERED_COUNT
+                                ),
+                                readDouble(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_MIN_PROMPT_INJECTION_CONFIDENCE
+                                ),
+                                readDouble(
+                                        parameters,
+                                        yamlConfig,
+                                        JobConfigOptions.ARG_PI_AND_TOXIC_MIN_TOXICITY_CONFIDENCE
+                                )
                         )
                 ),
                 policyConfig,
@@ -369,5 +412,24 @@ public record JobConfig(
             return Boolean.parseBoolean(value);
         }
         return defaultValue;
+    }
+
+    private static Double readDouble(
+            ParameterTool parameters,
+            Map<String, Object> yamlConfig,
+            String key
+    ) {
+        String cliValue = parameters.get(key);
+        if (cliValue != null) {
+            return Double.parseDouble(cliValue);
+        }
+        Object yamlValue = yamlConfig.get(key);
+        if (yamlValue instanceof Number number) {
+            return number.doubleValue();
+        }
+        if (yamlValue instanceof String value && !value.isBlank()) {
+            return Double.parseDouble(value);
+        }
+        return null;
     }
 }

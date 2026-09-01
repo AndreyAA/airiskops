@@ -46,20 +46,20 @@ Rule рассматривает только findings следующих тип�
 
 Findings с `triggered == false` никогда не участвуют в этом правиле.
 
-## 5. Config / Policy Fields
+## 5. Config Fields
 
 Обязательные поля:
 
-- `piAndToxic.enabled`
-- `piAndToxic.windowMinutes`
-- `piAndToxic.severity`
-- `piAndToxic.minPromptInjectionTriggeredCount`
-- `piAndToxic.minToxicityTriggeredCount`
+- `incidentPiAndToxicEnabled`
+- `incidentPiAndToxicWindowMinutes`
+- `incidentPiAndToxicSeverity`
+- `incidentPiAndToxicMinPromptInjectionTriggeredCount`
+- `incidentPiAndToxicMinToxicityTriggeredCount`
 
 Поддерживаемые optional поля:
 
-- `piAndToxic.minPromptInjectionConfidence`
-- `piAndToxic.minToxicityConfidence`
+- `incidentPiAndToxicMinPromptInjectionConfidence`
+- `incidentPiAndToxicMinToxicityConfidence`
 
 Рекомендуемые defaults:
 
@@ -119,7 +119,7 @@ Rule emits incident, если в одном и том же rule window одно�
 
 ## 8. Severity
 
-- severity задаётся конфигом или policy;
+- severity задаётся конфигом;
 - severity не выводится автоматически из confidence;
 - default severity: `HIGH`.
 
@@ -182,13 +182,11 @@ Rule emits incident, если в одном и том же rule window одно�
 - Это признанное ограничение MVP.
 - Если dedup будет добавлен позже, его semantics должна описываться отдельно для каждого rule.
 
-## 14. Policy Update Semantics
+## 14. Config Update Semantics
 
-- Runtime policy updates могут влиять на будущую оценку уже открытых sessions.
-- Ожидаемое MVP-поведение:
-  - существующая session state сохраняется;
-  - следующее релевантное событие оценивает rule по последней принятой policy.
-- Это поведение должно считаться intentional.
+- `PI_AND_TOXIC` в текущей реализации настраивается через job config, а не через runtime policy updates.
+- Изменение параметров rule требует обновления конфигурации и нового submit job.
+- Накопленная session state не пересчитывается задним числом после restart.
 
 ## 15. Edge Cases
 
@@ -239,10 +237,10 @@ Rule emits incident, если в одном и том же rule window одно�
 - При `incidentEmitUpdates=false` repeated qualifying events не должны давать новый incident.
 - При `incidentEmitUpdates=true` update допустим.
 
-### 15.10 Policy changes at runtime
+### 15.10 Config changes after restart
 
-- Более строгая policy может предотвратить future emission.
-- Более мягкая policy может разрешить emission на следующем релевантном событии для уже открытой session.
+- Более строгий config может предотвратить future emission после нового запуска job.
+- Более мягкий config может разрешить emission в следующих сессиях после нового запуска job.
 
 ### 15.11 Session cleanup
 
@@ -283,10 +281,10 @@ Rule emits incident, если в одном и том же rule window одно�
 - При `incidentEmitUpdates=false` repeated emission не происходит.
 - При `incidentEmitUpdates=true` update может переэмититься с новой revision.
 
-### Policy Cases
+### Config Cases
 
-- Runtime policy стала строже: emission не происходит, если новые thresholds не выполнены.
-- Runtime policy стала мягче: следующий qualifying event может активировать emission на уже открытой session.
+- После restart с более строгим config emission не происходит, если новые thresholds не выполнены.
+- После restart с более мягким config emission может происходить для новых qualifying sessions.
 
 ### State Lifecycle Cases
 

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.bank.airiskops.model.IncidentSeverity;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -70,6 +71,13 @@ class JobConfigTest {
                 incidentPromptInjectionBurstMinFindings: 4
                 incidentToxicityCampaignMinFindings: 5
                 incidentLoopingMinOccurrences: 3
+                incidentPiAndToxicEnabled: false
+                incidentPiAndToxicWindowMinutes: 7
+                incidentPiAndToxicSeverity: MEDIUM
+                incidentPiAndToxicMinPromptInjectionTriggeredCount: 2
+                incidentPiAndToxicMinToxicityTriggeredCount: 4
+                incidentPiAndToxicMinPromptInjectionConfidence: 0.81
+                incidentPiAndToxicMinToxicityConfidence: 0.93
                 policyEnabled: true
                 policyBootstrapFile: %s
                 policyRequireBootstrap: true
@@ -83,7 +91,8 @@ class JobConfigTest {
                 "--lateToleranceMinutes", "9",
                 "--autoWatermarkIntervalSeconds", "6",
                 "--deliveryGuarantee", "AT_LEAST_ONCE",
-                "--incidentPromptInjectionBurstMinFindings", "6"
+                "--incidentPromptInjectionBurstMinFindings", "6",
+                "--incidentPiAndToxicSeverity", "HIGH"
         });
 
         assertEquals("kafka:9092", config.bootstrapServers());
@@ -113,6 +122,13 @@ class JobConfigTest {
         assertEquals(6, config.incidentConfig().promptInjectionBurstMinFindings());
         assertEquals(5, config.incidentConfig().toxicityCampaignMinFindings());
         assertEquals(3, config.incidentConfig().loopingMinOccurrences());
+        assertFalse(config.incidentConfig().piAndToxic().enabled());
+        assertEquals(Duration.ofMinutes(7), config.incidentConfig().piAndToxic().window());
+        assertEquals(IncidentSeverity.HIGH, config.incidentConfig().piAndToxic().severity());
+        assertEquals(2, config.incidentConfig().piAndToxic().minPromptInjectionTriggeredCount());
+        assertEquals(4, config.incidentConfig().piAndToxic().minToxicityTriggeredCount());
+        assertEquals(0.81d, config.incidentConfig().piAndToxic().minPromptInjectionConfidence());
+        assertEquals(0.93d, config.incidentConfig().piAndToxic().minToxicityConfidence());
         assertTrue(config.policyConfig().enabled());
         assertEquals(policyFile, config.policyConfig().bootstrapFile());
         assertTrue(config.policyConfig().requireBootstrapPolicy());

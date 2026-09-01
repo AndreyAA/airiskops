@@ -34,10 +34,12 @@ public final class IncidentEmissionPlanner {
         if (GuardrailNames.PROMPT_INJECTION.equals(event.guardrailName())) {
             addPromptInjectionBurstIfNeeded(snapshot, emissions, effectivePolicy);
             addLeakageWithInjectionIfNeeded(snapshot, emissions, effectivePolicy);
+            addPiAndToxicIfNeeded(snapshot, emissions, event);
             return emissions;
         }
         if (GuardrailNames.TOXICITY.equals(event.guardrailName())) {
             addToxicityCampaignIfNeeded(snapshot, emissions, effectivePolicy);
+            addPiAndToxicIfNeeded(snapshot, emissions, event);
             return emissions;
         }
         if (GuardrailNames.LOOPING.equals(event.guardrailName())) {
@@ -157,8 +159,51 @@ public final class IncidentEmissionPlanner {
         ));
     }
 
+    private void addPiAndToxicIfNeeded(
+            SessionRiskSnapshot snapshot,
+            List<PlannedIncidentEmission> emissions,
+            SafetyEvent event
+    ) {
+        if (!config.piAndToxic().enabled()) {
+            return;
+        }
+        SessionRiskSnapshot.PiAndToxicWindowStats stats = snapshot.piAndToxicWindowStats(
+                event.eventTimeMillis(),
+                config.piAndToxic().window(),
+                config.piAndToxic().minPromptInjectionConfidence(),
+                config.piAndToxic().minToxicityConfidence()
+        );
+        if (stats.promptInjectionCount() < config.piAndToxic().minPromptInjectionTriggeredCount()
+                || stats.toxicityCount() < config.piAndToxic().minToxicityTriggeredCount()) {
+            return;
+        }
+        boolean update = snapshot.piAndToxicEmitted();
+        if (update && !config.emitUpdates()) {
+            return;
+        }
+        emissions.add(new PlannedIncidentEmission(
+                IncidentRuleNames.PI_AND_TOXIC,
+                config.piAndToxic().severity(),
+                snapshot.incrementPiAndToxicRevision(),
+                update,
+                policyVersion(event.agentId()),
+                "PI_AND_TOXIC detected: promptInjectionFindings="
+                        + stats.promptInjectionCount()
+                        + ", toxicityFindings="
+                        + stats.toxicityCount()
+                        + ", maxPromptInjectionConfidence="
+                        + formatConfidence(stats.maxPromptInjectionConfidence())
+                        + ", maxToxicityConfidence="
+                        + formatConfidence(stats.maxToxicityConfidence())
+        ));
+    }
+
     private EffectiveIncidentPolicy resolveEffectivePolicy(String agentId) {
         return policy == null ? fallbackPolicy() : policy.resolveForAgent(agentId);
+    }
+
+    private String policyVersion(String agentId) {
+        return resolveEffectivePolicy(agentId).version();
     }
 
     private static EffectiveIncidentPolicy fallbackPolicy() {

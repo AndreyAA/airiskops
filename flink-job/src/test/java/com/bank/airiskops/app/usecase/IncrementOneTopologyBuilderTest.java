@@ -7,6 +7,7 @@ import com.bank.airiskops.app.config.IncidentConfig;
 import com.bank.airiskops.app.config.JobConfig;
 import com.bank.airiskops.app.config.OutputTopics;
 import com.bank.airiskops.app.config.PipelineDeliveryGuarantee;
+import com.bank.airiskops.app.config.PiAndToxicRuleConfig;
 import com.bank.airiskops.app.config.PolicyConfig;
 import com.bank.airiskops.app.config.RuntimeContractConfig;
 import com.bank.airiskops.model.IncidentGuardrailPolicy;
@@ -64,7 +65,8 @@ class IncrementOneTopologyBuilderTest {
                         25,
                         3,
                         3,
-                        2
+                        2,
+                        new PiAndToxicRuleConfig(true, Duration.ofMinutes(5), IncidentSeverity.HIGH, 1, 1, null, null)
                 ),
                 new PolicyConfig(
                         true,

@@ -8,6 +8,7 @@ public final class IncidentRuleNames {
     public static final String TOXICITY_CAMPAIGN = "TOXICITY_CAMPAIGN";
     public static final String LEAKAGE_WITH_INJECTION = "LEAKAGE_WITH_INJECTION";
     public static final String LOOPING_PERSISTENCE = "LOOPING_PERSISTENCE";
+    public static final String PI_AND_TOXIC = "PI_AND_TOXIC";
 
     private IncidentRuleNames() {
     }

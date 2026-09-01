@@ -33,6 +33,17 @@ public final class JobConfigOptions {
     public static final String ARG_PROMPT_INJECTION_BURST_MIN_FINDINGS = "incidentPromptInjectionBurstMinFindings";
     public static final String ARG_TOXICITY_CAMPAIGN_MIN_FINDINGS = "incidentToxicityCampaignMinFindings";
     public static final String ARG_LOOPING_MIN_OCCURRENCES = "incidentLoopingMinOccurrences";
+    public static final String ARG_PI_AND_TOXIC_ENABLED = "incidentPiAndToxicEnabled";
+    public static final String ARG_PI_AND_TOXIC_WINDOW_MINUTES = "incidentPiAndToxicWindowMinutes";
+    public static final String ARG_PI_AND_TOXIC_SEVERITY = "incidentPiAndToxicSeverity";
+    public static final String ARG_PI_AND_TOXIC_MIN_PROMPT_INJECTION_TRIGGERED_COUNT =
+            "incidentPiAndToxicMinPromptInjectionTriggeredCount";
+    public static final String ARG_PI_AND_TOXIC_MIN_TOXICITY_TRIGGERED_COUNT =
+            "incidentPiAndToxicMinToxicityTriggeredCount";
+    public static final String ARG_PI_AND_TOXIC_MIN_PROMPT_INJECTION_CONFIDENCE =
+            "incidentPiAndToxicMinPromptInjectionConfidence";
+    public static final String ARG_PI_AND_TOXIC_MIN_TOXICITY_CONFIDENCE =
+            "incidentPiAndToxicMinToxicityConfidence";
     public static final String ARG_POLICY_ENABLED = "policyEnabled";
     public static final String ARG_POLICY_BOOTSTRAP_FILE = "policyBootstrapFile";
     public static final String ARG_POLICY_REQUIRE_BOOTSTRAP = "policyRequireBootstrap";
@@ -65,6 +76,11 @@ public final class JobConfigOptions {
     public static final int DEFAULT_PROMPT_INJECTION_BURST_MIN_FINDINGS = 3;
     public static final int DEFAULT_TOXICITY_CAMPAIGN_MIN_FINDINGS = 3;
     public static final int DEFAULT_LOOPING_MIN_OCCURRENCES = 2;
+    public static final boolean DEFAULT_PI_AND_TOXIC_ENABLED = true;
+    public static final long DEFAULT_PI_AND_TOXIC_WINDOW_MINUTES = 5L;
+    public static final String DEFAULT_PI_AND_TOXIC_SEVERITY = "HIGH";
+    public static final int DEFAULT_PI_AND_TOXIC_MIN_PROMPT_INJECTION_TRIGGERED_COUNT = 1;
+    public static final int DEFAULT_PI_AND_TOXIC_MIN_TOXICITY_TRIGGERED_COUNT = 1;
     public static final boolean DEFAULT_POLICY_ENABLED = true;
     public static final String DEFAULT_POLICY_BOOTSTRAP_FILE = "runtime/policies/active-policy.yaml";
     public static final boolean DEFAULT_POLICY_REQUIRE_BOOTSTRAP = false;

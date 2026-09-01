@@ -393,6 +393,7 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - dashboard `AIRiskOps Flink Overview` уже загружен автоматически;
 - dashboard `AIRiskOps Business Metrics` уже загружен автоматически;
 - dashboard `AIRiskOps Capacity And Performance` уже загружен автоматически;
+- dashboard `AIRiskOps Incidents` уже загружен автоматически;
 - dashboard `AIRiskOps Detector Quality` уже загружен автоматически;
 - папка dashboard: `AIRiskOps`.
 
@@ -563,6 +564,36 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - при replay `late-events` и `combined-chaos`;
 - при локальной нагрузке, когда надо увидеть приближение к saturation;
 - если `Business Metrics` выглядят странно и нужно отделить business effect от runtime issues.
+
+### `AIRiskOps Incidents`
+
+Это dashboard для incident-layer и rule-level triage.
+
+Панели:
+
+- `Open Incident Sessions`
+  - сколько keyed session states сейчас активно;
+- `Incidents Emitted 5m`
+  - сколько incidents суммарно выпущено за последние `5m`;
+- `PI_AND_TOXIC Incidents 5m`
+  - сколько раз за последние `5m` сработал rule `PI_AND_TOXIC`;
+- `Prompt Injection Burst Incidents 5m`
+  - сколько раз за последние `5m` сработал `PROMPT_INJECTION_BURST`;
+- `Toxicity Campaign Incidents 5m`
+  - сколько раз за последние `5m` сработал `TOXICITY_CAMPAIGN`;
+- `Leakage With Injection Incidents 5m`
+  - сколько раз за последние `5m` сработал `LEAKAGE_WITH_INJECTION`;
+- `Incidents By Rule 5m`
+  - какой именно rule сейчас формирует поток `basic-incidents`;
+- `Incident Severity Mix 5m`
+  - как incidents распределяются по severity.
+
+Когда смотреть:
+
+- если нужно быстро проверить, что `basic-incidents` вообще эмитятся без чтения Kafka;
+- если нужно увидеть, срабатывает ли `PI_AND_TOXIC`;
+- если нужно понять, какой rule дал текущий рост incidents;
+- если нужно отделить `HIGH` incidents от `MEDIUM` и `CRITICAL`.
 
 ### `AIRiskOps Detector Quality`
 

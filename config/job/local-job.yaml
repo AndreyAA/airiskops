@@ -28,6 +28,11 @@ incidentMaxRequestIdsPerIncident: 50
 incidentPromptInjectionBurstMinFindings: 3
 incidentToxicityCampaignMinFindings: 3
 incidentLoopingMinOccurrences: 2
+incidentPiAndToxicEnabled: true
+incidentPiAndToxicWindowMinutes: 5
+incidentPiAndToxicSeverity: HIGH
+incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
+incidentPiAndToxicMinToxicityTriggeredCount: 1
 policyEnabled: true
 policyBootstrapFile: runtime/policies/active-policy.yaml
 policyRequireBootstrap: false
