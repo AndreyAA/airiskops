@@ -145,7 +145,9 @@ URL:
 - dashboard `AIRiskOps Flink Overview`;
 - dashboard `AIRiskOps Business Metrics`;
 - dashboard `AIRiskOps Capacity And Performance`;
+- dashboard `AIRiskOps State And Checkpoint Pressure`;
 - dashboard `AIRiskOps Detector Quality`;
+- exporter `checkpoint-exporter` для REST-based checkpoint/restore metrics;
 - папка dashboard: `AIRiskOps`.
 
 Что смотреть в dashboard в первую очередь:
@@ -172,6 +174,8 @@ URL:
   - какой window type, delivery guarantee и набор aggregate windows реально активны.
 - `Busy, Backpressured, Idle Time By Task`
   - видно ли, где pipeline уже упирается в вычисления или downstream.
+- `AIRiskOps State And Checkpoint Pressure`
+  - пора ли уже рассматривать `RocksDB` вместо heap backend по косвенным operational signal.
 
 Как читать `Emissions` и `Findings` в business/dashboard панелях:
 
@@ -195,6 +199,9 @@ URL:
 
 - `Running Jobs = 0`
   - job не стартовала или уже упала;
+- `Running Jobs > 1`
+  - для локального MVP это подозрительно;
+  - часто означает duplicate submit одной и той же topology в session cluster;
 - `Completed Checkpoints` не растёт
   - checkpointing не работает или job не выполняется стабильно;
 - `Records In` растёт, `Records Out` не растёт
@@ -258,6 +265,79 @@ URL:
   - показывает, сколько агрегатов Flink уже выпустил по окнам `1m` и `5m`;
   - полезна для ответа на вопрос, закрываются ли окна вообще;
   - если `1m` растёт, а `5m` нет, это нормально на коротком горизонте наблюдения.
+
+### Dashboard `AIRiskOps State And Checkpoint Pressure`
+
+Это специализированный dashboard для одного вопроса:
+
+- остаётся ли текущий heap-based runtime комфортным;
+- или stateful ветки уже подходят к режиму, где стоит оценивать переход на `RocksDB`.
+
+Важно:
+
+- этот dashboard не доказывает автоматически, что `RocksDB` уже обязателен;
+- он сочетает прямые checkpoint state stats из Flink REST и несколько operational proxies;
+- решение нужно принимать по сочетанию нескольких сигналов, а не по одной панели.
+- `restore elapsed` в текущей версии считается как `job start -> restore timestamp`, потому что Flink REST `1.20.x` не отдаёт отдельную точную метрику длительности restore в том же виде, как checkpoint duration.
+
+Панели:
+
+- `Incremental Checkpoints`
+  - показывает, включён ли incremental checkpoint mode;
+  - нужен, чтобы правильно интерпретировать разницу между `state size` и `checkpointed size`.
+- `Restore Count`
+  - показывает, сколько restore Flink уже зафиксировал для текущей job.
+- `Last Restore State Size`
+  - показывает размер state, к которому относился последний restore.
+- `Last Restore Observed Elapsed`
+  - показывает наблюдаемое время от старта job до `restore timestamp`;
+  - использовать как restore proxy, а не как абсолютную точную runtime-метрику.
+- `Last Checkpoint State Size`
+  - показывает полный state size последнего completed checkpoint.
+- `Last Checkpoint Persisted Size`
+  - показывает объём данных, реально записанных этим checkpoint;
+  - при incremental mode именно здесь часто видна delta, а не полный state.
+- `Checkpoint And Restore Duration Signals`
+  - показывает рядом checkpoint duration и observed restore elapsed;
+  - полезно для сравнения steady-state checkpoint cost и поведения после restart.
+- `State Size, Persisted Size, Restore Size`
+  - позволяет сравнивать:
+  - полный state;
+  - реально persisted checkpoint size;
+  - state size последнего restore.
+- `Checkpoint And Restore Counters`
+  - показывает completed, failed и restored counters;
+  - полезно для корреляции с перезапусками и деградацией fault-tolerance path.
+- `Operator State Size`
+  - показывает state size по операторам на последнем completed checkpoint.
+- `Operator Persisted Checkpoint Size`
+  - показывает, сколько каждый оператор реально записал в последний checkpoint.
+- `Subtask State Size`
+  - показывает skew по subtasks;
+  - если один subtask систематически больше остальных, это сильный сигнал hot key/skew.
+- `Subtask Persisted Checkpoint Size`
+  - показывает skew именно в persisted checkpoint data.
+- `Subtask Checkpoint Duration`
+  - помогает быстро понять, какой operator/subtask делает checkpoint path самым дорогим.
+
+Как читать dashboard для вопроса "пора ли смотреть на RocksDB":
+
+- если `Last Checkpoint State Size` маленький и стабилен, а `Persisted Size` тоже мал
+  - переход на `RocksDB` пока не выглядит срочным;
+- если `State Size` растёт от прогона к прогону, а `Subtask State Size` показывает устойчивый рост конкретных stateful веток
+  - это уже осмысленный early warning;
+- если `Persisted Size` почти равен `State Size`
+  - incremental mode либо выключен, либо workload меняет почти весь state между checkpoint;
+- если появляются restore events и `Last Restore State Size` уже велик, а `Observed Restore Elapsed` становится заметным
+  - recovery path начинает становиться практическим ограничением;
+- если один subtask заметно тяжелее остальных
+  - сначала разбирать skew и key distribution, а не сразу обвинять backend;
+- если появляются `Failed Checkpoints`
+  - heap backend нужно считать кандидатом на пересмотр;
+- если рост business traffic умеренный, а checkpoint cost растёт быстрее него
+  - это типичный признак, что bottleneck смещается в state subsystem;
+- если деградируют только source/sink, а state size и checkpoint path выглядят стабильно
+  - проблема, скорее всего, не в выборе state backend.
 - `AIRiskOps Domain Counters`
   - показывает доменные counters по типам обработки: `valid`, `invalid`, `late`, `on_time`;
   - рост `invalid` означает проблемы со schema/validation;
@@ -470,6 +550,7 @@ URL:
 Что должно настораживать:
 
 - job часто переходит в `RESTARTING`;
+- одновременно видны несколько job с одинаковым `job_name`;
 - throughput резко просел без снижения входного трафика;
 - checkpoints стали длиннее или чаще падать;
 - watermark перестал двигаться;
@@ -493,6 +574,46 @@ flink_jobmanager_numRunningJobs
 
 - `1` для локального MVP означает, что job работает;
 - `0` означает, что сначала надо смотреть `submit`, `jobmanager logs` и `Flink UI`.
+- `>1` означает, что нужно проверить, не был ли сделан повторный submit поверх старого запуска.
+
+#### Нет ли дублирующихся job с одинаковым именем
+
+Практически важно помнить:
+
+- `job_name` в Grafana часто одинаковый у нескольких submit одной topology;
+- отличать их нужно по `job_id`, `state` и `start-time`;
+- session cluster по своей природе позволяет запустить новый submit, не отменяя старый автоматически.
+
+Проверка:
+
+```bash
+curl -s http://localhost:8081/jobs/overview
+```
+
+Что считать типичным конфликтом:
+
+- одна job `RUNNING`;
+- вторая job с тем же именем в `RESTARTING`, `FAILING` или `FAILED`;
+- у старой job обычно более ранний `start-time`.
+
+Почему это плохо:
+
+- дублируются или смешиваются operational metrics;
+- тяжелее понять, у какой job реально растут failed checkpoints и restarts;
+- можно случайно анализировать старую, уже неактуальную job.
+
+Что делать:
+
+- не поднимать ещё один submit поверх конфликта;
+- определить актуальный `job_id` по последнему `start-time` и факту успешных checkpoint;
+- отменить старую job;
+- затем перепроверить dashboards и Prometheus уже по одной живой job.
+
+Команда для cancel старой job:
+
+```bash
+curl -X PATCH "http://localhost:8081/jobs/<old-job-id>?mode=cancel"
+```
 
 #### Сколько checkpoint завершилось
 

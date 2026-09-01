@@ -32,6 +32,7 @@
 1. [architecture/airiskops-manual.md](architecture/airiskops-manual.md)
 2. [architecture/event-contracts.md](architecture/event-contracts.md)
 3. [architecture/adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
+4. [architecture/flink-rocksdb-best-practices.md](architecture/flink-rocksdb-best-practices.md)
 
 Если нужно понять MVP и этапы внедрения:
 
@@ -54,6 +55,10 @@
 - [adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
   - как правильно добавлять новые агрегированные метрики за `N` минут;
   - принципы, типовые ошибки, примеры кода.
+- [flink-rocksdb-best-practices.md](architecture/flink-rocksdb-best-practices.md)
+  - когда для Flink нужен `RocksDB state backend`, а когда нет;
+  - какие проблемы он решает;
+  - какие trade-offs и production practices появляются при large-state workload.
 
 ### `monitoring/`
 
@@ -63,6 +68,7 @@
   - какие Prometheus-запросы использовать;
   - как локализовать ошибки по этапам пайплайна;
   - где смотреть runtime contract и saturation signals.
+  - как интерпретировать state/checkpoint pressure перед переходом на `RocksDB`.
 
 ### `runbooks/`
 

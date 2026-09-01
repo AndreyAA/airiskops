@@ -83,7 +83,7 @@ bash tools/scripts/init.sh
 
 Что делает скрипт:
 
-- поднимает Kafka, Flink, Prometheus и Grafana;
+- поднимает Kafka, Flink, Prometheus, Grafana и checkpoint exporter;
 - создает Kafka topics;
 - загружает bootstrap policy;
 - собирает job jar;
@@ -170,7 +170,7 @@ Java-модуль с production-кодом Flink job.
 
 - поднять локальный Kafka;
 - поднять Flink JobManager и TaskManager;
-- поднять Prometheus и Grafana;
+- поднять Prometheus, Grafana и checkpoint exporter;
 - смонтировать собранный JAR и job config в контейнеры.
 
 ### `observability/`

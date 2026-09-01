@@ -81,6 +81,24 @@ services:
     depends_on:
       - jobmanager
       - taskmanager
+      - checkpoint-exporter
+
+  checkpoint-exporter:
+    image: python:3.11-slim
+    container_name: airiskops-checkpoint-exporter
+    command:
+      - "python"
+      - "/opt/airiskops/tools/exporters/flink_checkpoint_exporter.py"
+      - "--flink-base-url"
+      - "http://jobmanager:8081"
+      - "--listen-port"
+      - "9261"
+      - "--job-name"
+      - "AIRiskOps MVP Increment 1"
+    volumes:
+      - ../../:/opt/airiskops:ro
+    depends_on:
+      - jobmanager
 
   grafana:
     image: grafana/grafana:11.2.0

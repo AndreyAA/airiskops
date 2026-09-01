@@ -294,6 +294,27 @@ public final class SessionRiskSnapshot implements Serializable {
     ) implements Serializable {
     }
 
-    private record WindowFindingEvidence(long eventTimeMillis, Double confidence) implements Serializable {
+    /**
+     * Flink state stores this type through generic Kryo serialization, so it must stay
+     * a regular Serializable class rather than a Java record.
+     */
+    private static final class WindowFindingEvidence implements Serializable {
+        private static final long serialVersionUID = 1L;
+
+        private final long eventTimeMillis;
+        private final Double confidence;
+
+        private WindowFindingEvidence(long eventTimeMillis, Double confidence) {
+            this.eventTimeMillis = eventTimeMillis;
+            this.confidence = confidence;
+        }
+
+        private long eventTimeMillis() {
+            return eventTimeMillis;
+        }
+
+        private Double confidence() {
+            return confidence;
+        }
     }
 }

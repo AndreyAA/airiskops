@@ -194,6 +194,30 @@ bash tools/scripts/submit-job.sh
 
 - job `AIRiskOps MVP Increment 1` в статусе `RUNNING`
 
+Что дополнительно проверить сразу после submit:
+
+```bash
+curl -s http://localhost:8081/jobs/overview
+```
+
+Нормальное ожидание для локального MVP:
+
+- в списке должна быть ровно одна job с именем `AIRiskOps MVP Increment 1`;
+- её состояние должно быть `RUNNING`.
+
+Если вы видите две job с одинаковым именем:
+
+- это обычно означает, что был сделан повторный `submit` поверх старого запуска;
+- Flink session cluster не обязан автоматически отменять старую job;
+- в Grafana и Prometheus после этого метрики начинают приходить сразу по нескольким `job_id`, и читать картину становится заметно труднее.
+
+Что делать в таком случае:
+
+- не делать ещё один `submit`;
+- определить, какая job новая и живая, а какая старая и зависла в `RESTARTING` или `FAILING`;
+- отменить старую job;
+- только потом продолжать replay и анализ dashboard.
+
 ## Шаг 5. Посмотреть topology в Flink UI
 
 Откройте job в UI и посмотрите граф операторов.
@@ -394,6 +418,7 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - dashboard `AIRiskOps Business Metrics` уже загружен автоматически;
 - dashboard `AIRiskOps Capacity And Performance` уже загружен автоматически;
 - dashboard `AIRiskOps Incidents` уже загружен автоматически;
+- dashboard `AIRiskOps State And Checkpoint Pressure` уже загружен автоматически;
 - dashboard `AIRiskOps Detector Quality` уже загружен автоматически;
 - папка dashboard: `AIRiskOps`.
 
@@ -417,6 +442,8 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
   - показывает, публикуются ли `1m` и `5m` aggregates;
 - `AIRiskOps Domain Counters`
   - показывает `valid`, `invalid`, `late`, `on_time`.
+- `AIRiskOps State And Checkpoint Pressure`
+  - показывает checkpoint state size, persisted checkpoint size и restore signals.
 
 Что означают `Findings` и `Emissions` на business dashboard:
 
@@ -1020,6 +1047,38 @@ bash tools/scripts/run-replay.sh --scenario mixed --requests 180 --sessions 12 -
 ```bash
 docker compose -f deployment/local/docker-compose.yml logs --tail=200 jobmanager
 ```
+
+### Если в UI видно две job с одинаковым именем
+
+Проверьте overview:
+
+```bash
+curl -s http://localhost:8081/jobs/overview
+```
+
+Как интерпретировать:
+
+- `RUNNING` job с более поздним `start-time` обычно является новым submit;
+- `RESTARTING` job с более ранним `start-time` обычно является старым неуспешным запуском;
+- пока обе job существуют одновременно, Grafana может смешивать operational signals по разным `job_id`.
+
+Практически лучший порядок действий:
+
+```bash
+curl -X PATCH "http://localhost:8081/jobs/<old-job-id>?mode=cancel"
+```
+
+После cancel проверить ещё раз:
+
+```bash
+curl -s http://localhost:8081/jobs/overview
+```
+
+Ожидаемое состояние:
+
+- остаётся одна job `AIRiskOps MVP Increment 1`;
+- её статус `RUNNING`;
+- новые checkpoints идут только у неё.
 
 ### Если job появилась, но Kafka output пустой
 

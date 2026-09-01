@@ -225,12 +225,14 @@ bash tools/scripts/cleanup-local.sh
 - поднимает Kafka;
 - поднимает JobManager;
 - поднимает TaskManager;
+- поднимает checkpoint exporter;
 - поднимает Prometheus.
 - поднимает Grafana с dashboards:
   - `AIRiskOps Flink Overview`;
   - `AIRiskOps Business Metrics`;
   - `AIRiskOps Capacity And Performance`;
-  - `AIRiskOps Incidents`.
+  - `AIRiskOps Incidents`;
+  - `AIRiskOps State And Checkpoint Pressure`.
   - `AIRiskOps Detector Quality`.
 
 ### Шаг 2. Инициализировать topics
