@@ -78,6 +78,13 @@ class JobConfigTest {
                 incidentPiAndToxicMinToxicityTriggeredCount: 4
                 incidentPiAndToxicMinPromptInjectionConfidence: 0.81
                 incidentPiAndToxicMinToxicityConfidence: 0.93
+                incidentSimilarPromptInjectionEnabled: false
+                incidentSimilarPromptInjectionWindowMinutes: 8
+                incidentSimilarPromptInjectionThreshold: 0.62
+                incidentSimilarPromptInjectionMinUniqueRequests: 4
+                incidentSimilarPromptInjectionMinDistinctSessions: 3
+                incidentSimilarPromptInjectionSeverity: CRITICAL
+                incidentSimilarPromptInjectionEmbeddingModelVersion: e5-test-v2
                 policyEnabled: true
                 policyBootstrapFile: %s
                 policyRequireBootstrap: true
@@ -129,6 +136,13 @@ class JobConfigTest {
         assertEquals(4, config.incidentConfig().piAndToxic().minToxicityTriggeredCount());
         assertEquals(0.81d, config.incidentConfig().piAndToxic().minPromptInjectionConfidence());
         assertEquals(0.93d, config.incidentConfig().piAndToxic().minToxicityConfidence());
+        assertFalse(config.incidentConfig().similarPromptInjection().enabled());
+        assertEquals(Duration.ofMinutes(8), config.incidentConfig().similarPromptInjection().window());
+        assertEquals(0.62d, config.incidentConfig().similarPromptInjection().similarityThreshold());
+        assertEquals(4, config.incidentConfig().similarPromptInjection().minUniqueRequests());
+        assertEquals(3, config.incidentConfig().similarPromptInjection().minDistinctSessions());
+        assertEquals(IncidentSeverity.CRITICAL, config.incidentConfig().similarPromptInjection().severity());
+        assertEquals("e5-test-v2", config.incidentConfig().similarPromptInjection().embeddingModelVersion());
         assertTrue(config.policyConfig().enabled());
         assertEquals(policyFile, config.policyConfig().bootstrapFile());
         assertTrue(config.policyConfig().requireBootstrapPolicy());

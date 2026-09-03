@@ -493,6 +493,7 @@ bash tools/scripts/run-live-generator.sh \
 
 - `scenario`
 - `mode`
+- `replay-id` и `base-time` для one-shot replay;
 - число `requests`
 - число `findings`
 - число `triggered findings`
@@ -501,6 +502,12 @@ bash tools/scripts/run-live-generator.sh \
 - число `detector errors`
 
 Это нужно, чтобы сверить ожидаемый профиль сценария с тем, что потом видно в Kafka topics и на Flink/Grafana dashboards.
+
+По умолчанию каждый `run-replay.sh` использует новый replay namespace и
+монотонно продвигает event time, поэтому повторный запуск считается новой
+кампанией. Для воспроизводимого retry нужно явно повторить одинаковые
+`--replay-id` и `--base-time`; такой retry не должен повторно увеличивать
+incident counters.
 
 ## 6.1 Полный destructive e2e smoke test
 

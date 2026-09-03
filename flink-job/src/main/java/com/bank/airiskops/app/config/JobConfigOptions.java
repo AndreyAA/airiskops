@@ -44,6 +44,13 @@ public final class JobConfigOptions {
             "incidentPiAndToxicMinPromptInjectionConfidence";
     public static final String ARG_PI_AND_TOXIC_MIN_TOXICITY_CONFIDENCE =
             "incidentPiAndToxicMinToxicityConfidence";
+    public static final String ARG_SIMILAR_PI_ENABLED = "incidentSimilarPromptInjectionEnabled";
+    public static final String ARG_SIMILAR_PI_WINDOW_MINUTES = "incidentSimilarPromptInjectionWindowMinutes";
+    public static final String ARG_SIMILAR_PI_THRESHOLD = "incidentSimilarPromptInjectionThreshold";
+    public static final String ARG_SIMILAR_PI_MIN_REQUESTS = "incidentSimilarPromptInjectionMinUniqueRequests";
+    public static final String ARG_SIMILAR_PI_MIN_SESSIONS = "incidentSimilarPromptInjectionMinDistinctSessions";
+    public static final String ARG_SIMILAR_PI_SEVERITY = "incidentSimilarPromptInjectionSeverity";
+    public static final String ARG_SIMILAR_PI_MODEL_VERSION = "incidentSimilarPromptInjectionEmbeddingModelVersion";
     public static final String ARG_POLICY_ENABLED = "policyEnabled";
     public static final String ARG_POLICY_BOOTSTRAP_FILE = "policyBootstrapFile";
     public static final String ARG_POLICY_REQUIRE_BOOTSTRAP = "policyRequireBootstrap";
@@ -86,6 +93,13 @@ public final class JobConfigOptions {
     public static final boolean DEFAULT_POLICY_REQUIRE_BOOTSTRAP = false;
     public static final String DEFAULT_POLICY_UPDATES_TOPIC = "policy-updates";
     public static final boolean DEFAULT_POLICY_REJECT_OLDER_VERSIONS = true;
+    public static final boolean DEFAULT_SIMILAR_PI_ENABLED = true;
+    public static final long DEFAULT_SIMILAR_PI_WINDOW_MINUTES = 5L;
+    public static final double DEFAULT_SIMILAR_PI_THRESHOLD = .5;
+    public static final int DEFAULT_SIMILAR_PI_MIN_REQUESTS = 3;
+    public static final int DEFAULT_SIMILAR_PI_MIN_SESSIONS = 2;
+    public static final String DEFAULT_SIMILAR_PI_SEVERITY = "HIGH";
+    public static final String DEFAULT_SIMILAR_PI_MODEL_VERSION = "multilingual-e5-small-onnx-qint8";
 
     public static final String TOPIC_SEPARATOR = ",";
 

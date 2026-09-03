@@ -232,7 +232,23 @@ public record JobConfig(
                                         yamlConfig,
                                         JobConfigOptions.ARG_PI_AND_TOXIC_MIN_TOXICITY_CONFIDENCE
                                 )
-                        )
+                        ),
+                        new SimilarPromptInjectionRuleConfig(
+                                readBoolean(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_ENABLED,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_ENABLED),
+                                Duration.ofMinutes(readLong(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_WINDOW_MINUTES,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_WINDOW_MINUTES)),
+                                readDouble(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_THRESHOLD,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_THRESHOLD),
+                                readInt(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_MIN_REQUESTS,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_MIN_REQUESTS),
+                                readInt(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_MIN_SESSIONS,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_MIN_SESSIONS),
+                                IncidentSeverity.valueOf(readString(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_SEVERITY,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_SEVERITY).toUpperCase()),
+                                readString(parameters, yamlConfig, JobConfigOptions.ARG_SIMILAR_PI_MODEL_VERSION,
+                                        JobConfigOptions.DEFAULT_SIMILAR_PI_MODEL_VERSION),
+                                "query: ", 1000, 20, 100, 50, 20, 5, 500)
                 ),
                 policyConfig,
                 loadBootstrapIncidentPolicy(policyConfig),
@@ -431,5 +447,10 @@ public record JobConfig(
             return Double.parseDouble(value);
         }
         return null;
+    }
+
+    private static double readDouble(ParameterTool parameters, Map<String, Object> yamlConfig, String key, double defaultValue) {
+        Double value = readDouble(parameters, yamlConfig, key);
+        return value == null ? defaultValue : value;
     }
 }

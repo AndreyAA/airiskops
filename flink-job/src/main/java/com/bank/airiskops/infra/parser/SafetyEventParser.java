@@ -35,6 +35,7 @@ public final class SafetyEventParser {
     private static final String FIELD_TRIGGERED = "triggered";
     private static final String FIELD_DETECTOR_LATENCY_MS = "detectorLatencyMs";
     private static final String FIELD_DETECTOR_STATUS = "detectorStatus";
+    private static final String FIELD_EVIDENCE_SNIPPET = "evidenceSnippet";
 
     private static final String ERROR_GUARDRAIL_REQUIRED = "Missing required field: guardrailName";
     private static final String ERROR_CONFIDENCE_REQUIRED = "Missing required confidence for confidence-based guardrail";
@@ -99,6 +100,7 @@ public final class SafetyEventParser {
                     triggered,
                     root.hasNonNull(FIELD_DETECTOR_LATENCY_MS) ? root.get(FIELD_DETECTOR_LATENCY_MS).asLong() : null,
                     readOptionalText(root, FIELD_DETECTOR_STATUS),
+                    readOptionalText(root, FIELD_EVIDENCE_SNIPPET),
                     rawPayload
             );
             return ParseResult.success(event);

@@ -361,6 +361,29 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - `emissionRevision`
 - `summary`
 
+### Проверка Similar Prompt Injection Campaign
+
+Для воспроизводимой межсессионной кампании используйте отдельный сценарий:
+
+```bash
+bash tools/scripts/run-replay.sh --business-scenario similar_prompt_injection_campaign
+```
+
+В `basic-incidents` найдите `ruleName=SIMILAR_PROMPT_INJECTION_CAMPAIGN`.
+У incident должны быть как минимум две `sessionIds`, несколько `requestIds`,
+`embeddingModelVersion` и bounded `evidenceSnippets`; сам embedding vector в
+Kafka payload не публикуется. В Grafana dashboard `AIRiskOps Incidents` проверьте
+панель `Similar Prompt Injection Campaign Incidents 5m`.
+
+Обычный запуск `mixed` с `120` requests содержит пять различных similarity
+families по три finding. `run-replay.sh` автоматически создаёт новый namespace
+request/session IDs и продвигает event time за границу предыдущего similarity
+окна и session-state lifetime, поэтому повторный запуск команды создаёт новые
+incidents, а предыдущие open sessions могут закрыться по event-time timer.
+Технические
+флаги `--replay-id` и `--base-time` позволяют намеренно воспроизвести идентичный
+batch; такой batch должен быть дедуплицирован и не увеличивать counters.
+
 ## Шаг 9. Как читать бизнес-смысл агрегатов
 
 Примеры интерпретации:

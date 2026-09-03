@@ -33,6 +33,13 @@ incidentPiAndToxicWindowMinutes: 5
 incidentPiAndToxicSeverity: HIGH
 incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
 incidentPiAndToxicMinToxicityTriggeredCount: 1
+incidentSimilarPromptInjectionEnabled: true
+incidentSimilarPromptInjectionWindowMinutes: 5
+incidentSimilarPromptInjectionThreshold: 0.5
+incidentSimilarPromptInjectionMinUniqueRequests: 3
+incidentSimilarPromptInjectionMinDistinctSessions: 2
+incidentSimilarPromptInjectionSeverity: HIGH
+incidentSimilarPromptInjectionEmbeddingModelVersion: multilingual-e5-small-onnx-qint8
 policyEnabled: true
 policyBootstrapFile: runtime/policies/active-policy.yaml
 policyRequireBootstrap: false

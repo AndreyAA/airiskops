@@ -1,8 +1,45 @@
 # Similar Prompt Injection Campaign: принятые решения и критерии приёмки
 
-Дата актуальности: 2026-09-03
+Дата актуальности: 2026-09-04
 
-Статус: решения и начальные defaults для concept-реализации согласованы.
+Статус: требования согласованы; реализация частичная и пока не соответствует всем критериям приёмки.
+
+## 0. Текущий статус реализации
+
+На 2026-09-04 реализован concept path: optional `evidenceSnippet` в контракте и
+parser-е, фильтрация similarity-ветки, межсессионный keyed operator, bounded
+cluster state, новый `BasicIncident`, replay fixtures, совместимые incident
+counters и панель Grafana.
+
+Следующие части спецификации пока **не реализованы**:
+
+- реальный локальный inference через LangChain4j `OnnxEmbeddingModel` и ONNX
+  Runtime CPU;
+- загрузка `multilingual-e5-small` model/tokenizer/manifest из локальных файлов,
+  проверка их checksum/version/dimension и fail-fast при отсутствии artifacts;
+- custom Flink image с model artifacts и воспроизводимый deployment одного и
+  того же image для JobManager и TaskManager;
+- отдельные runtime config keys для model path, tokenizer path, embedding
+  parallelism и ограничения inference threads;
+- точная rolling event-time семантика на уровне отдельных findings: текущая
+  concept-реализация удаляет кластер по `lastEventTimeMillis`, но не вычитает из
+  centroid/count отдельные findings, вышедшие за левую границу окна;
+- retention `similarity window + allowed lateness` и подтверждённое поведение для
+  out-of-order findings на включённой границе окна;
+- полный набор диагностических метрик: embeddings generated/failed, findings
+  skipped из-за отсутствующего evidence, clusters created/expired и duplicate
+  findings;
+- startup smoke test настоящей модели, checkpoint/recovery test и полный local
+  E2E с проверкой Kafka, Prometheus и Grafana.
+
+Текущий `DeterministicEvidenceEmbedder` является временной hash-based заглушкой
+для concept tests и replay. Он не считается реализацией требований раздела 2.5
+и критериев AC-04/AC-05 для согласованной ONNX-модели.
+
+До закрытия перечисленных пунктов нельзя считать пройденными AC-04, AC-05,
+AC-09, AC-13 в части retention/expiry, AC-17 в части длительного live runtime,
+AC-18, AC-19 и AC-20. Остальные AC также требуют полного acceptance-прогона,
+даже если соответствующий код уже присутствует.
 
 ## 1. Назначение
 
@@ -203,6 +240,17 @@ similar_prompt_injection_campaign
 - работать и через one-shot replay, и через `stream_live_events.py`.
 
 Generator summary должен позволять понять, сколько evidence-bearing prompt-injection findings было создано для сценария.
+
+One-shot wrapper `run-replay.sh` по умолчанию создаёт новый `replay-id`, новый
+namespace для `requestId`/`sessionId` и монотонный event-time диапазон за
+границей предыдущего similarity window и session-state lifetime. Поэтому повторный запуск wrapper-а
+моделирует новую кампанию. Детерминированный retry обеспечивается явной парой
+`--replay-id` и `--base-time`; повтор такого batch должен дедуплицироваться.
+
+Сценарий `mixed --requests 120 --sessions 12` содержит пять семантически
+различимых attack families по три finding внутри каждой family. При concept
+defaults один запуск должен создать пять
+`SIMILAR_PROMPT_INJECTION_CAMPAIGN` incidents.
 
 ### 2.10 Grafana и метрики
 

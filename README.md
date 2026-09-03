@@ -78,7 +78,7 @@
 Если нужно быстро поднять локальный контур без очистки существующего state:
 
 ```bash
-bash tools/scripts/init.sh
+sudo bash tools/scripts/init.sh
 ```
 
 Что делает скрипт:
@@ -92,13 +92,23 @@ bash tools/scripts/init.sh
 После этого можно загрузить данные:
 
 ```bash
-bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 --agent-id agent-risk-01
+sudo bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 --agent-id agent-risk-01
 ```
+
+Каждый запуск `run-replay.sh` автоматически получает новый `replay-id`, новые
+session/request IDs и монотонный event-time диапазон. Поэтому повтор команды
+считается новой replay-кампанией, а не повторной Kafka-доставкой уже известных
+events. Стандартный `mixed/120/12` содержит пять разных семейств похожих
+prompt-injection атак и должен создать пять
+`SIMILAR_PROMPT_INJECTION_CAMPAIGN` incidents.
+
+Для точного воспроизведения одного и того же набора передайте одновременно
+`--replay-id` и `--base-time`; такой повтор намеренно будет дедуплицирован.
 
 Быстрая проверка результатов:
 
 ```bash
-bash tools/scripts/check-output-topics.sh
+sudo bash tools/scripts/check-output-topics.sh
 ```
 
 Интерфейсы локального стенда:
@@ -112,7 +122,7 @@ bash tools/scripts/check-output-topics.sh
 Если нужен полный destructive end-to-end smoke test с очисткой локального state:
 
 ```bash
-bash tools/scripts/run-e2e-smoke.sh
+sudo bash tools/scripts/run-e2e-smoke.sh
 ```
 
 Для неинтерактивного запуска:

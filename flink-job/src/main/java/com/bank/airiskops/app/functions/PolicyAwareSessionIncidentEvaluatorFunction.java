@@ -5,6 +5,8 @@ import com.bank.airiskops.app.support.IncidentEmissionPlanner;
 import com.bank.airiskops.app.support.IncidentPolicyUpdateDecider;
 import com.bank.airiskops.model.BasicIncident;
 import com.bank.airiskops.model.IncidentPolicy;
+import com.bank.airiskops.model.IncidentRuleNames;
+import com.bank.airiskops.model.IncidentSeverity;
 import com.bank.airiskops.model.SafetyEvent;
 import com.bank.airiskops.model.SessionIncidentKey;
 import com.bank.airiskops.model.SessionRiskSnapshot;
@@ -91,6 +93,10 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
         policyMetricGroup.gauge(POLICY_LAST_UPDATE_EPOCH_MS_METRIC, lastPolicyUpdateEpochMillis::get);
         ruleCounters = new ConcurrentHashMap<>();
         severityCounters = new ConcurrentHashMap<>();
+        IncidentRuleNames.sessionRules().forEach(this::ruleCounter);
+        for (IncidentSeverity severity : IncidentSeverity.values()) {
+            severityCounter(severity.name());
+        }
     }
 
     @Override

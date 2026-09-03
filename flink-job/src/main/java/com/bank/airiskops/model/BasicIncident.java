@@ -20,6 +20,9 @@ public final class BasicIncident implements Serializable {
     private ArrayList<String> guardrailNames;
     private ArrayList<String> guardrailVersions;
     private ArrayList<String> policyVersions;
+    private ArrayList<String> sessionIds;
+    private ArrayList<String> evidenceSnippets;
+    private String embeddingModelVersion;
     private String appliedPolicyVersion;
     private long firstEventTimeMillis;
     private long lastEventTimeMillis;
@@ -33,6 +36,8 @@ public final class BasicIncident implements Serializable {
         guardrailNames = new ArrayList<>();
         guardrailVersions = new ArrayList<>();
         policyVersions = new ArrayList<>();
+        sessionIds = new ArrayList<>();
+        evidenceSnippets = new ArrayList<>();
     }
 
     public BasicIncident(
@@ -64,6 +69,8 @@ public final class BasicIncident implements Serializable {
         this.guardrailNames = guardrailNames;
         this.guardrailVersions = guardrailVersions;
         this.policyVersions = policyVersions;
+        this.sessionIds = new ArrayList<>();
+        this.evidenceSnippets = new ArrayList<>();
         this.appliedPolicyVersion = appliedPolicyVersion;
         this.firstEventTimeMillis = firstEventTimeMillis;
         this.lastEventTimeMillis = lastEventTimeMillis;
@@ -192,6 +199,16 @@ public final class BasicIncident implements Serializable {
     public void setPolicyVersions(ArrayList<String> policyVersions) {
         this.policyVersions = policyVersions;
     }
+
+    public ArrayList<String> sessionIds() { return sessionIds; }
+    public ArrayList<String> getSessionIds() { return sessionIds; }
+    public void setSessionIds(ArrayList<String> sessionIds) { this.sessionIds = sessionIds; }
+    public ArrayList<String> evidenceSnippets() { return evidenceSnippets; }
+    public ArrayList<String> getEvidenceSnippets() { return evidenceSnippets; }
+    public void setEvidenceSnippets(ArrayList<String> evidenceSnippets) { this.evidenceSnippets = evidenceSnippets; }
+    public String embeddingModelVersion() { return embeddingModelVersion; }
+    public String getEmbeddingModelVersion() { return embeddingModelVersion; }
+    public void setEmbeddingModelVersion(String embeddingModelVersion) { this.embeddingModelVersion = embeddingModelVersion; }
 
     public String appliedPolicyVersion() {
         return appliedPolicyVersion;
