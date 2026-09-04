@@ -1,7 +1,9 @@
 import unittest
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from subprocess import CompletedProcess
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -53,6 +55,53 @@ class NtReportCollectorTest(unittest.TestCase):
             COLLECTOR.assess({"backpressure_ms_per_second": 0}, lag_points, 0),
         )
 
+    def test_assess_uses_only_failed_checkpoints_during_run(self):
+        lag_points = {
+            "at_generator_end": {"kafka_lag": {"total": 0}},
+            "after_settle": {"kafka_lag": {"total": 0}},
+            "after_recovery": {"kafka_lag": {"total": 0}},
+        }
+        self.assertEqual(
+            "stable",
+            COLLECTOR.assess(
+                {"backpressure_ms_per_second": 0, "failed_checkpoints": 7, "failed_checkpoints_during_run": 0},
+                lag_points,
+                0,
+            ),
+        )
+        self.assertEqual(
+            "degraded",
+            COLLECTOR.assess({"failed_checkpoints_during_run": 1}, lag_points, 0),
+        )
+
+    def test_matrix_max_value_uses_all_series_and_samples(self):
+        payload = {
+            "data": {
+                "result": [
+                    {"values": [[1, "10"], [2, "5"]]},
+                    {"values": [[1, "17"], [2, "12"]]},
+                ]
+            }
+        }
+        self.assertEqual(17.0, COLLECTOR.matrix_max_value(payload))
+
+    def test_collect_kafka_lag_fails_when_cli_fails(self):
+        completed = CompletedProcess(["kafka-consumer-groups.sh"], 1, "", "broker unavailable")
+        with patch.object(COLLECTOR.subprocess, "run", return_value=completed):
+            with self.assertRaisesRegex(OSError, "Kafka lag collection failed"):
+                COLLECTOR.collect_kafka_lag()
+
+    def test_collect_kafka_lag_fails_without_partition_rows(self):
+        completed = CompletedProcess(["kafka-consumer-groups.sh"], 0, "GROUP TOPIC\n", "")
+        with patch.object(COLLECTOR.subprocess, "run", return_value=completed):
+            with self.assertRaisesRegex(OSError, "no partition rows"):
+                COLLECTOR.collect_kafka_lag()
+
+    def test_wrapper_keeps_absolute_report_directory(self):
+        wrapper = (ROOT / "tools" / "scripts" / "run-nt-baseline.sh").read_text(encoding="utf-8")
+        self.assertIn('if [[ "$REPORT_DIR" = /* ]]; then', wrapper)
+        self.assertIn('RUN_REPORT_DIR="$REPORT_DIR"', wrapper)
+
     def test_render_report_includes_log_navigation(self):
         snapshot = {
             "verdict": "stable",
@@ -60,6 +109,7 @@ class NtReportCollectorTest(unittest.TestCase):
                 "run_id": "run-1",
                 "run_started_at": "2026-09-05T00:00:00+00:00",
                 "run_finished_at": "2026-09-05T00:01:00+00:00",
+                "metrics_end_at": "2026-09-05T00:02:30+00:00",
                 "job_id": "job-1",
                 "scenario": "mixed",
                 "mode": "baseline",
@@ -77,7 +127,13 @@ class NtReportCollectorTest(unittest.TestCase):
                 "prometheus_url": "http://localhost:9090",
                 "generator_summary": {"total-requests": "3000"},
             },
-            "metrics": {"backpressure_ms_per_second": 0, "jvm_cpu_load": 0.25},
+            "metrics": {
+                "backpressure_ms_per_second": 0,
+                "jvm_cpu_load": 0.25,
+                "failed_checkpoints_at_start": 2,
+                "failed_checkpoints_after_recovery": 2,
+                "failed_checkpoints_during_run": 0,
+            },
             "kafka_lag_points": {
                 "at_generator_end": {
                     "captured_at_epoch": 10.0,
@@ -101,6 +157,8 @@ class NtReportCollectorTest(unittest.TestCase):
         self.assertIn("Catch-up rate during settle", report)
         self.assertIn("Catch-up rate during recovery", report)
         self.assertIn("Total catch-up rate", report)
+        self.assertIn("Runtime metrics interval", report)
+        self.assertIn("Failed checkpoints during run", report)
 
 
 if __name__ == "__main__":

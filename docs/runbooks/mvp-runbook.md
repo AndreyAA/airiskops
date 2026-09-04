@@ -293,7 +293,11 @@ bash tools/scripts/run-nt-baseline.sh \
 Flink успели опубликовать финальные signals, затем ещё `60` секунд для
 измерения Kafka catch-up. В отчёте сохраняются lag сразу после генератора,
 после settle и после recovery, а также уменьшение lag и catch-up rate для
-интервалов settle, recovery и всего периода.
+интервалов settle, recovery и всего периода. Пиковые runtime-метрики берутся
+за весь интервал от старта генератора до recovery snapshot; failed checkpoints
+показываются как дельта текущего прогона, а не накопленный счётчик job. Если
+Kafka lag или checkpoint snapshot не удалось получить, скрипт завершается с
+ошибкой и не создаёт успешный verdict.
 Изменить эти интервалы можно через `--settle-seconds` и `--recovery-seconds`;
 если в кластере несколько running job с тем же именем, укажите `--job-id`.
 

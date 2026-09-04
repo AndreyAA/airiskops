@@ -99,11 +99,17 @@ fi
 
 RUN_START_EPOCH="$(date +%s)"
 RUN_ID="$(date '+%Y-%m-%dT%H%M%S%z')-${REQUESTS_PER_SECOND}rps-${SCENARIO}-${DELIVERY_MODE}"
-RUN_REPORT_DIR="$ROOT_DIR/$REPORT_DIR"
+if [[ "$REPORT_DIR" = /* ]]; then
+  RUN_REPORT_DIR="$REPORT_DIR"
+else
+  RUN_REPORT_DIR="$ROOT_DIR/$REPORT_DIR"
+fi
 GENERATOR_LOG="$RUN_REPORT_DIR/$RUN_ID.generator.log"
 KAFKA_LAG_AT_GENERATOR_END="$RUN_REPORT_DIR/$RUN_ID.kafka-lag-at-generator-end.json"
 KAFKA_LAG_AFTER_SETTLE="$RUN_REPORT_DIR/$RUN_ID.kafka-lag-after-settle.json"
 KAFKA_LAG_AFTER_RECOVERY="$RUN_REPORT_DIR/$RUN_ID.kafka-lag-after-recovery.json"
+CHECKPOINT_AT_RUN_START="$RUN_REPORT_DIR/$RUN_ID.checkpoint-at-run-start.json"
+CHECKPOINT_AFTER_RECOVERY="$RUN_REPORT_DIR/$RUN_ID.checkpoint-after-recovery.json"
 mkdir -p "$RUN_REPORT_DIR"
 
 echo "[nt-baseline] date=$(date '+%Y-%m-%dT%H:%M:%S%z')"
@@ -111,6 +117,12 @@ echo "[nt-baseline] scenario=$SCENARIO mode=$DELIVERY_MODE duration_seconds=$DUR
 echo "[nt-baseline] watch Grafana dashboard: AIRiskOps Capacity And Performance"
 echo "[nt-baseline] focus metrics: watermark, checkpoints, busy/backpressured time, aggregate e2e latency, incident e2e latency"
 echo "[nt-baseline] generator log: $GENERATOR_LOG"
+
+CHECKPOINT_SNAPSHOT_ARGS=(--write-checkpoint-snapshot "$CHECKPOINT_AT_RUN_START")
+if [[ -n "$JOB_ID" ]]; then
+  CHECKPOINT_SNAPSHOT_ARGS+=(--job-id "$JOB_ID")
+fi
+python3 tools/reporters/nt_report_collector.py "${CHECKPOINT_SNAPSHOT_ARGS[@]}"
 
 set +e
 bash tools/scripts/run-live-generator.sh \
@@ -138,6 +150,11 @@ if [[ "$RECOVERY_SECONDS" -gt 0 ]]; then
   sleep "$RECOVERY_SECONDS"
 fi
 python3 tools/reporters/nt_report_collector.py --write-kafka-lag "$KAFKA_LAG_AFTER_RECOVERY"
+CHECKPOINT_SNAPSHOT_ARGS=(--write-checkpoint-snapshot "$CHECKPOINT_AFTER_RECOVERY")
+if [[ -n "$JOB_ID" ]]; then
+  CHECKPOINT_SNAPSHOT_ARGS+=(--job-id "$JOB_ID")
+fi
+python3 tools/reporters/nt_report_collector.py "${CHECKPOINT_SNAPSHOT_ARGS[@]}"
 
 REPORT_ARGS=(
   --report-dir "$RUN_REPORT_DIR"
@@ -156,6 +173,8 @@ REPORT_ARGS=(
   --kafka-lag-at-generator-end "$KAFKA_LAG_AT_GENERATOR_END"
   --kafka-lag-after-settle "$KAFKA_LAG_AFTER_SETTLE"
   --kafka-lag-after-recovery "$KAFKA_LAG_AFTER_RECOVERY"
+  --checkpoint-at-run-start "$CHECKPOINT_AT_RUN_START"
+  --checkpoint-after-recovery "$CHECKPOINT_AFTER_RECOVERY"
 )
 
 if [[ -n "$JOB_ID" ]]; then

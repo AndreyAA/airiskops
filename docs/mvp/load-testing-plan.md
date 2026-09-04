@@ -111,7 +111,9 @@ Wrapper сохраняет per-run Markdown report, raw metrics JSON и generato
 generator summary, E2E, busy/backpressure, JVM heap/CPU, checkpoints,
 watermark, Kafka lag в трёх точках (`generator end`, `after settle`,
 `after recovery`), уменьшение lag и catch-up rate для обоих интервалов и всего
-периода, а также команды просмотра Docker logs.
+периода, а также команды просмотра Docker logs. Пики runtime-метрик считаются
+по всему интервалу теста и recovery, а checkpoint failures -- как дельта
+счётчика данной job за этот интервал.
 
 ### 4.2 Burst resilience
 
