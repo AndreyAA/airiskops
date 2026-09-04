@@ -142,6 +142,29 @@ bash tools/scripts/run-e2e-smoke.sh --yes
 - публикует стартовый replay dataset;
 - проверяет Kafka outputs, Prometheus и Grafana.
 
+## Нагрузочное тестирование
+
+Для воспроизводимого baseline-прогона используйте live generator и wrapper
+отчёта:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh \
+  --duration-seconds 600 \
+  --rps 50 \
+  --recovery-seconds 60 \
+  --report-dir runtime/load-tests
+```
+
+Скрипт создаёт Markdown-отчёт, raw JSON, лог генератора, три snapshot Kafka
+lag и snapshots checkpoint в `runtime/load-tests/`. В консоль выводятся пути
+артефактов, ссылки на Flink, Grafana и Prometheus, а также команды просмотра
+Docker logs.
+
+Пошаговый сценарий запуска, выбор DEFAULT/RocksDB profile и интерпретация
+результата описаны в [runbook НТ](docs/runbooks/mvp-runbook.md). Полный план
+НТ: RPS-ступени, сценарии, критерии деградации и определения метрик находятся
+в [плане нагрузочного тестирования](docs/mvp/load-testing-plan.md).
+
 ## Архитектура репозитория
 
 Репозиторий разделён по зонам ответственности, чтобы runtime-код Flink не смешивался с observability, tooling и документацией.
