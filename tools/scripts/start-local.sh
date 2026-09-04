@@ -8,5 +8,16 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/deployment/local/docker-compose.yml"
 
 cd "$ROOT_DIR"
-mkdir -p runtime/policies runtime/replay/latest flink-job/target
+mkdir -p \
+  runtime/policies \
+  runtime/replay/latest \
+  runtime/flink-state/checkpoints \
+  runtime/flink-state/savepoints \
+  runtime/flink-state/rocksdb \
+  flink-job/target
+chmod 0777 \
+  runtime/flink-state \
+  runtime/flink-state/checkpoints \
+  runtime/flink-state/savepoints \
+  runtime/flink-state/rocksdb
 docker compose -f "$COMPOSE_FILE" up -d kafka jobmanager taskmanager checkpoint-exporter prometheus grafana

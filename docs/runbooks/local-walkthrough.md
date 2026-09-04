@@ -1,6 +1,6 @@
 # Локальный Walkthrough: как руками проверить AIRiskOps Flink MVP
 
-Дата актуальности: 2026-08-31
+Дата актуальности: 2026-09-04
 
 Этот документ нужен для ручной проверки локального MVP на ноутбуке через Docker. Он описывает:
 
@@ -217,6 +217,79 @@ curl -s http://localhost:8081/jobs/overview
 - определить, какая job новая и живая, а какая старая и зависла в `RESTARTING` или `FAILING`;
 - отменить старую job;
 - только потом продолжать replay и анализ dashboard.
+
+### Вариант: отправить job с RocksDB profile
+
+Если нужен тот же локальный стенд, но с включённым `RocksDB` runtime profile, используйте:
+
+```bash
+bash tools/scripts/submit-job.sh --config config/job/local-rocksdb.yaml
+```
+
+Что меняется в этом режиме:
+
+- используется профиль `config/job/local-rocksdb.yaml`;
+- state backend переключается на `rocksdb`;
+- `incremental checkpoints` включены;
+- local state, checkpoints и savepoints пишутся в `runtime/flink-state/`.
+
+Если нужен полный init-path сразу с RocksDB profile:
+
+```bash
+bash tools/scripts/init.sh --config config/job/local-rocksdb.yaml
+```
+
+Где настраиваются пути:
+
+- `runtimeState.checkpointsDir`
+- `runtimeState.savepointsDir`
+- `runtimeState.rocksdbLocalDir`
+
+Эти поля находятся в:
+
+- `config/job/local-rocksdb.yaml`
+
+Ожидаемое соответствие локальному compose runtime:
+
+- `file:///opt/flink/state/checkpoints`
+- `file:///opt/flink/state/savepoints`
+- `/opt/flink/state/rocksdb`
+
+Host-side каталог для этих путей:
+
+- `runtime/flink-state/`
+
+#### Как проверить, что RocksDB реально активен
+
+Проверка через Flink REST:
+
+```bash
+curl -s http://localhost:8081/jobs/overview
+```
+
+Сначала определите `jid` нужной job, затем запросите checkpoint config:
+
+```bash
+curl -s http://localhost:8081/jobs/<jid>/checkpoints/config
+```
+
+Что должно быть видно:
+
+- `state_backend` соответствует `rocksdb`;
+- checkpoint storage указывает на filesystem-based path;
+- включён incremental mode.
+
+Дополнительная проверка через exporter / Prometheus:
+
+- в REST `checkpoints/config` поле `state_backend` должно быть `EmbeddedRocksDBStateBackend`;
+- в REST `checkpoints/config` поле `checkpoint_storage` должно быть `FileSystemCheckpointStorage`;
+- runtime metric `flink_taskmanager_job_task_operator_airiskops_runtime_contract_incremental_checkpoints_enabled{job_name="AIRiskOps_MVP_Increment_1"}` должна быть равна `1`;
+- runtime metric `flink_taskmanager_job_task_operator_airiskops_runtime_contract_state_backend_code{job_name="AIRiskOps_MVP_Increment_1"}` должна быть равна `1`.
+
+Что важно:
+
+- `checkpoint-exporter` надёжно показывает `state_backend` через Flink REST;
+- для job-level RocksDB profile признаки `incremental` и конкретный state path сейчас надёжнее проверять через runtime contract metrics и `jobmanager` logs, а не через exporter labels.
 
 ## Шаг 5. Посмотреть topology в Flink UI
 

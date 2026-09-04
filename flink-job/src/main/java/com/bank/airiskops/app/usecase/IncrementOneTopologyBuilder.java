@@ -117,6 +117,7 @@ public final class IncrementOneTopologyBuilder {
         DataStream<SafetyEvent> instrumentedOnTimeEvents = onTimeEvents
                 .map(new RuntimeContractMetricsFunction(
                         config.runtimeContract(),
+                        config.runtimeState(),
                         config.outOfOrderness(),
                         config.lateTolerance(),
                         config.idleTimeout(),

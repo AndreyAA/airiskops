@@ -151,10 +151,20 @@ class FlinkCheckpointExporter:
     ) -> list[str]:
         entries = config_entries_to_map(jobmanager_config_entries)
         interval_millis = checkpoint_config.get("interval", 0)
-        incremental_enabled = parse_bool(entries.get("execution.checkpointing.incremental"))
+        incremental_enabled = resolve_bool_override(
+            checkpoint_config.get("incremental"),
+            entries.get("execution.checkpointing.incremental"),
+        )
         state_backend = checkpoint_config.get("state_backend", "")
-        checkpoint_storage = entries.get("execution.checkpointing.storage", "")
-        checkpoint_dir = entries.get("execution.checkpointing.dir", "")
+        checkpoint_storage = (
+            checkpoint_config.get("checkpoint_storage")
+            or entries.get("execution.checkpointing.storage", "")
+        )
+        checkpoint_dir = (
+            checkpoint_config.get("checkpoint_directory")
+            or checkpoint_config.get("checkpoints_directory")
+            or entries.get("execution.checkpointing.dir", "")
+        )
         labels = {"job_id": job_id, "job_name": job_name}
 
         return [
@@ -407,6 +417,12 @@ def config_entries_to_map(entries: list[dict[str, str]]) -> dict[str, str]:
 
 def parse_bool(value: str | None) -> bool:
     return str(value).strip().lower() == "true"
+
+
+def resolve_bool_override(primary: Any, fallback: Any) -> bool:
+    if primary is not None:
+        return parse_bool(primary)
+    return parse_bool(fallback)
 
 
 def escape_label_value(value: str) -> str:

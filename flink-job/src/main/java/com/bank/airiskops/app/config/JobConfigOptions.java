@@ -49,6 +49,12 @@ public final class JobConfigOptions {
     public static final String ARG_POLICY_REQUIRE_BOOTSTRAP = "policyRequireBootstrap";
     public static final String ARG_POLICY_UPDATES_TOPIC = "policyUpdatesTopic";
     public static final String ARG_POLICY_REJECT_OLDER_VERSIONS = "policyRejectOlderVersions";
+    public static final String ARG_RUNTIME_STATE = "runtimeState";
+    public static final String ARG_RUNTIME_STATE_BACKEND_TYPE = "backendType";
+    public static final String ARG_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED = "incrementalCheckpointsEnabled";
+    public static final String ARG_RUNTIME_STATE_CHECKPOINTS_DIR = "checkpointsDir";
+    public static final String ARG_RUNTIME_STATE_SAVEPOINTS_DIR = "savepointsDir";
+    public static final String ARG_RUNTIME_STATE_ROCKSDB_LOCAL_DIR = "rocksdbLocalDir";
 
     public static final String DEFAULT_CONFIG_FILE = "config/job/local-job.yaml";
     public static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
@@ -86,6 +92,8 @@ public final class JobConfigOptions {
     public static final boolean DEFAULT_POLICY_REQUIRE_BOOTSTRAP = false;
     public static final String DEFAULT_POLICY_UPDATES_TOPIC = "policy-updates";
     public static final boolean DEFAULT_POLICY_REJECT_OLDER_VERSIONS = true;
+    public static final String DEFAULT_RUNTIME_STATE_BACKEND_TYPE = "default";
+    public static final boolean DEFAULT_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED = false;
 
     public static final String TOPIC_SEPARATOR = ",";
 

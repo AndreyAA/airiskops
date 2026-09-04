@@ -26,6 +26,7 @@ public record JobConfig(
         PolicyConfig policyConfig,
         IncidentPolicy bootstrapIncidentPolicy,
         RuntimeContractConfig runtimeContract,
+        RuntimeStateConfig runtimeState,
         Duration outOfOrderness,
         Duration idleTimeout,
         Duration lateTolerance,
@@ -99,6 +100,7 @@ public record JobConfig(
                         JobConfigOptions.DEFAULT_DELIVERY_GUARANTEE
                 ))
         );
+        RuntimeStateConfig runtimeState = readRuntimeStateConfig(yamlConfig);
 
         return new JobConfig(
                 bootstrapServers,
@@ -237,6 +239,7 @@ public record JobConfig(
                 policyConfig,
                 loadBootstrapIncidentPolicy(policyConfig),
                 runtimeContract,
+                runtimeState,
                 Duration.ofSeconds(readLong(
                         parameters,
                         yamlConfig,
@@ -273,6 +276,34 @@ public record JobConfig(
                         JobConfigOptions.ARG_START_FROM_EARLIEST,
                         JobConfigOptions.DEFAULT_START_FROM_EARLIEST
                 )
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private static RuntimeStateConfig readRuntimeStateConfig(Map<String, Object> yamlConfig) {
+        Object rawRuntimeState = yamlConfig.get(JobConfigOptions.ARG_RUNTIME_STATE);
+        if (rawRuntimeState == null) {
+            return RuntimeStateConfig.defaults();
+        }
+        if (!(rawRuntimeState instanceof Map<?, ?> rawMap)) {
+            throw new IllegalArgumentException("runtimeState section must be a YAML map");
+        }
+
+        Map<String, Object> runtimeState = (Map<String, Object>) rawMap;
+        return new RuntimeStateConfig(
+                StateBackendType.fromConfigValue(readString(
+                        runtimeState,
+                        JobConfigOptions.ARG_RUNTIME_STATE_BACKEND_TYPE,
+                        JobConfigOptions.DEFAULT_RUNTIME_STATE_BACKEND_TYPE
+                )),
+                readBoolean(
+                        runtimeState,
+                        JobConfigOptions.ARG_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED,
+                        JobConfigOptions.DEFAULT_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED
+                ),
+                readString(runtimeState, JobConfigOptions.ARG_RUNTIME_STATE_CHECKPOINTS_DIR, null),
+                readString(runtimeState, JobConfigOptions.ARG_RUNTIME_STATE_SAVEPOINTS_DIR, null),
+                readString(runtimeState, JobConfigOptions.ARG_RUNTIME_STATE_ROCKSDB_LOCAL_DIR, null)
         );
     }
 
@@ -354,6 +385,15 @@ public record JobConfig(
         return yamlValue != null ? String.valueOf(yamlValue) : defaultValue;
     }
 
+    private static String readString(
+            Map<String, Object> yamlConfig,
+            String key,
+            String defaultValue
+    ) {
+        Object yamlValue = yamlConfig.get(key);
+        return yamlValue != null ? String.valueOf(yamlValue) : defaultValue;
+    }
+
     private static long readLong(
             ParameterTool parameters,
             Map<String, Object> yamlConfig,
@@ -404,6 +444,21 @@ public record JobConfig(
         if (cliValue != null) {
             return Boolean.parseBoolean(cliValue);
         }
+        Object yamlValue = yamlConfig.get(key);
+        if (yamlValue instanceof Boolean value) {
+            return value;
+        }
+        if (yamlValue instanceof String value) {
+            return Boolean.parseBoolean(value);
+        }
+        return defaultValue;
+    }
+
+    private static boolean readBoolean(
+            Map<String, Object> yamlConfig,
+            String key,
+            boolean defaultValue
+    ) {
         Object yamlValue = yamlConfig.get(key);
         if (yamlValue instanceof Boolean value) {
             return value;

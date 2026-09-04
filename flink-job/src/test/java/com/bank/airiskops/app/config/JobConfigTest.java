@@ -2,6 +2,8 @@ package com.bank.airiskops.app.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bank.airiskops.model.IncidentSeverity;
@@ -83,6 +85,12 @@ class JobConfigTest {
                 policyRequireBootstrap: true
                 policyUpdatesTopic: policy-updates-local
                 policyRejectOlderVersions: false
+                runtimeState:
+                  backendType: rocksdb
+                  incrementalCheckpointsEnabled: true
+                  checkpointsDir: file:///opt/flink/state/checkpoints
+                  savepointsDir: file:///opt/flink/state/savepoints
+                  rocksdbLocalDir: /opt/flink/state/rocksdb
                 """.formatted(policyFile));
 
         JobConfig config = JobConfig.fromArgs(new String[]{
@@ -134,7 +142,51 @@ class JobConfigTest {
         assertTrue(config.policyConfig().requireBootstrapPolicy());
         assertEquals("policy-updates-local", config.policyConfig().updatesTopic());
         assertFalse(config.policyConfig().rejectOlderVersions());
+        assertEquals(StateBackendType.ROCKSDB, config.runtimeState().backendType());
+        assertTrue(config.runtimeState().incrementalCheckpointsEnabled());
+        assertEquals("file:///opt/flink/state/checkpoints", config.runtimeState().checkpointsDir());
+        assertEquals("file:///opt/flink/state/savepoints", config.runtimeState().savepointsDir());
+        assertEquals("/opt/flink/state/rocksdb", config.runtimeState().rocksdbLocalDir());
         assertEquals("policy-v9", config.bootstrapIncidentPolicy().version());
         assertEquals(0.73d, config.bootstrapIncidentPolicy().resolveForAgent("agent-risk-01").promptInjection().high());
+    }
+
+    @Test
+    void usesDefaultRuntimeStateProfileWhenYamlSectionIsMissing() throws Exception {
+        Path configFile = tempDir.resolve("default-job-config.yaml");
+        Files.writeString(configFile, """
+                bootstrapServers: kafka:9092
+                policyEnabled: false
+                """);
+
+        JobConfig config = JobConfig.fromArgs(new String[]{
+                "--configFile", configFile.toString()
+        });
+
+        assertEquals(StateBackendType.DEFAULT, config.runtimeState().backendType());
+        assertFalse(config.runtimeState().incrementalCheckpointsEnabled());
+        assertNull(config.runtimeState().checkpointsDir());
+        assertNull(config.runtimeState().savepointsDir());
+        assertNull(config.runtimeState().rocksdbLocalDir());
+    }
+
+    @Test
+    void rejectsIncompleteRocksDbRuntimeStateConfig() throws Exception {
+        Path configFile = tempDir.resolve("invalid-rocksdb-config.yaml");
+        Files.writeString(configFile, """
+                bootstrapServers: kafka:9092
+                policyEnabled: false
+                runtimeState:
+                  backendType: rocksdb
+                  incrementalCheckpointsEnabled: true
+                  checkpointsDir: file:///opt/flink/state/checkpoints
+                """);
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> JobConfig.fromArgs(new String[]{"--configFile", configFile.toString()})
+        );
+
+        assertTrue(error.getMessage().contains("runtimeState.savepointsDir"));
     }
 }

@@ -31,6 +31,11 @@ class FlinkCheckpointExporterTest(unittest.TestCase):
         self.assertFalse(EXPORTER.parse_bool("false"))
         self.assertFalse(EXPORTER.parse_bool(None))
 
+    def test_resolve_bool_override_preserves_explicit_false(self):
+        self.assertFalse(EXPORTER.resolve_bool_override(False, True))
+        self.assertFalse(EXPORTER.resolve_bool_override("false", "true"))
+        self.assertTrue(EXPORTER.resolve_bool_override(None, True))
+
     def test_format_metric_escapes_label_values(self):
         rendered = EXPORTER.format_metric(
             "sample_metric",
@@ -93,6 +98,67 @@ class FlinkCheckpointExporterTest(unittest.TestCase):
         )
         self.assertIn(
             'airiskops_flink_last_restore_observed_elapsed_ms{job_id="job-1",job_name="AIRiskOps MVP Increment 1"} 500',
+            payload,
+        )
+
+    def test_render_checkpoint_config_metrics_prefers_job_level_checkpoint_config(self):
+        exporter = EXPORTER.FlinkCheckpointExporter(
+            EXPORTER.ExporterConfig(
+                flink_base_url="http://jobmanager:8081",
+                listen_host="0.0.0.0",
+                listen_port=9261,
+                scrape_timeout_seconds=5,
+                cache_ttl_seconds=15,
+                job_name="AIRiskOps MVP Increment 1",
+            )
+        )
+        lines = exporter._render_checkpoint_config_metrics(
+            "job-1",
+            "AIRiskOps MVP Increment 1",
+            {
+                "interval": 30_000,
+                "incremental": True,
+                "state_backend": "rocksdb",
+                "checkpoint_storage": "filesystem",
+                "checkpoint_directory": "file:///opt/flink/state/checkpoints",
+            },
+            [],
+        )
+        payload = "\n".join(lines)
+        self.assertIn(
+            'airiskops_flink_checkpoint_incremental_enabled{job_id="job-1",job_name="AIRiskOps MVP Increment 1"} 1',
+            payload,
+        )
+        self.assertIn('state_backend="rocksdb"', payload)
+        self.assertIn('checkpoint_storage="filesystem"', payload)
+        self.assertIn('checkpoint_dir="file:///opt/flink/state/checkpoints"', payload)
+
+    def test_render_checkpoint_config_metrics_respects_explicit_job_level_false(self):
+        exporter = EXPORTER.FlinkCheckpointExporter(
+            EXPORTER.ExporterConfig(
+                flink_base_url="http://jobmanager:8081",
+                listen_host="0.0.0.0",
+                listen_port=9261,
+                scrape_timeout_seconds=5,
+                cache_ttl_seconds=15,
+                job_name="AIRiskOps MVP Increment 1",
+            )
+        )
+        lines = exporter._render_checkpoint_config_metrics(
+            "job-1",
+            "AIRiskOps MVP Increment 1",
+            {
+                "interval": 30_000,
+                "incremental": False,
+                "state_backend": "hashmap",
+            },
+            [
+                {"key": "execution.checkpointing.incremental", "value": "true"},
+            ],
+        )
+        payload = "\n".join(lines)
+        self.assertIn(
+            'airiskops_flink_checkpoint_incremental_enabled{job_id="job-1",job_name="AIRiskOps MVP Increment 1"} 0',
             payload,
         )
 

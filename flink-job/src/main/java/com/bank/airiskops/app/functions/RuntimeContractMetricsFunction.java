@@ -1,6 +1,7 @@
 package com.bank.airiskops.app.functions;
 
 import com.bank.airiskops.app.config.RuntimeContractConfig;
+import com.bank.airiskops.app.config.RuntimeStateConfig;
 import com.bank.airiskops.model.SafetyEvent;
 import java.time.Duration;
 import java.util.List;
@@ -32,9 +33,12 @@ public final class RuntimeContractMetricsFunction extends RichMapFunction<Safety
     private static final String IDLE_TIMEOUT_SECONDS_METRIC = "idle_timeout_seconds";
     private static final String CHECKPOINT_INTERVAL_SECONDS_METRIC = "checkpoint_interval_seconds";
     private static final String AUTO_WATERMARK_INTERVAL_SECONDS_METRIC = "auto_watermark_interval_seconds";
+    private static final String INCREMENTAL_CHECKPOINTS_ENABLED_METRIC = "incremental_checkpoints_enabled";
+    private static final String STATE_BACKEND_CODE_METRIC = "state_backend_code";
     private static final String WINDOW_SIZE_SECONDS_METRIC = "window_size_seconds";
 
     private final RuntimeContractConfig runtimeContract;
+    private final RuntimeStateConfig runtimeState;
     private final Duration outOfOrderness;
     private final Duration lateTolerance;
     private final Duration idleTimeout;
@@ -43,6 +47,7 @@ public final class RuntimeContractMetricsFunction extends RichMapFunction<Safety
 
     public RuntimeContractMetricsFunction(
             RuntimeContractConfig runtimeContract,
+            RuntimeStateConfig runtimeState,
             Duration outOfOrderness,
             Duration lateTolerance,
             Duration idleTimeout,
@@ -50,6 +55,7 @@ public final class RuntimeContractMetricsFunction extends RichMapFunction<Safety
             Duration autoWatermarkInterval
     ) {
         this.runtimeContract = runtimeContract;
+        this.runtimeState = runtimeState;
         this.outOfOrderness = outOfOrderness;
         this.lateTolerance = lateTolerance;
         this.idleTimeout = idleTimeout;
@@ -74,6 +80,11 @@ public final class RuntimeContractMetricsFunction extends RichMapFunction<Safety
         runtimeMetricGroup.gauge(IDLE_TIMEOUT_SECONDS_METRIC, gaugeOfSeconds(idleTimeout));
         runtimeMetricGroup.gauge(CHECKPOINT_INTERVAL_SECONDS_METRIC, gaugeOfSeconds(checkpointInterval));
         runtimeMetricGroup.gauge(AUTO_WATERMARK_INTERVAL_SECONDS_METRIC, gaugeOfSeconds(autoWatermarkInterval));
+        runtimeMetricGroup.gauge(
+                INCREMENTAL_CHECKPOINTS_ENABLED_METRIC,
+                new LongGaugeValue(runtimeState.incrementalCheckpointsEnabled() ? 1L : 0L)
+        );
+        runtimeMetricGroup.gauge(STATE_BACKEND_CODE_METRIC, new LongGaugeValue(stateBackendCode(runtimeState)));
         registerWindowSizeGauges(runtimeMetricGroup, runtimeContract.aggregateWindows(), runtimeContract.aggregateWindowNames());
     }
 
@@ -84,6 +95,13 @@ public final class RuntimeContractMetricsFunction extends RichMapFunction<Safety
 
     private static Gauge<Long> gaugeOfSeconds(Duration duration) {
         return new LongGaugeValue(duration.toSeconds());
+    }
+
+    private static long stateBackendCode(RuntimeStateConfig runtimeState) {
+        return switch (runtimeState.backendType()) {
+            case DEFAULT -> 0L;
+            case ROCKSDB -> 1L;
+        };
     }
 
     private static void registerWindowSizeGauges(

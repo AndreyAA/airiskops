@@ -1,6 +1,6 @@
 # AIRiskOps Flink MVP
 
-Дата актуальности: 2026-09-01
+Дата актуальности: 2026-09-04
 
 ## Назначение
 
@@ -88,6 +88,19 @@ bash tools/scripts/init.sh
 - загружает bootstrap policy;
 - собирает job jar;
 - отправляет Flink job в локальный кластер.
+
+Если нужен тот же локальный сценарий, но с `RocksDB` runtime profile:
+
+```bash
+bash tools/scripts/init.sh --config config/job/local-rocksdb.yaml
+```
+
+Что меняется в этом режиме:
+
+- submit идёт с profile `config/job/local-rocksdb.yaml`;
+- job включает `RocksDB state backend`;
+- `incremental checkpoints` включены;
+- local state, checkpoints и savepoints пишутся в `runtime/flink-state/`.
 
 После этого можно загрузить данные:
 
@@ -178,6 +191,7 @@ Java-модуль с production-кодом Flink job.
 - поднять Flink JobManager и TaskManager;
 - поднять Prometheus, Grafana и checkpoint exporter;
 - смонтировать собранный JAR и job config в контейнеры.
+- смонтировать локальный runtime state path `runtime/flink-state` для optional RocksDB profile.
 
 ### `observability/`
 
