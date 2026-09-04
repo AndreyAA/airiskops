@@ -36,6 +36,7 @@ public final class GuardrailAggregateAccumulator implements Serializable {
     private long detectorLatencySum;
     private Long minDetectorLatencyMs;
     private Long maxDetectorLatencyMs;
+    private long latestEventTimeMillis;
     private long confidenceCount;
     private double confidenceSum;
     private Double minConfidence;
@@ -54,6 +55,7 @@ public final class GuardrailAggregateAccumulator implements Serializable {
         totalEvents++;
         inputTokens += event.inputTokens();
         outputTokens += event.outputTokens();
+        latestEventTimeMillis = Math.max(latestEventTimeMillis, event.eventTimeMillis());
 
         if (event.eventType() == EventType.GUARDRAIL_FINDING) {
             guardrailFindingCount++;
@@ -107,6 +109,7 @@ public final class GuardrailAggregateAccumulator implements Serializable {
         detectorLatencySum += other.detectorLatencySum;
         minDetectorLatencyMs = minLong(minDetectorLatencyMs, other.minDetectorLatencyMs);
         maxDetectorLatencyMs = maxLong(maxDetectorLatencyMs, other.maxDetectorLatencyMs);
+        latestEventTimeMillis = Math.max(latestEventTimeMillis, other.latestEventTimeMillis);
         confidenceCount += other.confidenceCount;
         confidenceSum += other.confidenceSum;
         minConfidence = minDouble(minConfidence, other.minConfidence);
@@ -182,6 +185,10 @@ public final class GuardrailAggregateAccumulator implements Serializable {
 
     public long detectorLatencyCount() {
         return detectorLatencyCount;
+    }
+
+    public long latestEventTimeMillis() {
+        return latestEventTimeMillis;
     }
 
     public List<Double> confidenceValues() {

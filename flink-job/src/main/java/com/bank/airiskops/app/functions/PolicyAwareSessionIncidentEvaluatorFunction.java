@@ -1,6 +1,7 @@
 package com.bank.airiskops.app.functions;
 
 import com.bank.airiskops.app.config.IncidentConfig;
+import com.bank.airiskops.app.support.EndToEndLatencyCalculator;
 import com.bank.airiskops.app.support.IncidentEmissionPlanner;
 import com.bank.airiskops.app.support.IncidentPolicyUpdateDecider;
 import com.bank.airiskops.model.BasicIncident;
@@ -42,6 +43,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
     private static final String POLICY_ACCEPTED_UPDATES_METRIC = "accepted_updates_total";
     private static final String POLICY_REJECTED_UPDATES_METRIC = "rejected_updates_total";
     private static final String POLICY_LAST_UPDATE_EPOCH_MS_METRIC = "last_update_epoch_ms";
+    private static final String LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC = "last_e2e_latest_event_to_emit_ms";
     private static final String POLICY_STATE_KEY = "active";
 
     private final IncidentConfig incidentConfig;
@@ -56,6 +58,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
     private transient Counter rejectedPolicyUpdatesCounter;
     private transient AtomicInteger openSessionsGaugeValue;
     private transient AtomicLong lastPolicyUpdateEpochMillis;
+    private transient AtomicLong lastE2eLatestEventToEmitMillis = new AtomicLong();
     private transient Map<String, Counter> ruleCounters;
     private transient Map<String, Counter> severityCounters;
     private transient MetricGroup airiskOpsMetricGroup;
@@ -87,8 +90,10 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
         rejectedPolicyUpdatesCounter = policyMetricGroup.counter(POLICY_REJECTED_UPDATES_METRIC);
         openSessionsGaugeValue = new AtomicInteger();
         lastPolicyUpdateEpochMillis = new AtomicLong(parseUpdatedAt(bootstrapPolicy));
+        lastE2eLatestEventToEmitMillis = new AtomicLong();
         incidentMetricGroup.gauge(OPEN_SESSIONS_METRIC, openSessionsGaugeValue::get);
         policyMetricGroup.gauge(POLICY_LAST_UPDATE_EPOCH_MS_METRIC, lastPolicyUpdateEpochMillis::get);
+        incidentMetricGroup.gauge(LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC, lastE2eLatestEventToEmitMillis::get);
         ruleCounters = new ConcurrentHashMap<>();
         severityCounters = new ConcurrentHashMap<>();
     }
@@ -166,6 +171,7 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
             SafetyEvent event,
             IncidentEmissionPlanner.PlannedIncidentEmission plannedEmission
     ) {
+        long emittedAtProcessingTimeMillis = System.currentTimeMillis();
         BasicIncident incident = new BasicIncident(
                 buildIncidentId(snapshot, plannedEmission.ruleName()),
                 snapshot.tenantId(),
@@ -186,6 +192,10 @@ public final class PolicyAwareSessionIncidentEvaluatorFunction
                 plannedEmission.summary()
         );
         emittedCounter.inc();
+        lastE2eLatestEventToEmitMillis.set(EndToEndLatencyCalculator.eventToEmitMillis(
+                snapshot.lastEventTimeMillis(),
+                emittedAtProcessingTimeMillis
+        ));
         ruleCounter(plannedEmission.ruleName()).inc();
         severityCounter(plannedEmission.severity().name()).inc();
         if (plannedEmission.update()) {

@@ -16,6 +16,7 @@ public record GuardrailWindowAggregate(
         String windowName,
         long windowStartMillis,
         long windowEndMillis,
+        long latestEventTimeMillis,
         long totalEvents,
         long guardrailFindingCount,
         long triggeredCount,
@@ -34,6 +35,8 @@ public record GuardrailWindowAggregate(
         Long minDetectorLatencyMs,
         Double avgDetectorLatencyMs,
         Long maxDetectorLatencyMs,
-        long detectorErrorCount
+        long detectorErrorCount,
+        long e2eLatestEventToEmitMs,
+        long e2eWindowEndToEmitMs
 ) {
 }

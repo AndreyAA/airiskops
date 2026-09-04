@@ -90,6 +90,7 @@ class JsonSerdeTest {
                 WindowNames.WINDOW_1_MINUTE,
                 1_000L,
                 61_000L,
+                58_000L,
                 10L,
                 4L,
                 0.4d,
@@ -101,10 +102,13 @@ class JsonSerdeTest {
                 8L,
                 10L,
                 20.0d,
-                80L
+                80L,
+                3_000L,
+                1_500L
         ));
         assertTrue(json.contains("\"guardrailName\":\"PROMPT_INJECTION\""));
         assertTrue(json.contains("\"detectorErrorRate\":0.1"));
         assertTrue(json.contains("\"confidenceCoverageRate\":0.8"));
+        assertTrue(json.contains("\"e2eLatestEventToEmitMs\":3000"));
     }
 }

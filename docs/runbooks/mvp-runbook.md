@@ -85,6 +85,7 @@
 - [load-policies.sh](../../tools/scripts/load-policies.sh)
 - [run-replay.sh](../../tools/scripts/run-replay.sh)
 - [run-live-generator.sh](../../tools/scripts/run-live-generator.sh)
+- [run-nt-baseline.sh](../../tools/scripts/run-nt-baseline.sh)
 - [run-e2e-smoke.sh](../../tools/scripts/run-e2e-smoke.sh)
 - [stream_live_events.py](../../tools/generators/stream_live_events.py)
 - [run-regression.sh](../../tools/scripts/run-regression.sh)
@@ -257,6 +258,38 @@ bash tools/scripts/reset-topics.sh
 - удаляет входные и выходные MVP topics;
 - создает их заново;
 - позволяет валидировать текущий инкремент без смешения со старыми локальными прогонами.
+
+## 5.1 Первый воспроизводимый baseline для нагрузочного тестирования
+
+Если нужно быстро запустить первый каноничный НТ-сценарий без ручного подбора флагов, используйте:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh
+```
+
+Что делает:
+
+- запускает `live generator` на `10` минут;
+- использует сценарий `mixed`;
+- использует режим `baseline`;
+- подает `20 RPS`;
+- сохраняет воспроизводимость через `seed=42`.
+
+Что смотреть во время прогона:
+
+- dashboard `AIRiskOps Capacity And Performance`;
+- `Current Input Watermark By Task`;
+- `Last Checkpoint Duration`;
+- `Failed Checkpoints`;
+- `Busy, Backpressured, Idle Time By Task`;
+- `Guardrail Aggregate E2E Latency`;
+- `Incident E2E Latency`.
+
+Если нужен тот же сценарий, но с другим `RPS`:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh --rps 40
+```
 
 Что не делает:
 

@@ -33,6 +33,8 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
     private static final String LAST_CONFIDENCE_COVERAGE_RATE_METRIC = "last_confidence_coverage_rate";
     private static final String LAST_AVG_DETECTOR_LATENCY_MS_METRIC = "last_avg_detector_latency_ms";
     private static final String LAST_MAX_DETECTOR_LATENCY_MS_METRIC = "last_max_detector_latency_ms";
+    private static final String LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC = "last_e2e_latest_event_to_emit_ms";
+    private static final String LAST_E2E_WINDOW_END_TO_EMIT_MS_METRIC = "last_e2e_window_end_to_emit_ms";
 
     private transient MetricGroup airiskOpsMetricGroup;
     private transient Map<String, QualityMetricSet> metricSets;
@@ -74,6 +76,7 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
                 aggregate.windowName(),
                 aggregate.windowStartMillis(),
                 aggregate.windowEndMillis(),
+                aggregate.latestEventTimeMillis(),
                 aggregate.guardrailFindingCount(),
                 aggregate.triggeredCount(),
                 triggerRate,
@@ -85,7 +88,9 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
                 aggregate.confidenceCount(),
                 aggregate.minDetectorLatencyMs(),
                 aggregate.avgDetectorLatencyMs(),
-                aggregate.maxDetectorLatencyMs()
+                aggregate.maxDetectorLatencyMs(),
+                aggregate.e2eLatestEventToEmitMs(),
+                aggregate.e2eWindowEndToEmitMs()
         );
     }
 
@@ -105,12 +110,16 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
         DoubleGaugeValue lastConfidenceCoverageRate = new DoubleGaugeValue();
         DoubleGaugeValue lastAvgDetectorLatencyMs = new DoubleGaugeValue();
         DoubleGaugeValue lastMaxDetectorLatencyMs = new DoubleGaugeValue();
+        DoubleGaugeValue lastE2eLatestEventToEmitMs = new DoubleGaugeValue();
+        DoubleGaugeValue lastE2eWindowEndToEmitMs = new DoubleGaugeValue();
         metricGroup.gauge(LAST_TRIGGER_RATE_METRIC, lastTriggerRate);
         metricGroup.gauge(LAST_DETECTOR_ERROR_RATE_METRIC, lastDetectorErrorRate);
         metricGroup.gauge(LAST_MISSING_CONFIDENCE_RATE_METRIC, lastMissingConfidenceRate);
         metricGroup.gauge(LAST_CONFIDENCE_COVERAGE_RATE_METRIC, lastConfidenceCoverageRate);
         metricGroup.gauge(LAST_AVG_DETECTOR_LATENCY_MS_METRIC, lastAvgDetectorLatencyMs);
         metricGroup.gauge(LAST_MAX_DETECTOR_LATENCY_MS_METRIC, lastMaxDetectorLatencyMs);
+        metricGroup.gauge(LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC, lastE2eLatestEventToEmitMs);
+        metricGroup.gauge(LAST_E2E_WINDOW_END_TO_EMIT_MS_METRIC, lastE2eWindowEndToEmitMs);
         return new QualityMetricSet(
                 metricGroup.counter(EMITTED_METRIC),
                 metricGroup.counter(FINDINGS_METRIC),
@@ -121,7 +130,9 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
                 lastMissingConfidenceRate,
                 lastConfidenceCoverageRate,
                 lastAvgDetectorLatencyMs,
-                lastMaxDetectorLatencyMs
+                lastMaxDetectorLatencyMs,
+                lastE2eLatestEventToEmitMs,
+                lastE2eWindowEndToEmitMs
         );
     }
 
@@ -142,7 +153,9 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
             DoubleGaugeValue lastMissingConfidenceRate,
             DoubleGaugeValue lastConfidenceCoverageRate,
             DoubleGaugeValue lastAvgDetectorLatencyMs,
-            DoubleGaugeValue lastMaxDetectorLatencyMs
+            DoubleGaugeValue lastMaxDetectorLatencyMs,
+            DoubleGaugeValue lastE2eLatestEventToEmitMs,
+            DoubleGaugeValue lastE2eWindowEndToEmitMs
     ) {
         private void record(GuardrailQualityMetric qualityMetric) {
             emittedCounter.inc();
@@ -157,6 +170,8 @@ public final class GuardrailQualityMetricFunction extends RichMapFunction<Guardr
             lastMaxDetectorLatencyMs.set(qualityMetric.maxDetectorLatencyMs() == null
                     ? null
                     : qualityMetric.maxDetectorLatencyMs().doubleValue());
+            lastE2eLatestEventToEmitMs.set((double) qualityMetric.e2eLatestEventToEmitMs());
+            lastE2eWindowEndToEmitMs.set((double) qualityMetric.e2eWindowEndToEmitMs());
         }
     }
 

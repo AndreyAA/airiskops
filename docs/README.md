@@ -47,6 +47,7 @@
 4. [mvp/local-rocksdb-profile-implementation-spec.md](mvp/local-rocksdb-profile-implementation-spec.md)
 5. [mvp/stage-1-results.md](mvp/stage-1-results.md)
 6. [mvp/stage-2-results.md](mvp/stage-2-results.md)
+7. [mvp/load-testing-plan.md](mvp/load-testing-plan.md)
 
 ## Состав каталога
 
@@ -98,6 +99,9 @@
 - [local-rocksdb-profile-implementation-spec.md](mvp/local-rocksdb-profile-implementation-spec.md)
   - детальная спецификация отдельного local runtime profile с `RocksDB`;
   - границы изменений, config model, profile switching, проверки и риски реализации.
+- [load-testing-plan.md](mvp/load-testing-plan.md)
+  - текущая стратегия нагрузочного тестирования локального MVP;
+  - сценарии, критерии деградации и ключевые latency/runtime метрики.
 - [prompt-injection-campaign-requirements.md](mvp/prompt-injection-campaign-requirements.md)
   - бизнес-требования для campaign-level детекции однотипных `PROMPT_INJECTION` атак;
   - режимы `GLOBAL` и `PER_AGENT`, требования к `REST`, Grafana и access control.

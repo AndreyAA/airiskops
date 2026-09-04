@@ -215,6 +215,34 @@ URL:
 - `Guardrail Aggregate Emissions` растёт только для `1m`
   - короткие окна уже закрываются, а `5m` ещё нет.
 
+### 3.1.1 E2E latency для нагрузочного тестирования
+
+Начиная с `2026-09-04` локальный MVP экспортирует первые runtime-метрики end-to-end latency без изменения Kafka output contracts.
+
+Для aggregate layer появились gauge-метрики:
+
+- `last_e2e_latest_event_to_emit_ms`
+  - задержка между самым поздним `eventTime` внутри aggregate и фактическим emission этого aggregate;
+- `last_e2e_window_end_to_emit_ms`
+  - задержка между `windowEndMillis` и фактическим emission aggregate.
+
+В Prometheus эти aggregate latency gauge сейчас идут через quality layer:
+
+- `flink_taskmanager_job_task_operator_airiskops_quality_window_guardrail_last_e2e_latest_event_to_emit_ms`
+- `flink_taskmanager_job_task_operator_airiskops_quality_window_guardrail_last_e2e_window_end_to_emit_ms`
+
+Для incident layer появилась gauge-метрика:
+
+- `last_e2e_latest_event_to_emit_ms`
+  - задержка между последним `eventTime` в session snapshot и emission incident.
+
+Как это использовать:
+
+- в baseline-прогоне зафиксировать нормальный диапазон latency;
+- при stress-прогоне сравнивать не одиночный пик, а устойчивый сдвиг вверх;
+- смотреть latency вместе с watermark lag, backpressure и checkpoint duration;
+- помнить, что это runtime approximation `processing_time_now - domain event time`, а не внешний SLA probe.
+
 ## 3.2 Что показывает каждый dashboard в Grafana
 
 Ниже описание всех готовых dashboards и панелей, которые уже provisioned в локальном стенде.
