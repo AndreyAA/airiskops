@@ -236,6 +236,11 @@ URL:
 - `last_e2e_latest_event_to_emit_ms`
   - задержка между последним `eventTime` в session snapshot и emission incident.
 
+В `mixed` baseline incident может не эмитироваться. Пустая серия или значение
+`0` в таком прогоне не означает incident latency `0`; для проверки этой ветки
+используйте `attack` или `prompt_injection_burst` и отдельно подтвердите рост
+`incidents_emitted_total`.
+
 Как это использовать:
 
 - в baseline-прогоне зафиксировать нормальный диапазон latency;

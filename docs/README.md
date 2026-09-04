@@ -101,7 +101,8 @@
   - границы изменений, config model, profile switching, проверки и риски реализации.
 - [load-testing-plan.md](mvp/load-testing-plan.md)
   - текущая стратегия нагрузочного тестирования локального MVP;
-  - сценарии, критерии деградации и ключевые latency/runtime метрики.
+  - сценарии, критерии деградации, результаты short-run DEFAULT/RocksDB и
+    ключевые latency/runtime метрики.
 - [prompt-injection-campaign-requirements.md](mvp/prompt-injection-campaign-requirements.md)
   - бизнес-требования для campaign-level детекции однотипных `PROMPT_INJECTION` атак;
   - режимы `GLOBAL` и `PER_AGENT`, требования к `REST`, Grafana и access control.

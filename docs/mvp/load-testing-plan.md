@@ -85,6 +85,11 @@
 
 Каждую ступень желательно держать `5-10` минут.
 
+Фактически выполненная exploratory short-run сетка расширена до `200`, `400`
+и `600 RPS` для DEFAULT profile и до `50`, `100`, `200`, `400`, `600 RPS` для
+RocksDB. Эти 60-секундные результаты приведены в разделе 9; они уточняют
+границы для следующего длительного теста, но не заменяют каноничный ramp.
+
 Команда:
 
 ```bash
@@ -100,6 +105,13 @@ bash tools/scripts/run-live-generator.sh \
 ```bash
 bash tools/scripts/run-nt-baseline.sh
 ```
+
+Wrapper сохраняет per-run Markdown report, raw metrics JSON и generator log в
+`runtime/load-tests/`. Отчёт привязан к точному Flink `job_id` и содержит
+generator summary, E2E, busy/backpressure, JVM heap/CPU, checkpoints,
+watermark, Kafka lag в трёх точках (`generator end`, `after settle`,
+`after recovery`), уменьшение lag и catch-up rate для обоих интервалов и всего
+периода, а также команды просмотра Docker logs.
 
 ### 4.2 Burst resilience
 
@@ -249,6 +261,12 @@ MVP можно считать деградировавшим, если выпо�
 4. Late stress `30 RPS`, `10m`, default state backend.
 5. Hot session skew `30 RPS`, `10m`, default state backend.
 6. Повтор пункта `2` и `5` на `RocksDB` profile.
+
+После результатов short-run baseline приоритет следующего цикла уточнён:
+
+1. DEFAULT `400 RPS`, `10m`, затем измерение полного catch-up.
+2. RocksDB `50 RPS`, `10m`, затем измерение полного catch-up.
+3. Только после этих выдержек продолжать burst, late-event и hot-session skew.
 
 ## 8. Шаблон фиксации результатов
 

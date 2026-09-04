@@ -274,6 +274,28 @@ bash tools/scripts/run-nt-baseline.sh
 - использует режим `baseline`;
 - подает `20 RPS`;
 - сохраняет воспроизводимость через `seed=42`.
+- сохраняет Markdown report, raw metrics JSON и generator log в
+  `runtime/load-tests/`;
+- после прогона печатает путь к артефактам, Flink job URL, Grafana/Prometheus
+  URL и Docker-команды для просмотра TaskManager, JobManager и Kafka logs.
+
+Для более долгого прогона с явным каталогом отчётов:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh \
+  --duration-seconds 600 \
+  --rps 50 \
+  --recovery-seconds 60 \
+  --report-dir runtime/load-tests
+```
+
+По умолчанию скрипт ждёт `30` секунд после генератора, чтобы Prometheus и
+Flink успели опубликовать финальные signals, затем ещё `60` секунд для
+измерения Kafka catch-up. В отчёте сохраняются lag сразу после генератора,
+после settle и после recovery, а также уменьшение lag и catch-up rate для
+интервалов settle, recovery и всего периода.
+Изменить эти интервалы можно через `--settle-seconds` и `--recovery-seconds`;
+если в кластере несколько running job с тем же именем, укажите `--job-id`.
 
 Что смотреть во время прогона:
 
@@ -298,6 +320,29 @@ bash tools/scripts/run-nt-baseline.sh --rps 40
 - не очищает `runtime/policies`;
 - не удаляет `flink-job/target`;
 - не пересоздает контейнеры.
+
+Выбор backend делает не generator, а уже запущенная Flink job. Перед
+сравнительным прогоном убедитесь, что job отправлена с нужным profile:
+
+```bash
+bash tools/scripts/submit-job.sh --config config/job/local-job.yaml
+# или
+bash tools/scripts/submit-job.sh --config config/job/local-rocksdb.yaml
+```
+
+Для чистого и воспроизводимого A/B прогона сначала отмените текущую job через
+Flink UI, затем выполните:
+
+```bash
+bash tools/scripts/reset-topics.sh
+bash tools/scripts/submit-job.sh --config config/job/local-rocksdb.yaml
+bash tools/scripts/run-nt-baseline.sh --duration-seconds 600 --rps 50
+```
+
+`reset-topics.sh` удаляет и пересоздаёт все data topics, включая output topics.
+Перед его запуском сохраните нужные результаты или используйте отдельный
+локальный стенд. Для DEFAULT profile замените `local-rocksdb.yaml` на
+`local-job.yaml`.
 
 Правило выбора:
 
