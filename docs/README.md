@@ -44,8 +44,9 @@
 1. [mvp/mvp-spec.md](mvp/mvp-spec.md)
 2. [mvp/near-term-improvement-plan.md](mvp/near-term-improvement-plan.md)
 3. [mvp/increment-3-implementation-spec.md](mvp/increment-3-implementation-spec.md)
-4. [mvp/stage-1-results.md](mvp/stage-1-results.md)
-5. [mvp/stage-2-results.md](mvp/stage-2-results.md)
+4. [mvp/local-rocksdb-profile-implementation-spec.md](mvp/local-rocksdb-profile-implementation-spec.md)
+5. [mvp/stage-1-results.md](mvp/stage-1-results.md)
+6. [mvp/stage-2-results.md](mvp/stage-2-results.md)
 
 ## Состав каталога
 
@@ -94,6 +95,12 @@
 - [increment-3-implementation-spec.md](mvp/increment-3-implementation-spec.md)
   - прикладная спецификация реализации `Increment 3`;
   - список файлов, параметров, topics, metrics, dashboards, тестов и ожидаемого business value.
+- [local-rocksdb-profile-implementation-spec.md](mvp/local-rocksdb-profile-implementation-spec.md)
+  - детальная спецификация отдельного local runtime profile с `RocksDB`;
+  - границы изменений, config model, profile switching, проверки и риски реализации.
+- [prompt-injection-campaign-requirements.md](mvp/prompt-injection-campaign-requirements.md)
+  - бизнес-требования для campaign-level детекции однотипных `PROMPT_INJECTION` атак;
+  - режимы `GLOBAL` и `PER_AGENT`, требования к `REST`, Grafana и access control.
 - [stage-1-results.md](mvp/stage-1-results.md)
   - результаты и бизнес-value первого этапа.
 - [stage-2-results.md](mvp/stage-2-results.md)
