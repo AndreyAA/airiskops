@@ -8,6 +8,7 @@ __pycache__/
 
 runtime/replay/latest/
 runtime/policies/
+runtime/flink-state/
 tools/testdata/generated/
 
 .DS_Store

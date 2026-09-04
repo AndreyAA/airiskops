@@ -1,0 +1,44 @@
+bootstrapServers: kafka:9092
+topics:
+  - agent-requests
+  - agent-responses
+  - guardrail-findings
+groupId: airiskops-mvp
+normalizedEventsTopic: normalized-events
+invalidEventsTopic: invalid-events
+lateEventsTopic: late-events
+guardrailAggregatesTopic: guardrail-aggregates
+basicIncidentsTopic: basic-incidents
+guardrailQualityMetricsTopic: guardrail-quality-metrics
+windowType: tumbling-event-time
+aggregateWindowMinutes:
+  - 1
+  - 5
+deliveryGuarantee: AT_LEAST_ONCE
+outOfOrdernessSeconds: 30
+idleTimeoutMinutes: 1
+lateToleranceMinutes: 5
+checkpointIntervalSeconds: 30
+autoWatermarkIntervalSeconds: 5
+startFromEarliest: true
+incidentEnabled: true
+incidentEmitUpdates: false
+incidentSessionTimeoutMinutes: 30
+incidentMaxRequestIdsPerIncident: 50
+incidentPromptInjectionBurstMinFindings: 3
+incidentToxicityCampaignMinFindings: 3
+incidentLoopingMinOccurrences: 2
+incidentPiAndToxicEnabled: true
+incidentPiAndToxicWindowMinutes: 5
+incidentPiAndToxicSeverity: HIGH
+incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
+incidentPiAndToxicMinToxicityTriggeredCount: 1
+policyEnabled: true
+policyBootstrapFile: runtime/policies/active-policy.yaml
+policyRequireBootstrap: false
+runtimeState:
+  backendType: rocksdb
+  incrementalCheckpointsEnabled: true
+  checkpointsDir: file:///opt/flink/state/checkpoints
+  savepointsDir: file:///opt/flink/state/savepoints
+  rocksdbLocalDir: /opt/flink/state/rocksdb
