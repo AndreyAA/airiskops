@@ -33,8 +33,8 @@ public record IncidentConfig(
                           int toxicityCampaignMinFindings, int loopingMinOccurrences, PiAndToxicRuleConfig piAndToxic) {
         this(enabled, incidentsTopic, emitUpdates, sessionInactivityTimeout, maxRequestIdsPerIncident,
                 promptInjectionBurstMinFindings, toxicityCampaignMinFindings, loopingMinOccurrences, piAndToxic,
-                new SimilarPromptInjectionRuleConfig(true, Duration.ofMinutes(5), .5, 3, 2,
-                        com.bank.airiskops.model.IncidentSeverity.HIGH, "multilingual-e5-small-onnx-qint8",
+                new SimilarPromptInjectionRuleConfig(false, Duration.ofMinutes(5), .5, 3, 2,
+                        com.bank.airiskops.model.IncidentSeverity.HIGH, "deterministic-hash-v1",
                         "query: ", 1000, 20, 100, 50, 20, 5, 500));
     }
 }

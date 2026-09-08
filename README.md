@@ -1,6 +1,6 @@
 # AIRiskOps Flink MVP
 
-Дата актуальности: 2026-09-01
+Дата актуальности: 2026-09-04
 
 ## Назначение
 
@@ -89,6 +89,19 @@ sudo bash tools/scripts/init.sh
 - собирает job jar;
 - отправляет Flink job в локальный кластер.
 
+Если нужен тот же локальный сценарий, но с `RocksDB` runtime profile:
+
+```bash
+bash tools/scripts/init.sh --config config/job/local-rocksdb.yaml
+```
+
+Что меняется в этом режиме:
+
+- submit идёт с profile `config/job/local-rocksdb.yaml`;
+- job включает `RocksDB state backend`;
+- `incremental checkpoints` включены;
+- local state, checkpoints и savepoints пишутся в `runtime/flink-state/`.
+
 После этого можно загрузить данные:
 
 ```bash
@@ -139,6 +152,29 @@ bash tools/scripts/run-e2e-smoke.sh --yes
 - публикует стартовый replay dataset;
 - проверяет Kafka outputs, Prometheus и Grafana.
 
+## Нагрузочное тестирование
+
+Для воспроизводимого baseline-прогона используйте live generator и wrapper
+отчёта:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh \
+  --duration-seconds 600 \
+  --rps 50 \
+  --recovery-seconds 60 \
+  --report-dir runtime/load-tests
+```
+
+Скрипт создаёт Markdown-отчёт, raw JSON, лог генератора, три snapshot Kafka
+lag и snapshots checkpoint в `runtime/load-tests/`. В консоль выводятся пути
+артефактов, ссылки на Flink, Grafana и Prometheus, а также команды просмотра
+Docker logs.
+
+Пошаговый сценарий запуска, выбор DEFAULT/RocksDB profile и интерпретация
+результата описаны в [runbook НТ](docs/runbooks/mvp-runbook.md). Полный план
+НТ: RPS-ступени, сценарии, критерии деградации и определения метрик находятся
+в [плане нагрузочного тестирования](docs/mvp/load-testing-plan.md).
+
 ## Архитектура репозитория
 
 Репозиторий разделён по зонам ответственности, чтобы runtime-код Flink не смешивался с observability, tooling и документацией.
@@ -188,6 +224,7 @@ Java-модуль с production-кодом Flink job.
 - поднять Flink JobManager и TaskManager;
 - поднять Prometheus, Grafana и checkpoint exporter;
 - смонтировать собранный JAR и job config в контейнеры.
+- смонтировать локальный runtime state path `runtime/flink-state` для optional RocksDB profile.
 
 ### `observability/`
 

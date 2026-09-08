@@ -56,6 +56,12 @@ public final class JobConfigOptions {
     public static final String ARG_POLICY_REQUIRE_BOOTSTRAP = "policyRequireBootstrap";
     public static final String ARG_POLICY_UPDATES_TOPIC = "policyUpdatesTopic";
     public static final String ARG_POLICY_REJECT_OLDER_VERSIONS = "policyRejectOlderVersions";
+    public static final String ARG_RUNTIME_STATE = "runtimeState";
+    public static final String ARG_RUNTIME_STATE_BACKEND_TYPE = "backendType";
+    public static final String ARG_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED = "incrementalCheckpointsEnabled";
+    public static final String ARG_RUNTIME_STATE_CHECKPOINTS_DIR = "checkpointsDir";
+    public static final String ARG_RUNTIME_STATE_SAVEPOINTS_DIR = "savepointsDir";
+    public static final String ARG_RUNTIME_STATE_ROCKSDB_LOCAL_DIR = "rocksdbLocalDir";
 
     public static final String DEFAULT_CONFIG_FILE = "config/job/local-job.yaml";
     public static final String DEFAULT_BOOTSTRAP_SERVERS = "localhost:9092";
@@ -93,13 +99,15 @@ public final class JobConfigOptions {
     public static final boolean DEFAULT_POLICY_REQUIRE_BOOTSTRAP = false;
     public static final String DEFAULT_POLICY_UPDATES_TOPIC = "policy-updates";
     public static final boolean DEFAULT_POLICY_REJECT_OLDER_VERSIONS = true;
-    public static final boolean DEFAULT_SIMILAR_PI_ENABLED = true;
+    public static final boolean DEFAULT_SIMILAR_PI_ENABLED = false;
     public static final long DEFAULT_SIMILAR_PI_WINDOW_MINUTES = 5L;
     public static final double DEFAULT_SIMILAR_PI_THRESHOLD = .5;
     public static final int DEFAULT_SIMILAR_PI_MIN_REQUESTS = 3;
     public static final int DEFAULT_SIMILAR_PI_MIN_SESSIONS = 2;
     public static final String DEFAULT_SIMILAR_PI_SEVERITY = "HIGH";
-    public static final String DEFAULT_SIMILAR_PI_MODEL_VERSION = "multilingual-e5-small-onnx-qint8";
+    public static final String DEFAULT_SIMILAR_PI_MODEL_VERSION = "deterministic-hash-v1";
+    public static final String DEFAULT_RUNTIME_STATE_BACKEND_TYPE = "default";
+    public static final boolean DEFAULT_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED = false;
 
     public static final String TOPIC_SEPARATOR = ",";
 

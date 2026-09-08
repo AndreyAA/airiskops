@@ -10,6 +10,7 @@ import com.bank.airiskops.app.config.PipelineDeliveryGuarantee;
 import com.bank.airiskops.app.config.PiAndToxicRuleConfig;
 import com.bank.airiskops.app.config.PolicyConfig;
 import com.bank.airiskops.app.config.RuntimeContractConfig;
+import com.bank.airiskops.app.config.RuntimeStateConfig;
 import com.bank.airiskops.model.IncidentGuardrailPolicy;
 import com.bank.airiskops.model.IncidentPolicy;
 import com.bank.airiskops.model.IncidentPolicyDefaults;
@@ -81,6 +82,7 @@ class IncrementOneTopologyBuilderTest {
                         List.of(Duration.ofMinutes(1), Duration.ofMinutes(5)),
                         PipelineDeliveryGuarantee.AT_LEAST_ONCE
                 ),
+                RuntimeStateConfig.defaults(),
                 Duration.ofSeconds(30),
                 Duration.ofMinutes(1),
                 Duration.ofMinutes(5),

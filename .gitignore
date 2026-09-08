@@ -6,8 +6,11 @@
 __pycache__/
 *.pyc
 
+runtime/load-tests-smoke/
 runtime/replay/latest/
 runtime/policies/
+runtime/flink-state/
+runtime/load-tests/
 tools/testdata/generated/
 
 .DS_Store

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.bank.airiskops.app.config.PipelineDeliveryGuarantee;
 import com.bank.airiskops.app.config.RuntimeContractConfig;
+import com.bank.airiskops.app.config.RuntimeStateConfig;
+import com.bank.airiskops.app.config.StateBackendType;
 import com.bank.airiskops.model.EventType;
 import com.bank.airiskops.model.SafetyEvent;
 import java.time.Duration;
@@ -20,6 +22,13 @@ class RuntimeContractMetricsFunctionTest {
                         "tumbling-event-time",
                         List.of(Duration.ofMinutes(1), Duration.ofMinutes(5)),
                         PipelineDeliveryGuarantee.AT_LEAST_ONCE
+                ),
+                new RuntimeStateConfig(
+                        StateBackendType.ROCKSDB,
+                        true,
+                        "file:///opt/flink/state/checkpoints",
+                        "file:///opt/flink/state/savepoints",
+                        "/opt/flink/state/rocksdb"
                 ),
                 Duration.ofSeconds(30),
                 Duration.ofMinutes(5),

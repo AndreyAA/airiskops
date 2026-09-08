@@ -1,5 +1,6 @@
 package com.bank.airiskops.app.functions;
 
+import com.bank.airiskops.app.support.EndToEndLatencyCalculator;
 import com.bank.airiskops.app.support.PercentileCalculator;
 import com.bank.airiskops.model.GuardrailAggregateKey;
 import com.bank.airiskops.model.GuardrailNames;
@@ -37,6 +38,8 @@ public final class GuardrailWindowProcessFunction extends
     private static final String LAST_P95_CONFIDENCE_METRIC = "last_p95_confidence";
     private static final String LAST_TRIGGERED_P50_CONFIDENCE_METRIC = "last_triggered_p50_confidence";
     private static final String LAST_TRIGGERED_P95_CONFIDENCE_METRIC = "last_triggered_p95_confidence";
+    private static final String LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC = "last_e2e_latest_event_to_emit_ms";
+    private static final String LAST_E2E_WINDOW_END_TO_EMIT_MS_METRIC = "last_e2e_window_end_to_emit_ms";
     private static final int P50 = 50;
     private static final int P95 = 95;
 
@@ -70,8 +73,22 @@ public final class GuardrailWindowProcessFunction extends
 
         GuardrailAggregateAccumulator aggregate = iterator.next();
         ConfidencePercentiles percentiles = calculatePercentiles(key.guardrailName(), aggregate);
+        long emittedAtProcessingTimeMillis = System.currentTimeMillis();
+        long latestEventToEmitMillis = EndToEndLatencyCalculator.eventToEmitMillis(
+                aggregate.latestEventTimeMillis(),
+                emittedAtProcessingTimeMillis
+        );
+        long windowEndToEmitMillis = EndToEndLatencyCalculator.windowEndToEmitMillis(
+                context.window().getEnd(),
+                emittedAtProcessingTimeMillis
+        );
         emittedAggregateCounter.inc();
-        metricSetFor(key.guardrailName()).record(aggregate, percentiles);
+        metricSetFor(key.guardrailName()).record(
+                aggregate,
+                percentiles,
+                latestEventToEmitMillis,
+                windowEndToEmitMillis
+        );
         out.collect(new GuardrailWindowAggregate(
                 aggregate.tenantId(),
                 key.agentId(),
@@ -82,6 +99,7 @@ public final class GuardrailWindowProcessFunction extends
                 windowName,
                 context.window().getStart(),
                 context.window().getEnd(),
+                aggregate.latestEventTimeMillis(),
                 aggregate.totalEvents(),
                 aggregate.guardrailFindingCount(),
                 aggregate.triggeredCount(),
@@ -100,7 +118,9 @@ public final class GuardrailWindowProcessFunction extends
                 aggregate.minDetectorLatencyMs(),
                 aggregate.avgDetectorLatencyMs(),
                 aggregate.maxDetectorLatencyMs(),
-                aggregate.detectorErrorCount()
+                aggregate.detectorErrorCount(),
+                latestEventToEmitMillis,
+                windowEndToEmitMillis
         ));
     }
 
@@ -119,10 +139,14 @@ public final class GuardrailWindowProcessFunction extends
         DoubleGaugeValue lastP95Confidence = new DoubleGaugeValue();
         DoubleGaugeValue lastTriggeredP50Confidence = new DoubleGaugeValue();
         DoubleGaugeValue lastTriggeredP95Confidence = new DoubleGaugeValue();
+        LongGaugeValue lastE2eLatestEventToEmitMillis = new LongGaugeValue();
+        LongGaugeValue lastE2eWindowEndToEmitMillis = new LongGaugeValue();
         metricGroup.gauge(LAST_P50_CONFIDENCE_METRIC, lastP50Confidence);
         metricGroup.gauge(LAST_P95_CONFIDENCE_METRIC, lastP95Confidence);
         metricGroup.gauge(LAST_TRIGGERED_P50_CONFIDENCE_METRIC, lastTriggeredP50Confidence);
         metricGroup.gauge(LAST_TRIGGERED_P95_CONFIDENCE_METRIC, lastTriggeredP95Confidence);
+        metricGroup.gauge(LAST_E2E_LATEST_EVENT_TO_EMIT_MS_METRIC, lastE2eLatestEventToEmitMillis);
+        metricGroup.gauge(LAST_E2E_WINDOW_END_TO_EMIT_MS_METRIC, lastE2eWindowEndToEmitMillis);
         return new GuardrailMetricSet(
                 metricGroup.counter(EMITTED_AGGREGATES_METRIC),
                 metricGroup.counter(EMITTED_EVENTS_METRIC),
@@ -133,7 +157,9 @@ public final class GuardrailWindowProcessFunction extends
                 lastP50Confidence,
                 lastP95Confidence,
                 lastTriggeredP50Confidence,
-                lastTriggeredP95Confidence
+                lastTriggeredP95Confidence,
+                lastE2eLatestEventToEmitMillis,
+                lastE2eWindowEndToEmitMillis
         );
     }
 
@@ -162,11 +188,15 @@ public final class GuardrailWindowProcessFunction extends
             DoubleGaugeValue lastP50Confidence,
             DoubleGaugeValue lastP95Confidence,
             DoubleGaugeValue lastTriggeredP50Confidence,
-            DoubleGaugeValue lastTriggeredP95Confidence
+            DoubleGaugeValue lastTriggeredP95Confidence,
+            LongGaugeValue lastE2eLatestEventToEmitMillis,
+            LongGaugeValue lastE2eWindowEndToEmitMillis
     ) {
         private void record(
                 GuardrailAggregateAccumulator aggregate,
-                ConfidencePercentiles percentiles
+                ConfidencePercentiles percentiles,
+                long latestEventToEmitMillis,
+                long windowEndToEmitMillis
         ) {
             emittedAggregatesCounter.inc();
             eventsCounter.inc(aggregate.totalEvents());
@@ -178,6 +208,8 @@ public final class GuardrailWindowProcessFunction extends
             lastP95Confidence.set(percentiles.p95Confidence());
             lastTriggeredP50Confidence.set(percentiles.triggeredP50Confidence());
             lastTriggeredP95Confidence.set(percentiles.triggeredP95Confidence());
+            lastE2eLatestEventToEmitMillis.set(latestEventToEmitMillis);
+            lastE2eWindowEndToEmitMillis.set(windowEndToEmitMillis);
         }
     }
 
@@ -203,6 +235,19 @@ public final class GuardrailWindowProcessFunction extends
 
         @Override
         public Double getValue() {
+            return value;
+        }
+    }
+
+    private static final class LongGaugeValue implements org.apache.flink.metrics.Gauge<Long> {
+        private volatile long value;
+
+        private void set(long nextValue) {
+            value = nextValue;
+        }
+
+        @Override
+        public Long getValue() {
             return value;
         }
     }

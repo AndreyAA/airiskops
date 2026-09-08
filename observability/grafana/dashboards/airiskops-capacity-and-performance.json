@@ -669,6 +669,100 @@
       "title": "Current Input Watermark By Task",
       "type": "timeseries"
     },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by (window, guardrail) (flink_taskmanager_job_task_operator_airiskops_quality_window_guardrail_last_e2e_latest_event_to_emit_ms{job_name=\"AIRiskOps_MVP_Increment_1\"})",
+          "legendFormat": "{{window}} / {{guardrail}} latest event",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max by (window, guardrail) (flink_taskmanager_job_task_operator_airiskops_quality_window_guardrail_last_e2e_window_end_to_emit_ms{job_name=\"AIRiskOps_MVP_Increment_1\"})",
+          "legendFormat": "{{window}} / {{guardrail}} window end",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Guardrail Aggregate E2E Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max(flink_taskmanager_job_task_operator_airiskops_incident_last_e2e_latest_event_to_emit_ms{job_name=\"AIRiskOps_MVP_Increment_1\"})",
+          "legendFormat": "Incident latest event to emit",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Incident E2E Latency",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",

@@ -5,9 +5,28 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+CONFIG_FILE="config/job/local-job.yaml"
 STEP_NUMBER=0
 CURRENT_STEP_TITLE=""
 CURRENT_STEP_STARTED_AT=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      if [[ $# -lt 2 ]]; then
+        echo "init.sh: missing value for --config" >&2
+        exit 1
+      fi
+      CONFIG_FILE="$2"
+      shift 2
+      ;;
+    *)
+      echo "init.sh: unsupported argument: $1" >&2
+      echo "Usage: bash tools/scripts/init.sh [--config <project-relative-config-path>]" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [[ -t 1 ]]; then
   COLOR_RESET=$'\033[0m'
@@ -112,7 +131,7 @@ run_checked "Building Flink job artifact" bash tools/scripts/build-job.sh
 finish_step
 
 step "Submit Flink job"
-run_checked "Submitting AIRiskOps job to local Flink cluster" bash tools/scripts/submit-job.sh
+run_checked "Submitting AIRiskOps job to local Flink cluster" bash tools/scripts/submit-job.sh --config "$CONFIG_FILE"
 finish_step
 
 status pass "Local initialization completed successfully"

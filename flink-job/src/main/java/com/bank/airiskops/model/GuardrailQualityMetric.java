@@ -17,6 +17,7 @@ public record GuardrailQualityMetric(
         String windowName,
         long windowStartMillis,
         long windowEndMillis,
+        long latestEventTimeMillis,
         long guardrailFindingCount,
         long triggeredCount,
         double triggerRate,
@@ -28,6 +29,8 @@ public record GuardrailQualityMetric(
         long confidenceCount,
         Long minDetectorLatencyMs,
         Double avgDetectorLatencyMs,
-        Long maxDetectorLatencyMs
+        Long maxDetectorLatencyMs,
+        long e2eLatestEventToEmitMs,
+        long e2eWindowEndToEmitMs
 ) {
 }

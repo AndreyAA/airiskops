@@ -36,6 +36,13 @@ counters и панель Grafana.
 для concept tests и replay. Он не считается реализацией требований раздела 2.5
 и критериев AC-04/AC-05 для согласованной ONNX-модели.
 
+Поэтому его фактическая версия в runtime contract называется
+`deterministic-hash-v1`, а не именем будущей ONNX-модели. Fallback в Java
+оставляет similarity branch выключенной; локальные профили
+`config/job/local-job.yaml` и `config/job/local-rocksdb.yaml` включают concept
+явно. Это не активирует новую incident semantics для внешних конфигураций,
+которые ещё не содержат similarity-настроек.
+
 До закрытия перечисленных пунктов нельзя считать пройденными AC-04, AC-05,
 AC-09, AC-13 в части retention/expiry, AC-17 в части длительного live runtime,
 AC-18, AC-19 и AC-20. Остальные AC также требуют полного acceptance-прогона,

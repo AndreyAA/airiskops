@@ -43,3 +43,9 @@ incidentSimilarPromptInjectionEmbeddingModelVersion: deterministic-hash-v1
 policyEnabled: true
 policyBootstrapFile: runtime/policies/active-policy.yaml
 policyRequireBootstrap: false
+runtimeState:
+  backendType: rocksdb
+  incrementalCheckpointsEnabled: true
+  checkpointsDir: file:///opt/flink/state/checkpoints
+  savepointsDir: file:///opt/flink/state/savepoints
+  rocksdbLocalDir: /opt/flink/state/rocksdb

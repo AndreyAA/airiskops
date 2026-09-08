@@ -85,6 +85,7 @@
 - [load-policies.sh](../../tools/scripts/load-policies.sh)
 - [run-replay.sh](../../tools/scripts/run-replay.sh)
 - [run-live-generator.sh](../../tools/scripts/run-live-generator.sh)
+- [run-nt-baseline.sh](../../tools/scripts/run-nt-baseline.sh)
 - [run-e2e-smoke.sh](../../tools/scripts/run-e2e-smoke.sh)
 - [stream_live_events.py](../../tools/generators/stream_live_events.py)
 - [run-regression.sh](../../tools/scripts/run-regression.sh)
@@ -258,6 +259,64 @@ bash tools/scripts/reset-topics.sh
 - создает их заново;
 - позволяет валидировать текущий инкремент без смешения со старыми локальными прогонами.
 
+## 5.1 Первый воспроизводимый baseline для нагрузочного тестирования
+
+Если нужно быстро запустить первый каноничный НТ-сценарий без ручного подбора флагов, используйте:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh
+```
+
+Что делает:
+
+- запускает `live generator` на `10` минут;
+- использует сценарий `mixed`;
+- использует режим `baseline`;
+- подает `20 RPS`;
+- сохраняет воспроизводимость через `seed=42`.
+- сохраняет Markdown report, raw metrics JSON и generator log в
+  `runtime/load-tests/`;
+- после прогона печатает путь к артефактам, Flink job URL, Grafana/Prometheus
+  URL и Docker-команды для просмотра TaskManager, JobManager и Kafka logs.
+
+Для более долгого прогона с явным каталогом отчётов:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh \
+  --duration-seconds 600 \
+  --rps 50 \
+  --recovery-seconds 60 \
+  --report-dir runtime/load-tests
+```
+
+По умолчанию скрипт ждёт `30` секунд после генератора, чтобы Prometheus и
+Flink успели опубликовать финальные signals, затем ещё `60` секунд для
+измерения Kafka catch-up. В отчёте сохраняются lag сразу после генератора,
+после settle и после recovery, а также уменьшение lag и catch-up rate для
+интервалов settle, recovery и всего периода. Пиковые runtime-метрики берутся
+за весь интервал от старта генератора до recovery snapshot; failed checkpoints
+показываются как дельта текущего прогона, а не накопленный счётчик job. Если
+Kafka lag или checkpoint snapshot не удалось получить, скрипт завершается с
+ошибкой и не создаёт успешный verdict.
+Изменить эти интервалы можно через `--settle-seconds` и `--recovery-seconds`;
+если в кластере несколько running job с тем же именем, укажите `--job-id`.
+
+Что смотреть во время прогона:
+
+- dashboard `AIRiskOps Capacity And Performance`;
+- `Current Input Watermark By Task`;
+- `Last Checkpoint Duration`;
+- `Failed Checkpoints`;
+- `Busy, Backpressured, Idle Time By Task`;
+- `Guardrail Aggregate E2E Latency`;
+- `Incident E2E Latency`.
+
+Если нужен тот же сценарий, но с другим `RPS`:
+
+```bash
+bash tools/scripts/run-nt-baseline.sh --rps 40
+```
+
 Что не делает:
 
 - не останавливает Docker-контур;
@@ -265,6 +324,29 @@ bash tools/scripts/reset-topics.sh
 - не очищает `runtime/policies`;
 - не удаляет `flink-job/target`;
 - не пересоздает контейнеры.
+
+Выбор backend делает не generator, а уже запущенная Flink job. Перед
+сравнительным прогоном убедитесь, что job отправлена с нужным profile:
+
+```bash
+bash tools/scripts/submit-job.sh --config config/job/local-job.yaml
+# или
+bash tools/scripts/submit-job.sh --config config/job/local-rocksdb.yaml
+```
+
+Для чистого и воспроизводимого A/B прогона сначала отмените текущую job через
+Flink UI, затем выполните:
+
+```bash
+bash tools/scripts/reset-topics.sh
+bash tools/scripts/submit-job.sh --config config/job/local-rocksdb.yaml
+bash tools/scripts/run-nt-baseline.sh --duration-seconds 600 --rps 50
+```
+
+`reset-topics.sh` удаляет и пересоздаёт все data topics, включая output topics.
+Перед его запуском сохраните нужные результаты или используйте отдельный
+локальный стенд. Для DEFAULT profile замените `local-rocksdb.yaml` на
+`local-job.yaml`.
 
 Правило выбора:
 

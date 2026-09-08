@@ -22,6 +22,7 @@ class GuardrailQualityMetricFunctionTest {
                 WindowNames.WINDOW_1_MINUTE,
                 1_000L,
                 61_000L,
+                58_000L,
                 10L,
                 10L,
                 4L,
@@ -40,7 +41,9 @@ class GuardrailQualityMetricFunctionTest {
                 10L,
                 25.0d,
                 80L,
-                2L
+                2L,
+                3_000L,
+                1_500L
         );
 
         GuardrailQualityMetric qualityMetric = GuardrailQualityMetricFunction.buildQualityMetric(aggregate);
@@ -51,6 +54,9 @@ class GuardrailQualityMetricFunctionTest {
         assertEquals(0.2d, qualityMetric.missingConfidenceRate(), 0.0001d);
         assertEquals(0.8d, qualityMetric.confidenceCoverageRate(), 0.0001d);
         assertEquals(8L, qualityMetric.confidenceCount());
+        assertEquals(58_000L, qualityMetric.latestEventTimeMillis());
+        assertEquals(3_000L, qualityMetric.e2eLatestEventToEmitMs());
+        assertEquals(1_500L, qualityMetric.e2eWindowEndToEmitMs());
     }
 
     @Test
@@ -65,6 +71,7 @@ class GuardrailQualityMetricFunctionTest {
                 WindowNames.WINDOW_5_MINUTES,
                 1_000L,
                 301_000L,
+                299_000L,
                 6L,
                 6L,
                 2L,
@@ -83,7 +90,9 @@ class GuardrailQualityMetricFunctionTest {
                 5L,
                 7.0d,
                 9L,
-                0L
+                0L,
+                2_000L,
+                500L
         );
 
         GuardrailQualityMetric qualityMetric = GuardrailQualityMetricFunction.buildQualityMetric(aggregate);
@@ -94,5 +103,7 @@ class GuardrailQualityMetricFunctionTest {
         assertNull(qualityMetric.missingConfidenceRate());
         assertNull(qualityMetric.confidenceCoverageRate());
         assertEquals(0L, qualityMetric.confidenceCount());
+        assertEquals(2_000L, qualityMetric.e2eLatestEventToEmitMs());
+        assertEquals(500L, qualityMetric.e2eWindowEndToEmitMs());
     }
 }

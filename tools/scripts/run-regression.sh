@@ -18,6 +18,7 @@ bash -n tools/scripts/load-policies.sh
 bash -n tools/scripts/init.sh
 bash -n tools/scripts/run-replay.sh
 bash -n tools/scripts/run-live-generator.sh
+bash -n tools/scripts/run-nt-baseline.sh
 bash -n tools/scripts/run-e2e-smoke.sh
 python3 -m unittest discover -s tools/tests -p 'test_*.py'
 
