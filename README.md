@@ -1,6 +1,6 @@
 # AIRiskOps Flink MVP
 
-Дата актуальности: 2026-09-04
+Дата актуальности: 2026-09-08
 
 ## Назначение
 
@@ -101,6 +101,34 @@ bash tools/scripts/init.sh --config config/job/local-rocksdb.yaml
 - job включает `RocksDB state backend`;
 - `incremental checkpoints` включены;
 - local state, checkpoints и savepoints пишутся в `runtime/flink-state/`.
+
+### Локальный ONNX profile для similarity detection
+
+`config/job/local-onnx.yaml` включает синхронный embedding внутри JVM
+TaskManager через LangChain4j. Перед сборкой custom image один раз скачайте
+**базовый** ONNX artifact `intfloat/multilingual-e5-small/onnx/model.onnx`
+(не `model_O4.onnx`: он несовместим с используемым generic adapter) и tokenizer:
+
+```bash
+mkdir -p deployment/local/models/multilingual-e5-small
+curl --fail --location --output deployment/local/models/multilingual-e5-small/model.onnx \
+  'https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/onnx/model.onnx?download=true'
+curl --fail --location --output deployment/local/models/multilingual-e5-small/tokenizer.json \
+  'https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/tokenizer.json?download=true'
+```
+
+Затем соберите image и отправьте ONNX profile:
+
+```bash
+docker build -f deployment/local/flink-onnx.Dockerfile -t airiskops-flink-onnx:local deployment/local
+FLINK_IMAGE=airiskops-flink-onnx:local docker compose -f deployment/local/docker-compose.yml up -d --force-recreate jobmanager taskmanager
+bash tools/scripts/build-job.sh
+bash tools/scripts/submit-job.sh --config config/job/local-onnx.yaml
+```
+
+Файлы модели не хранятся в Git. Docker build сопоставляет их SHA-256 с
+`deployment/local/models/multilingual-e5-small/manifest.json` и прекращает
+сборку при отсутствии или подмене artifact.
 
 После этого можно загрузить данные:
 

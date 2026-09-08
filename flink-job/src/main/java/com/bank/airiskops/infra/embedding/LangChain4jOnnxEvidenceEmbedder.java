@@ -86,7 +86,8 @@ public final class LangChain4jOnnxEvidenceEmbedder implements EvidenceEmbedder {
         if (!config.embeddingModelVersion().equals(manifest.modelVersion)
                 || manifest.embeddingDimension != config.embeddingExpectedDimension()
                 || !"MEAN".equals(manifest.pooling)
-                || !config.embeddingInputPrefix().equals(manifest.inputPrefix)) {
+                || !config.embeddingInputPrefix().equals(manifest.inputPrefix)
+                || manifest.maxTokens != config.embeddingMaxTokens()) {
             throw new IllegalStateException("ONNX embedding manifest does not match runtime configuration");
         }
         if (!sha256(model).equalsIgnoreCase(manifest.modelSha256)

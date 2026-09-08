@@ -218,6 +218,25 @@ curl -s http://localhost:8081/jobs/overview
 - отменить старую job;
 - только потом продолжать replay и анализ dashboard.
 
+## Локальная проверка ONNX embeddings
+
+По умолчанию `local-job.yaml` сохраняет воспроизводимый provider `deterministic`.
+Чтобы проверить synchronous embedding через `multilingual-e5-small` внутри JVM,
+соберите image с заранее загруженным artifact и пересоздайте только Flink-сервисы:
+
+```bash
+docker build -f deployment/local/flink-onnx.Dockerfile -t airiskops-flink-onnx:local deployment/local
+FLINK_IMAGE=airiskops-flink-onnx:local docker compose -f deployment/local/docker-compose.yml up -d --force-recreate jobmanager taskmanager
+bash tools/scripts/build-job.sh
+bash tools/scripts/submit-job.sh --config config/job/local-onnx.yaml
+```
+
+`deployment/local/models/multilingual-e5-small/model.onnx` и `tokenizer.json`
+не хранятся в Git. Docker build сверяет их SHA-256 с tracked `manifest.json`;
+отсутствующий или подменённый artifact останавливает build. Для реального
+локального smoke-test выполните `mvn -f flink-job/pom.xml test`: тест сам
+пропустится, если artifact ещё не установлен.
+
 ### Вариант: отправить job с RocksDB profile
 
 Если нужен тот же локальный стенд, но с включённым `RocksDB` runtime profile, используйте:
