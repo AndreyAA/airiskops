@@ -202,6 +202,7 @@ public final class IncrementOneTopologyBuilder {
                     .map(new EmbedPromptInjectionEvidenceFunction(config.incidentConfig().similarPromptInjection()))
                     .uid(JobTopology.SIMILAR_PI_EMBED_UID)
                     .name(JobTopology.SIMILAR_PI_EMBED_NAME)
+                    .setParallelism(config.incidentConfig().similarPromptInjection().embeddingParallelism())
                     .keyBy(new SimilarAttackKeySelector())
                     .process(new SimilarPromptInjectionCampaignFunction(
                             config.incidentConfig().similarPromptInjection(), config.incidentConfig().emitUpdates()))

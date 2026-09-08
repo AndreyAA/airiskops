@@ -51,6 +51,14 @@ public final class JobConfigOptions {
     public static final String ARG_SIMILAR_PI_MIN_SESSIONS = "incidentSimilarPromptInjectionMinDistinctSessions";
     public static final String ARG_SIMILAR_PI_SEVERITY = "incidentSimilarPromptInjectionSeverity";
     public static final String ARG_SIMILAR_PI_MODEL_VERSION = "incidentSimilarPromptInjectionEmbeddingModelVersion";
+    public static final String ARG_SIMILAR_PI_PROVIDER = "incidentSimilarPromptInjectionEmbeddingProvider";
+    public static final String ARG_SIMILAR_PI_MODEL_PATH = "incidentSimilarPromptInjectionEmbeddingModelPath";
+    public static final String ARG_SIMILAR_PI_TOKENIZER_PATH = "incidentSimilarPromptInjectionEmbeddingTokenizerPath";
+    public static final String ARG_SIMILAR_PI_MANIFEST_PATH = "incidentSimilarPromptInjectionEmbeddingManifestPath";
+    public static final String ARG_SIMILAR_PI_INPUT_PREFIX = "incidentSimilarPromptInjectionEmbeddingInputPrefix";
+    public static final String ARG_SIMILAR_PI_EXPECTED_DIMENSION = "incidentSimilarPromptInjectionEmbeddingExpectedDimension";
+    public static final String ARG_SIMILAR_PI_MAX_TOKENS = "incidentSimilarPromptInjectionEmbeddingMaxTokens";
+    public static final String ARG_SIMILAR_PI_PARALLELISM = "incidentSimilarPromptInjectionEmbeddingParallelism";
     public static final String ARG_POLICY_ENABLED = "policyEnabled";
     public static final String ARG_POLICY_BOOTSTRAP_FILE = "policyBootstrapFile";
     public static final String ARG_POLICY_REQUIRE_BOOTSTRAP = "policyRequireBootstrap";
@@ -106,6 +114,11 @@ public final class JobConfigOptions {
     public static final int DEFAULT_SIMILAR_PI_MIN_SESSIONS = 2;
     public static final String DEFAULT_SIMILAR_PI_SEVERITY = "HIGH";
     public static final String DEFAULT_SIMILAR_PI_MODEL_VERSION = "deterministic-hash-v1";
+    public static final String DEFAULT_SIMILAR_PI_PROVIDER = "deterministic";
+    public static final String DEFAULT_SIMILAR_PI_INPUT_PREFIX = "query: ";
+    public static final int DEFAULT_SIMILAR_PI_EXPECTED_DIMENSION = 384;
+    public static final int DEFAULT_SIMILAR_PI_MAX_TOKENS = 256;
+    public static final int DEFAULT_SIMILAR_PI_PARALLELISM = 1;
     public static final String DEFAULT_RUNTIME_STATE_BACKEND_TYPE = "default";
     public static final boolean DEFAULT_RUNTIME_STATE_INCREMENTAL_CHECKPOINTS_ENABLED = false;
 
