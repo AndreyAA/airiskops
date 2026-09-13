@@ -203,6 +203,13 @@ Docker logs.
 НТ: RPS-ступени, сценарии, критерии деградации и определения метрик находятся
 в [плане нагрузочного тестирования](docs/mvp/load-testing-plan.md).
 
+Нормативная SDD-спецификация новой similarity-фичи находится в
+[specs/similar-prompt-injection-sdd-spec.md](specs/similar-prompt-injection-sdd-spec.md).
+Спецификация topology-level выключателя находится в
+[specs/similar-prompt-injection-topology-toggle-sdd.md](specs/similar-prompt-injection-topology-toggle-sdd.md).
+Фактический разбор diff текущей ветки сохранён отдельно в
+[specs/similar-prompt-injection-branch-summary.md](specs/similar-prompt-injection-branch-summary.md).
+
 ## Архитектура репозитория
 
 Репозиторий разделён по зонам ответственности, чтобы runtime-код Flink не смешивался с observability, tooling и документацией.

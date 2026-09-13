@@ -193,23 +193,23 @@ public final class IncrementOneTopologyBuilder {
                     .uid(JobTopology.INCIDENT_EVALUATOR_UID)
                     .name(JobTopology.INCIDENT_EVALUATOR_NAME);
 
-            boolean similarPromptInjectionEnabled = config.incidentConfig().similarPromptInjection().enabled();
-            DataStream<BasicIncident> similarPromptInjectionIncidents = guardrailFindings
-                    .filter(event -> similarPromptInjectionEnabled
-                            && Boolean.TRUE.equals(event.triggered())
-                            && "PROMPT_INJECTION".equals(event.guardrailName())
-                            && event.evidenceSnippet() != null && !event.evidenceSnippet().isBlank())
-                    .map(new EmbedPromptInjectionEvidenceFunction(config.incidentConfig().similarPromptInjection()))
-                    .uid(JobTopology.SIMILAR_PI_EMBED_UID)
-                    .name(JobTopology.SIMILAR_PI_EMBED_NAME)
-                    .setParallelism(config.incidentConfig().similarPromptInjection().embeddingParallelism())
-                    .keyBy(new SimilarAttackKeySelector())
-                    .process(new SimilarPromptInjectionCampaignFunction(
-                            config.incidentConfig().similarPromptInjection(), config.incidentConfig().emitUpdates()))
-                    .uid(JobTopology.SIMILAR_PI_EVALUATOR_UID)
-                    .name(JobTopology.SIMILAR_PI_EVALUATOR_NAME);
-
-            DataStream<BasicIncident> incidents = sessionIncidents.union(similarPromptInjectionIncidents);
+            DataStream<BasicIncident> incidents = sessionIncidents;
+            if (config.incidentConfig().similarPromptInjection().enabled()) {
+                DataStream<BasicIncident> similarPromptInjectionIncidents = guardrailFindings
+                        .filter(event -> Boolean.TRUE.equals(event.triggered())
+                                && "PROMPT_INJECTION".equals(event.guardrailName())
+                                && event.evidenceSnippet() != null && !event.evidenceSnippet().isBlank())
+                        .map(new EmbedPromptInjectionEvidenceFunction(config.incidentConfig().similarPromptInjection()))
+                        .uid(JobTopology.SIMILAR_PI_EMBED_UID)
+                        .name(JobTopology.SIMILAR_PI_EMBED_NAME)
+                        .setParallelism(config.incidentConfig().similarPromptInjection().embeddingParallelism())
+                        .keyBy(new SimilarAttackKeySelector())
+                        .process(new SimilarPromptInjectionCampaignFunction(
+                                config.incidentConfig().similarPromptInjection(), config.incidentConfig().emitUpdates()))
+                        .uid(JobTopology.SIMILAR_PI_EVALUATOR_UID)
+                        .name(JobTopology.SIMILAR_PI_EVALUATOR_NAME);
+                incidents = sessionIncidents.union(similarPromptInjectionIncidents);
+            }
 
             serializeToJson(incidents)
                     .sinkTo(KafkaSinkFactory.build(config, config.outputTopics().basicIncidentsTopic()))
