@@ -244,6 +244,8 @@ assert_prometheus_query_equals() {
   local query="$2"
   local expected_fragment="$3"
   local response
+  local normalized_response
+  local normalized_expected_fragment
   log check "Checking Prometheus: $description"
   log check "Command: curl --get --data-urlencode query=$query $PROMETHEUS_URL/api/v1/query"
   log check "Expected fragment: $expected_fragment"
@@ -266,7 +268,10 @@ assert_grafana_contains() {
   log check "Command: curl -u $GRAFANA_USER:*** $url"
   log check "Expected fragment: $expected_fragment"
   response="$(curl -fsS -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "$url")"
-  if [[ "$response" == *"$expected_fragment"* ]]; then
+  # Grafana may pretty-print JSON or return it compactly depending on endpoint.
+  normalized_response="$(printf '%s' "$response" | tr -d '[:space:]')"
+  normalized_expected_fragment="$(printf '%s' "$expected_fragment" | tr -d '[:space:]')"
+  if [[ "$normalized_response" == *"$normalized_expected_fragment"* ]]; then
     status pass "$description"
     return 0
   fi
