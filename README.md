@@ -712,6 +712,10 @@ bash tools/scripts/cleanup-local.sh
   - [docs/architecture/adding-n-minute-metrics.md](docs/architecture/adding-n-minute-metrics.md)
 - Анализ high-load режима `50K RPS`:
   - [docs/architecture/highload-50k-rps-analysis.md](docs/architecture/highload-50k-rps-analysis.md)
+- Исследование NRT-оценки гардрейлов и перепроверки для дообучения:
+  - [docs/architecture/guardrail-review-deep-research.md](docs/architecture/guardrail-review-deep-research.md)
+- Исследование latency гардрейлов и реакции после доставки ответа:
+  - [docs/architecture/guardrail-latency-post-response-research.md](docs/architecture/guardrail-latency-post-response-research.md)
 - Monitoring и debugging:
   - [docs/monitoring/monitoring-debugging-guide.md](docs/monitoring/monitoring-debugging-guide.md)
 - Анализ надёжности `local-job` и доработок Prometheus:

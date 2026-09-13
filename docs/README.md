@@ -74,6 +74,14 @@
   - анализ high-load режима `50K RPS`;
   - влияние RocksDB latency, backpressure, state и checkpointing;
   - рекомендации по окнам, parallelism и capacity testing.
+- [guardrail-review-deep-research.md](architecture/guardrail-review-deep-research.md)
+  - исследование практических реализаций streaming и перепроверки гардрейлов при `50K+ RPS`;
+  - пятиминутный NRT, отдельный Python review-контур, sampling и подготовка заданий на дообучение;
+  - первичные источники, ограничения текущего AIRiskOps и [расчётные capacity-сценарии](architecture/guardrail-review-capacity.csv).
+- [guardrail-latency-post-response-research.md](architecture/guardrail-latency-post-response-research.md)
+  - коммерческий опыт и исследования гардрейлов с разной latency на большом потоке;
+  - streaming, holdback, каскады моделей и реакция на нарушения после доставки ответа;
+  - банковские playbooks, границы компенсации, enforcement ACK и предложения для AIRiskOps.
 - [flink-rocksdb-best-practices.md](architecture/flink-rocksdb-best-practices.md)
   - когда для Flink нужен `RocksDB state backend`, а когда нет;
   - какие проблемы он решает;

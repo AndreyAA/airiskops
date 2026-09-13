@@ -1,0 +1,7 @@
+scenario,input_rate_per_s,records_per_input,record_bytes,window_seconds,replication_factor,review_fraction,mean_inference_seconds,records_per_s,records_per_window,ingest_MB_per_s,logical_TB_per_day,replicated_window_GB,reviews_per_s,reviews_per_day,mean_inflight_inference
+50k_kafka_records,50000,1,2000,300,3,0,8,50000,15000000,100,8.64,90,0,0,0
+50k_user_requests_six_records,50000,6,2000,300,3,0,8,300000,90000000,600,51.84,540,0,0,0
+review_all_pi_decisions,50000,1,2000,300,3,1,8,50000,15000000,100,8.64,90,50000,4320000000,400000
+review_one_percent_pi_decisions,50000,1,2000,300,3,0.01,8,50000,15000000,100,8.64,90,500,43200000,4000
+review_point_one_percent_pi_decisions,50000,1,2000,300,3,0.001,8,50000,15000000,100,8.64,90,50,4320000,400
+review_point_zero_one_percent_pi_decisions,50000,1,2000,300,3,0.0001,8,50000,15000000,100,8.64,90,5,432000,40
