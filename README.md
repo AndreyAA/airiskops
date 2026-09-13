@@ -710,8 +710,12 @@ bash tools/scripts/cleanup-local.sh
   - [docs/architecture/airiskops-manual.md](docs/architecture/airiskops-manual.md)
 - Manual по добавлению новых агрегированных метрик:
   - [docs/architecture/adding-n-minute-metrics.md](docs/architecture/adding-n-minute-metrics.md)
+- Анализ high-load режима `50K RPS`:
+  - [docs/architecture/highload-50k-rps-analysis.md](docs/architecture/highload-50k-rps-analysis.md)
 - Monitoring и debugging:
   - [docs/monitoring/monitoring-debugging-guide.md](docs/monitoring/monitoring-debugging-guide.md)
+- Анализ надёжности `local-job` и доработок Prometheus:
+  - [docs/monitoring/local-job-prometheus-reliability-review.md](docs/monitoring/local-job-prometheus-reliability-review.md)
 - Local walkthrough:
   - [docs/runbooks/local-walkthrough.md](docs/runbooks/local-walkthrough.md)
 - MVP runbook:

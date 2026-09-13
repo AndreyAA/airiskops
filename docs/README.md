@@ -70,6 +70,10 @@
 - [adding-n-minute-metrics.md](architecture/adding-n-minute-metrics.md)
   - как правильно добавлять новые агрегированные метрики за `N` минут;
   - принципы, типовые ошибки, примеры кода.
+- [highload-50k-rps-analysis.md](architecture/highload-50k-rps-analysis.md)
+  - анализ high-load режима `50K RPS`;
+  - влияние RocksDB latency, backpressure, state и checkpointing;
+  - рекомендации по окнам, parallelism и capacity testing.
 - [flink-rocksdb-best-practices.md](architecture/flink-rocksdb-best-practices.md)
   - когда для Flink нужен `RocksDB state backend`, а когда нет;
   - какие проблемы он решает;
@@ -84,6 +88,10 @@
   - как локализовать ошибки по этапам пайплайна;
   - где смотреть runtime contract и saturation signals.
   - как интерпретировать state/checkpoint pressure перед переходом на `RocksDB`.
+- [local-job-prometheus-reliability-review.md](monitoring/local-job-prometheus-reliability-review.md)
+  - надёжность текущего `local-job` профиля;
+  - ограничения checkpoint/recovery и Kafka single-node режима;
+  - состояние Prometheus/Grafana и backlog доработок.
 
 ### `runbooks/`
 
