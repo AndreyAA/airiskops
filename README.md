@@ -204,11 +204,12 @@ Docker logs.
 в [плане нагрузочного тестирования](docs/mvp/load-testing-plan.md).
 
 Нормативная SDD-спецификация новой similarity-фичи находится в
-[specs/similar-prompt-injection-sdd-spec.md](specs/similar-prompt-injection-sdd-spec.md).
+[spec/similar-prompt-injection/similar-prompt-injection-feature.md](spec/similar-prompt-injection/similar-prompt-injection-feature.md).
 Спецификация topology-level выключателя находится в
-[specs/similar-prompt-injection-topology-toggle-sdd.md](specs/similar-prompt-injection-topology-toggle-sdd.md).
-Фактический разбор diff текущей ветки сохранён отдельно в
-[specs/similar-prompt-injection-branch-summary.md](specs/similar-prompt-injection-branch-summary.md).
+[spec/topology-toggle/similar-prompt-injection-topology-toggle-sdd.md](spec/topology-toggle/similar-prompt-injection-topology-toggle-sdd.md).
+Дизайн локального LangChain4j/ONNX runtime и пошаговый план реализации находятся
+в [ONNX runtime design](spec/similar-prompt-injection/langchain4j-onnx-runtime-design.md)
+и [implementation plan](spec/similar-prompt-injection/similar-prompt-injection-implementation-plan.md).
 
 ## Архитектура репозитория
 

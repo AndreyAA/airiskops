@@ -1,26 +1,26 @@
 # Similar Prompt Injection Campaign: подробный план реализации
 
-Дата актуальности: 2026-09-04
+Дата актуальности: 2026-09-13
 
 Связанная спецификация: [similar-prompt-injection-feature.md](similar-prompt-injection-feature.md)
 
-Статус: план выполнен частично; наличие concept detector-а не означает
-завершение ONNX runtime, event-time semantics или end-to-end acceptance.
+Статус: основные этапы реализации выполнены; остаются event-time hardening,
+расширенная диагностика и полноценный Docker E2E/recovery acceptance.
 
 ## 0. Фактический прогресс на 2026-09-04
 
 | Этап | Статус | Что осталось |
 |---|---|---|
 | 0. Defaults | Частично | Calibration corpus и измерения на настоящей ONNX-модели не подготовлены. |
-| 1. Event contract | Реализован concept path | Нужен полный regression/compatibility acceptance на собранном runtime. |
-| 2. Embedding abstraction и ONNX adapter | Не реализован | Используется временный `DeterministicEvidenceEmbedder`; отсутствуют LangChain4j/ONNX adapter, model/tokenizer config, lifecycle и failure metrics. |
+| 1. Event contract | Реализован | Нужен отдельный compatibility acceptance на внешних producers. |
+| 2. Embedding abstraction и ONNX adapter | Реализован | Требуется эксплуатационная проверка длительного inference runtime и failure metrics. |
 | 3. Similarity state | Частично | Есть keyed bounded clusters и дедупликация, но нет удаления отдельных устаревших findings и retention с allowed lateness. |
 | 4. Incident contract и metrics | Частично | Incident и совместимые counters добавлены; не хватает полного набора detector diagnostics и acceptance для revisions/state limits. |
-| 5. Topology | Частично | Concept branch подключена; не заданы явные embedding parallelism/thread limits и не проверена savepoint compatibility. |
-| 6. Replay/live generators | Частично | Replay fixtures и controls добавлены; live progression требует отдельного длительного acceptance-прогона. |
-| 7. Model artifact и deployment | Не реализован | Нет custom image, pinned artifacts, manifest/checksum и startup smoke test. |
+| 5. Topology | Реализован | Similarity branch topology-level отключается; savepoint compatibility требует отдельной проверки. |
+| 6. Replay/live generators | Реализован частично | Replay fixtures добавлены; live progression требует отдельного длительного acceptance-прогона. |
+| 7. Model artifact и deployment | Реализован | Custom image, local artifacts и manifest/checksum validation добавлены; startup smoke требует отдельной автоматизации. |
 | 8. Grafana и observability | Частично | Панель и incident counters добавлены; отсутствуют embedding health metrics и фактическая проверка series на обновлённой job. |
-| 9. End-to-end acceptance | Не выполнен | Не зафиксированы результаты Kafka/Prometheus/Grafana, negative-agent isolation, failure scenarios и checkpoint recovery. |
+| 9. End-to-end acceptance | Частично | Общий smoke и manual similarity replay описаны; не хватает автоматической проверки rule payload, negative-agent isolation, failure scenarios и checkpoint recovery. |
 
 Изменение rolling window, watermark или allowed-lateness поведения выполняется
 отдельным согласованным изменением согласно корневому `AGENTS.md`. До этого

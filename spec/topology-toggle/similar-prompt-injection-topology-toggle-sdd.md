@@ -1,7 +1,7 @@
 # SDD: Topology-Level Toggle для Similar Prompt-Injection Detection
 
-Статус: `Draft`  
-Дата: `2026-09-12`  
+Статус: `Implemented`
+Дата: `2026-09-13`
 Область: AIRiskOps Flink MVP  
 Связанная фича: `SIMILAR_PROMPT_INJECTION_CAMPAIGN`
 
@@ -22,11 +22,9 @@ topology-level feature toggle. При значении `false` similarity branch
 - существующие incident rules продолжают работать без изменения semantics;
 - job graph и runtime поведение однозначно соответствуют конфигурации.
 
-Текущий код фильтрует события через `similarPromptInjectionEnabled`, но строит
-операторы similarity branch независимо от значения флага. Это означает, что
-`EmbedPromptInjectionEvidenceFunction.open()` потенциально может создать ONNX
-embedder даже при отсутствии событий. Данная спецификация устраняет эту
-неопределённость.
+Реализация в `IncrementOneTopologyBuilder` проверяет флаг до создания similarity
+операторов. Поэтому `EmbedPromptInjectionEvidenceFunction.open()` не вызывается
+в выключенном режиме и ONNX embedder не создаётся даже при отсутствии событий.
 
 ## 2. Scope
 

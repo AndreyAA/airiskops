@@ -13,6 +13,14 @@
 - `runbooks` — пошаговые инструкции запуска и эксплуатации;
 - `mvp` — спецификация и результаты инкрементов.
 
+Связанные SDD-документы similarity-фичи находятся в корневом каталоге
+`spec/`, потому что описывают отдельный feature-driven цикл:
+
+- [similarity feature](../spec/similar-prompt-injection/similar-prompt-injection-feature.md);
+- [LangChain4j/ONNX runtime design](../spec/similar-prompt-injection/langchain4j-onnx-runtime-design.md);
+- [implementation plan](../spec/similar-prompt-injection/similar-prompt-injection-implementation-plan.md);
+- [topology-level toggle](../spec/topology-toggle/similar-prompt-injection-topology-toggle-sdd.md).
+
 ## Быстрый маршрут чтения
 
 Если нужно быстро понять проект с нуля:

@@ -1,26 +1,21 @@
 # Similar Prompt Injection Campaign: принятые решения и критерии приёмки
 
-Дата актуальности: 2026-09-04
+Дата актуальности: 2026-09-13
 
-Статус: требования согласованы; реализация частичная и пока не соответствует всем критериям приёмки.
+Статус: основная реализация similarity-фичи и локального ONNX runtime присутствует
+в текущей ветке; полный acceptance для production-like нагрузки и recovery ещё
+требует отдельного E2E-прогона.
 
 ## 0. Текущий статус реализации
 
-На 2026-09-04 реализован concept path: optional `evidenceSnippet` в контракте и
-parser-е, фильтрация similarity-ветки, межсессионный keyed operator, bounded
-cluster state, новый `BasicIncident`, replay fixtures, совместимые incident
-counters и панель Grafana.
+На 2026-09-13 реализованы: optional `evidenceSnippet` в контракте и parser-е,
+межсессионный keyed operator, bounded cluster state, новый `BasicIncident`,
+детерминированный embedding provider, LangChain4j ONNX provider с manifest/checksum
+валидацией, replay fixtures, incident counters, Grafana panel и topology-level
+toggle `incidentSimilarPromptInjectionEnabled`.
 
-Следующие части спецификации пока **не реализованы**:
+Следующие части спецификации пока требуют отдельного hardening/acceptance:
 
-- реальный локальный inference через LangChain4j `OnnxEmbeddingModel` и ONNX
-  Runtime CPU;
-- загрузка `multilingual-e5-small` model/tokenizer/manifest из локальных файлов,
-  проверка их checksum/version/dimension и fail-fast при отсутствии artifacts;
-- custom Flink image с model artifacts и воспроизводимый deployment одного и
-  того же image для JobManager и TaskManager;
-- отдельные runtime config keys для model path, tokenizer path, embedding
-  parallelism и ограничения inference threads;
 - точная rolling event-time семантика на уровне отдельных findings: текущая
   concept-реализация удаляет кластер по `lastEventTimeMillis`, но не вычитает из
   centroid/count отдельные findings, вышедшие за левую границу окна;
@@ -29,12 +24,13 @@ counters и панель Grafana.
 - полный набор диагностических метрик: embeddings generated/failed, findings
   skipped из-за отсутствующего evidence, clusters created/expired и duplicate
   findings;
-- startup smoke test настоящей модели, checkpoint/recovery test и полный local
-  E2E с проверкой Kafka, Prometheus и Grafana.
+- полный Docker E2E с явной проверкой similarity incident, Prometheus/Grafana
+  series и checkpoint/recovery.
 
-Текущий `DeterministicEvidenceEmbedder` является временной hash-based заглушкой
-для concept tests и replay. Он не считается реализацией требований раздела 2.5
-и критериев AC-04/AC-05 для согласованной ONNX-модели.
+`DeterministicEvidenceEmbedder` остаётся воспроизводимым provider-ом для replay и
+тестов. Для локального inference также реализован
+`LangChain4jOnnxEvidenceEmbedder`, который работает только с заранее
+подготовленными локальными artifacts и не использует сетевой fallback.
 
 Поэтому его фактическая версия в runtime contract называется
 `deterministic-hash-v1`, а не именем будущей ONNX-модели. Fallback в Java
@@ -43,10 +39,10 @@ counters и панель Grafana.
 явно. Это не активирует новую incident semantics для внешних конфигураций,
 которые ещё не содержат similarity-настроек.
 
-До закрытия перечисленных пунктов нельзя считать пройденными AC-04, AC-05,
+До закрытия перечисленных пунктов нельзя считать полностью подтверждёнными
 AC-09, AC-13 в части retention/expiry, AC-17 в части длительного live runtime,
-AC-18, AC-19 и AC-20. Остальные AC также требуют полного acceptance-прогона,
-даже если соответствующий код уже присутствует.
+AC-18, AC-19 и AC-20. Реализованность кода не заменяет acceptance-прогон на
+чистом локальном стенде.
 
 ## 1. Назначение
 
