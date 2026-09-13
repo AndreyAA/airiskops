@@ -7,7 +7,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 COMPOSE_FILE="$ROOT_DIR/deployment/local/docker-compose.yml"
 KAFKA_BIN="/opt/kafka/bin"
-SAMPLE_TIMEOUT_MS=5000
+# Kafka's console consumer needs time to initialise after a replay; 15 seconds
+# keeps the smoke check reliable on local Docker while still failing promptly.
+SAMPLE_TIMEOUT_MS=15000
 TOPICS=(
   "normalized-events"
   "invalid-events"

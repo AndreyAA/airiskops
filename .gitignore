@@ -13,4 +13,8 @@ runtime/flink-state/
 runtime/load-tests/
 tools/testdata/generated/
 
+# Downloaded ONNX artifacts are supplied to the local custom image outside Git.
+deployment/local/models/*/*.onnx
+deployment/local/models/*/tokenizer.json
+
 .DS_Store

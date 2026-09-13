@@ -218,6 +218,25 @@ curl -s http://localhost:8081/jobs/overview
 - отменить старую job;
 - только потом продолжать replay и анализ dashboard.
 
+## Локальная проверка ONNX embeddings
+
+По умолчанию `local-job.yaml` сохраняет воспроизводимый provider `deterministic`.
+Чтобы проверить synchronous embedding через `multilingual-e5-small` внутри JVM,
+соберите image с заранее загруженным artifact и пересоздайте только Flink-сервисы:
+
+```bash
+docker build -f deployment/local/flink-onnx.Dockerfile -t airiskops-flink-onnx:local deployment/local
+FLINK_IMAGE=airiskops-flink-onnx:local docker compose -f deployment/local/docker-compose.yml up -d --force-recreate jobmanager taskmanager
+bash tools/scripts/build-job.sh
+bash tools/scripts/submit-job.sh --config config/job/local-onnx.yaml
+```
+
+`deployment/local/models/multilingual-e5-small/model.onnx` и `tokenizer.json`
+не хранятся в Git. Docker build сверяет их SHA-256 с tracked `manifest.json`;
+отсутствующий или подменённый artifact останавливает build. Для реального
+локального smoke-test выполните `mvn -f flink-job/pom.xml test`: тест сам
+пропустится, если artifact ещё не установлен.
+
 ### Вариант: отправить job с RocksDB profile
 
 Если нужен тот же локальный стенд, но с включённым `RocksDB` runtime profile, используйте:
@@ -433,6 +452,34 @@ docker compose -f deployment/local/docker-compose.yml exec -T kafka /opt/kafka/b
 - `triggeredFindingsCount`
 - `emissionRevision`
 - `summary`
+
+### Проверка Similar Prompt Injection Campaign
+
+Для воспроизводимой межсессионной кампании используйте отдельный сценарий:
+
+```bash
+bash tools/scripts/run-replay.sh --business-scenario similar_prompt_injection_campaign
+```
+
+В `basic-incidents` найдите `ruleName=SIMILAR_PROMPT_INJECTION_CAMPAIGN`.
+У incident должны быть как минимум две `sessionIds`, несколько `requestIds`,
+`embeddingModelVersion` и bounded `evidenceSnippets`; сам embedding vector в
+Kafka payload не публикуется. В Grafana dashboard `AIRiskOps Incidents` проверьте
+панель `Similar Prompt Injection Campaign Incidents 5m`.
+
+Оба локальных профиля (`local-job.yaml` и `local-rocksdb.yaml`) включают concept
+явно и публикуют `embeddingModelVersion=deterministic-hash-v1`. Для внешнего
+конфига без `incidentSimilarPromptInjectionEnabled` новая ветка по умолчанию
+выключена.
+
+Обычный запуск `mixed` с `120` requests содержит пять различных similarity
+families по три finding. `run-replay.sh` автоматически создаёт новый namespace
+request/session IDs и продвигает event time за границу предыдущего similarity
+окна и session-state lifetime, поэтому повторный запуск команды создаёт новые
+incidents, а предыдущие open sessions могут закрыться по event-time timer.
+Технические
+флаги `--replay-id` и `--base-time` позволяют намеренно воспроизвести идентичный
+batch; такой batch должен быть дедуплицирован и не увеличивать counters.
 
 ## Шаг 9. Как читать бизнес-смысл агрегатов
 

@@ -33,6 +33,18 @@ incidentPiAndToxicWindowMinutes: 5
 incidentPiAndToxicSeverity: HIGH
 incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
 incidentPiAndToxicMinToxicityTriggeredCount: 1
+incidentSimilarPromptInjectionEnabled: true
+incidentSimilarPromptInjectionWindowMinutes: 5
+incidentSimilarPromptInjectionThreshold: 0.5
+incidentSimilarPromptInjectionMinUniqueRequests: 3
+incidentSimilarPromptInjectionMinDistinctSessions: 2
+incidentSimilarPromptInjectionSeverity: HIGH
+incidentSimilarPromptInjectionEmbeddingModelVersion: deterministic-hash-v1
+incidentSimilarPromptInjectionEmbeddingProvider: deterministic
+incidentSimilarPromptInjectionEmbeddingInputPrefix: "query: "
+incidentSimilarPromptInjectionEmbeddingExpectedDimension: 384
+incidentSimilarPromptInjectionEmbeddingMaxTokens: 256
+incidentSimilarPromptInjectionEmbeddingParallelism: 1
 policyEnabled: true
 policyBootstrapFile: runtime/policies/active-policy.yaml
 policyRequireBootstrap: false

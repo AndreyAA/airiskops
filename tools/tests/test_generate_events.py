@@ -103,6 +103,90 @@ class GenerateEventsTest(unittest.TestCase):
             },
         )
 
+    def test_mixed_scenario_includes_a_cross_session_similarity_campaign(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(42),
+            scenario="mixed",
+            request_count=10,
+            session_count=2,
+            agent_id="agent-risk-01",
+            base_time=datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc),
+        )
+        campaign = [
+            row for row in batch["findings"]
+            if row["guardrailName"] == "PROMPT_INJECTION" and row.get("evidenceSnippet")
+        ]
+        self.assertEqual(len(campaign), 10)
+        self.assertTrue(all(row["triggered"] for row in campaign))
+        self.assertEqual(len({row["requestId"] for row in campaign}), 10)
+
+    def test_full_mixed_replay_contains_five_distinct_cross_session_families(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(42),
+            scenario="mixed",
+            request_count=120,
+            session_count=12,
+            agent_id="agent-risk-01",
+            base_time=datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc),
+        )
+        prompt_findings = [
+            row for row in batch["findings"]
+            if row["guardrailName"] == "PROMPT_INJECTION" and row.get("evidenceSnippet")
+        ]
+
+        self.assertEqual(len(prompt_findings), 15)
+        for family in GENERATE_EVENTS.MIXED_SIMILAR_PROMPT_EVIDENCE_FAMILIES:
+            findings = [row for row in prompt_findings if row["evidenceSnippet"] in family]
+            self.assertEqual(len(findings), 3)
+            self.assertGreaterEqual(len({row["sessionId"] for row in findings}), 2)
+            self.assertEqual(len({row["requestId"] for row in findings}), 3)
+
+    def test_replay_id_namespaces_request_and_session_ids(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(42),
+            scenario="mixed",
+            request_count=3,
+            session_count=2,
+            agent_id="agent-risk-01",
+            base_time=datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc),
+            replay_id="demo/run 02",
+        )
+
+        self.assertTrue(all("demo-run-02" in row["requestId"] for row in batch["requests"]))
+        self.assertEqual(
+            {"session-demo-run-02-001", "session-demo-run-02-002"},
+            {row["sessionId"] for row in batch["requests"]},
+        )
+
+    def test_dedicated_similarity_scenario_has_campaign_and_non_repeating_controls(self):
+        batch = GENERATE_EVENTS.generate_event_batch(
+            rng=random.Random(42),
+            scenario="similar_prompt_injection_campaign",
+            request_count=12,
+            session_count=3,
+            agent_id="agent-risk-01",
+            base_time=datetime(2026, 8, 30, 12, 0, 0, tzinfo=timezone.utc),
+        )
+        evidence_findings = [
+            row for row in batch["findings"]
+            if row["guardrailName"] == "PROMPT_INJECTION" and row.get("evidenceSnippet")
+        ]
+        campaign = [
+            row for row in evidence_findings
+            if row["evidenceSnippet"] in GENERATE_EVENTS.SIMILAR_PROMPT_EVIDENCE
+        ]
+        controls = [
+            row for row in evidence_findings
+            if row["evidenceSnippet"] in GENERATE_EVENTS.UNRELATED_PROMPT_EVIDENCE
+        ]
+
+        self.assertEqual(len(campaign), 3)
+        self.assertGreaterEqual(len({row["sessionId"] for row in campaign}), 2)
+        self.assertEqual(len({row["requestId"] for row in campaign}), 3)
+        self.assertEqual(len(controls), len(GENERATE_EVENTS.UNRELATED_PROMPT_EVIDENCE))
+        self.assertEqual(len({row["evidenceSnippet"] for row in controls}), len(controls))
+        self.assertTrue(all(row["triggered"] for row in campaign + controls))
+
     def test_generate_live_tick_batch_uses_live_request_ids_and_precise_timestamps(self):
         batch = GENERATE_EVENTS.generate_live_tick_batch(
             rng=random.Random(11),

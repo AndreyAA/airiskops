@@ -1,9 +1,7 @@
+# Local ONNX profile. Build deployment/local/flink-onnx.Dockerfile before submitting this profile.
 bootstrapServers: kafka:9092
-topics:
-  - agent-requests
-  - agent-responses
-  - guardrail-findings
-groupId: airiskops-mvp
+topics: [agent-requests, agent-responses, guardrail-findings]
+groupId: airiskops-mvp-onnx
 normalizedEventsTopic: normalized-events
 invalidEventsTopic: invalid-events
 lateEventsTopic: late-events
@@ -11,9 +9,7 @@ guardrailAggregatesTopic: guardrail-aggregates
 basicIncidentsTopic: basic-incidents
 guardrailQualityMetricsTopic: guardrail-quality-metrics
 windowType: tumbling-event-time
-aggregateWindowMinutes:
-  - 1
-  - 5
+aggregateWindowMinutes: [1, 5]
 deliveryGuarantee: AT_LEAST_ONCE
 outOfOrdernessSeconds: 30
 idleTimeoutMinutes: 1
@@ -39,8 +35,11 @@ incidentSimilarPromptInjectionThreshold: 0.5
 incidentSimilarPromptInjectionMinUniqueRequests: 3
 incidentSimilarPromptInjectionMinDistinctSessions: 2
 incidentSimilarPromptInjectionSeverity: HIGH
-incidentSimilarPromptInjectionEmbeddingModelVersion: deterministic-hash-v1
-incidentSimilarPromptInjectionEmbeddingProvider: deterministic
+incidentSimilarPromptInjectionEmbeddingProvider: langchain4j-onnx
+incidentSimilarPromptInjectionEmbeddingModelPath: /opt/airiskops/models/multilingual-e5-small/model.onnx
+incidentSimilarPromptInjectionEmbeddingTokenizerPath: /opt/airiskops/models/multilingual-e5-small/tokenizer.json
+incidentSimilarPromptInjectionEmbeddingManifestPath: /opt/airiskops/models/multilingual-e5-small/manifest.json
+incidentSimilarPromptInjectionEmbeddingModelVersion: multilingual-e5-small-onnx-v1
 incidentSimilarPromptInjectionEmbeddingInputPrefix: "query: "
 incidentSimilarPromptInjectionEmbeddingExpectedDimension: 384
 incidentSimilarPromptInjectionEmbeddingMaxTokens: 256

@@ -13,6 +13,8 @@ REQUESTS=120
 SESSIONS=12
 AGENT_ID="agent-risk-01"
 SEED=42
+REPLAY_ID=""
+BASE_TIME=""
 OUT_DIR="$ROOT_DIR/runtime/replay/latest"
 REQUEST_OFFSET_SECONDS=2
 BURST_START_SECOND=60
@@ -25,6 +27,11 @@ ERROR_SHARE=0.08
 DETECTOR_LATENCY_MULTIPLIER=6.0
 OUT_OF_ORDERNESS_SECONDS=30
 LATE_TOLERANCE_SECONDS=300
+# Local config keeps session incident state for 30 minutes, which is longer
+# than the five-minute similarity window. Advancing beyond the longer lifetime
+# makes repeated one-shot replays independent for every incident rule.
+REPLAY_STATE_GAP_SECONDS=1800
+AUTO_BASE_TIME=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -50,6 +57,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --seed)
       SEED="$2"
+      shift 2
+      ;;
+    --replay-id)
+      REPLAY_ID="$2"
+      shift 2
+      ;;
+    --base-time)
+      BASE_TIME="$2"
       shift 2
       ;;
     --out-dir)
@@ -109,6 +124,23 @@ done
 
 mkdir -p "$OUT_DIR"
 
+if [[ -z "$REPLAY_ID" ]]; then
+  REPLAY_ID="replay-$(date -u '+%Y%m%dT%H%M%S')-$$"
+fi
+if [[ -z "$BASE_TIME" ]]; then
+  AUTO_BASE_TIME=true
+  CURRENT_EPOCH="$(date -u '+%s')"
+  BASE_TIME_EPOCH="$CURRENT_EPOCH"
+  BASE_TIME_CURSOR="$OUT_DIR/.next-replay-base-epoch"
+  if [[ -f "$BASE_TIME_CURSOR" ]]; then
+    read -r CANDIDATE_BASE_TIME_EPOCH < "$BASE_TIME_CURSOR"
+    if [[ "$CANDIDATE_BASE_TIME_EPOCH" =~ ^[0-9]+$ ]] && (( CANDIDATE_BASE_TIME_EPOCH > BASE_TIME_EPOCH )); then
+      BASE_TIME_EPOCH="$CANDIDATE_BASE_TIME_EPOCH"
+    fi
+  fi
+  BASE_TIME="$(python3 -c 'from datetime import datetime, timezone; import sys; print(datetime.fromtimestamp(int(sys.argv[1]), timezone.utc).isoformat().replace("+00:00", "Z"))' "$BASE_TIME_EPOCH")"
+fi
+
 PYTHON_ARGS=(
   --business-scenario "$BUSINESS_SCENARIO"
   --delivery-mode "$DELIVERY_MODE"
@@ -116,6 +148,8 @@ PYTHON_ARGS=(
   --sessions "$SESSIONS"
   --agent-id "$AGENT_ID"
   --seed "$SEED"
+  --replay-id "$REPLAY_ID"
+  --base-time "$BASE_TIME"
   --request-offset-seconds "$REQUEST_OFFSET_SECONDS"
   --burst-start-second "$BURST_START_SECOND"
   --burst-duration-seconds "$BURST_DURATION_SECONDS"
@@ -145,5 +179,13 @@ do
     --topic "$topic" < "$OUT_DIR/$file"
 done
 
+if [[ "$AUTO_BASE_TIME" == true ]]; then
+  # Advance the next replay beyond this batch and the longest incident-state
+  # lifetime. This makes a repeated command a new campaign while preserving
+  # event-time order and allowing the previous 12 sessions to close.
+  NEXT_BASE_TIME_EPOCH=$((BASE_TIME_EPOCH + (REQUESTS - 1) * REQUEST_OFFSET_SECONDS + REPLAY_STATE_GAP_SECONDS + 1))
+  printf '%s\n' "$NEXT_BASE_TIME_EPOCH" > "$BASE_TIME_CURSOR"
+fi
+
 echo "Replay published from $OUT_DIR"
-echo "business-scenario=$BUSINESS_SCENARIO delivery-mode=$DELIVERY_MODE requests=$REQUESTS sessions=$SESSIONS"
+echo "business-scenario=$BUSINESS_SCENARIO delivery-mode=$DELIVERY_MODE replay-id=$REPLAY_ID base-time=$BASE_TIME requests=$REQUESTS sessions=$SESSIONS"

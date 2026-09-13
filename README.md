@@ -1,6 +1,6 @@
 # AIRiskOps Flink MVP
 
-Дата актуальности: 2026-09-04
+Дата актуальности: 2026-09-08
 
 ## Назначение
 
@@ -78,7 +78,7 @@
 Если нужно быстро поднять локальный контур без очистки существующего state:
 
 ```bash
-bash tools/scripts/init.sh
+sudo bash tools/scripts/init.sh
 ```
 
 Что делает скрипт:
@@ -102,16 +102,54 @@ bash tools/scripts/init.sh --config config/job/local-rocksdb.yaml
 - `incremental checkpoints` включены;
 - local state, checkpoints и savepoints пишутся в `runtime/flink-state/`.
 
+### Локальный ONNX profile для similarity detection
+
+`config/job/local-onnx.yaml` включает синхронный embedding внутри JVM
+TaskManager через LangChain4j. Перед сборкой custom image один раз скачайте
+**базовый** ONNX artifact `intfloat/multilingual-e5-small/onnx/model.onnx`
+(не `model_O4.onnx`: он несовместим с используемым generic adapter) и tokenizer:
+
+```bash
+mkdir -p deployment/local/models/multilingual-e5-small
+curl --fail --location --output deployment/local/models/multilingual-e5-small/model.onnx \
+  'https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/onnx/model.onnx?download=true'
+curl --fail --location --output deployment/local/models/multilingual-e5-small/tokenizer.json \
+  'https://huggingface.co/intfloat/multilingual-e5-small/resolve/main/tokenizer.json?download=true'
+```
+
+Затем соберите image и отправьте ONNX profile:
+
+```bash
+docker build -f deployment/local/flink-onnx.Dockerfile -t airiskops-flink-onnx:local deployment/local
+FLINK_IMAGE=airiskops-flink-onnx:local docker compose -f deployment/local/docker-compose.yml up -d --force-recreate jobmanager taskmanager
+bash tools/scripts/build-job.sh
+bash tools/scripts/submit-job.sh --config config/job/local-onnx.yaml
+```
+
+Файлы модели не хранятся в Git. Docker build сопоставляет их SHA-256 с
+`deployment/local/models/multilingual-e5-small/manifest.json` и прекращает
+сборку при отсутствии или подмене artifact.
+
 После этого можно загрузить данные:
 
 ```bash
-bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 --agent-id agent-risk-01
+sudo bash tools/scripts/run-replay.sh --scenario mixed --requests 120 --sessions 12 --agent-id agent-risk-01
 ```
+
+Каждый запуск `run-replay.sh` автоматически получает новый `replay-id`, новые
+session/request IDs и монотонный event-time диапазон. Поэтому повтор команды
+считается новой replay-кампанией, а не повторной Kafka-доставкой уже известных
+events. Стандартный `mixed/120/12` содержит пять разных семейств похожих
+prompt-injection атак и должен создать пять
+`SIMILAR_PROMPT_INJECTION_CAMPAIGN` incidents.
+
+Для точного воспроизведения одного и того же набора передайте одновременно
+`--replay-id` и `--base-time`; такой повтор намеренно будет дедуплицирован.
 
 Быстрая проверка результатов:
 
 ```bash
-bash tools/scripts/check-output-topics.sh
+sudo bash tools/scripts/check-output-topics.sh
 ```
 
 Интерфейсы локального стенда:
@@ -125,7 +163,7 @@ bash tools/scripts/check-output-topics.sh
 Если нужен полный destructive end-to-end smoke test с очисткой локального state:
 
 ```bash
-bash tools/scripts/run-e2e-smoke.sh
+sudo bash tools/scripts/run-e2e-smoke.sh
 ```
 
 Для неинтерактивного запуска:
@@ -164,6 +202,14 @@ Docker logs.
 результата описаны в [runbook НТ](docs/runbooks/mvp-runbook.md). Полный план
 НТ: RPS-ступени, сценарии, критерии деградации и определения метрик находятся
 в [плане нагрузочного тестирования](docs/mvp/load-testing-plan.md).
+
+Нормативная SDD-спецификация новой similarity-фичи находится в
+[spec/similar-prompt-injection/similar-prompt-injection-feature.md](spec/similar-prompt-injection/similar-prompt-injection-feature.md).
+Спецификация topology-level выключателя находится в
+[spec/topology-toggle/similar-prompt-injection-topology-toggle-sdd.md](spec/topology-toggle/similar-prompt-injection-topology-toggle-sdd.md).
+Дизайн локального LangChain4j/ONNX runtime и пошаговый план реализации находятся
+в [ONNX runtime design](spec/similar-prompt-injection/langchain4j-onnx-runtime-design.md)
+и [implementation plan](spec/similar-prompt-injection/similar-prompt-injection-implementation-plan.md).
 
 ## Архитектура репозитория
 

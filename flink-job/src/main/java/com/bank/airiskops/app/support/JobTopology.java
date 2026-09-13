@@ -60,6 +60,10 @@ public final class JobTopology {
     public static final String INCIDENT_EVALUATOR_NAME = "Session Incident Evaluator";
     public static final String INCIDENT_SINK_UID = "kafka-basic-incidents";
     public static final String INCIDENT_SINK_NAME = "Kafka Basic Incidents";
+    public static final String SIMILAR_PI_EMBED_UID = "embed-similar-prompt-injection";
+    public static final String SIMILAR_PI_EMBED_NAME = "Embed Similar Prompt Injection Evidence";
+    public static final String SIMILAR_PI_EVALUATOR_UID = "similar-prompt-injection-campaign";
+    public static final String SIMILAR_PI_EVALUATOR_NAME = "Similar Prompt Injection Campaign";
     public static final String POLICY_SOURCE_UID = "kafka-policy-updates";
     public static final String POLICY_SOURCE_NAME = "Kafka Policy Updates";
     public static final String POLICY_PARSE_UID = "parse-policy-updates";

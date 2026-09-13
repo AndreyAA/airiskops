@@ -21,8 +21,20 @@ public record IncidentConfig(
         int promptInjectionBurstMinFindings,
         int toxicityCampaignMinFindings,
         int loopingMinOccurrences,
-        PiAndToxicRuleConfig piAndToxic
+        PiAndToxicRuleConfig piAndToxic,
+        SimilarPromptInjectionRuleConfig similarPromptInjection
 ) implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
+
+    /** Compatibility constructor retained for existing rule tests and integrations. */
+    public IncidentConfig(boolean enabled, String incidentsTopic, boolean emitUpdates, Duration sessionInactivityTimeout,
+                          int maxRequestIdsPerIncident, int promptInjectionBurstMinFindings,
+                          int toxicityCampaignMinFindings, int loopingMinOccurrences, PiAndToxicRuleConfig piAndToxic) {
+        this(enabled, incidentsTopic, emitUpdates, sessionInactivityTimeout, maxRequestIdsPerIncident,
+                promptInjectionBurstMinFindings, toxicityCampaignMinFindings, loopingMinOccurrences, piAndToxic,
+                new SimilarPromptInjectionRuleConfig(false, Duration.ofMinutes(5), .5, 3, 2,
+                        com.bank.airiskops.model.IncidentSeverity.HIGH, "deterministic-hash-v1",
+                        "query: ", 1000, 20, 100, 50, 20, 5, 500));
+    }
 }
