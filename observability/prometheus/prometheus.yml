@@ -1,16 +1,24 @@
 global:
+  # Частота сбора metrics со всех targets. Малые интервалы повышают актуальность, но увеличивают нагрузку Prometheus.
   scrape_interval: 5s
+  # Интервал вычисления rules; сейчас recording/alerting rules здесь не определены.
   evaluation_interval: 5s
 
 scrape_configs:
+  # Flink JobManager metrics: lifecycle job и сигналы уровня coordinator.
   - job_name: "flink-jobmanager"
     static_configs:
+      # Target во внутреннем Docker DNS и port Prometheus reporter.
       - targets: ["jobmanager:9249"]
 
+  # Flink TaskManager metrics: throughput, busy/backpressure и operator metrics.
   - job_name: "flink-taskmanager"
     static_configs:
+      # Target во внутреннем Docker DNS и Prometheus port TaskManager.
       - targets: ["taskmanager:9250"]
 
+  # Custom exporter публикует checkpoint/recovery metrics из Flink REST API.
   - job_name: "airiskops-checkpoint-exporter"
     static_configs:
+      # Endpoint exporter внутри Docker-сети.
       - targets: ["checkpoint-exporter:9261"]

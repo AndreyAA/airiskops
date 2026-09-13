@@ -1,56 +1,100 @@
+# Kafka listener внутри Docker-сети; он должен соответствовать compose service.
 bootstrapServers: kafka:9092
+# Входные topics. Их имена являются частью Kafka contract; изменение нарушает работу job.
 topics:
   - agent-requests
   - agent-responses
   - guardrail-findings
+# Пространство offset. Повторное использование group продолжает старые offset; новая group может replay всех данных.
 groupId: airiskops-mvp
+# Выходные topics для downstream checks, dashboards и integrations.
 normalizedEventsTopic: normalized-events
 invalidEventsTopic: invalid-events
 lateEventsTopic: late-events
 guardrailAggregatesTopic: guardrail-aggregates
 basicIncidentsTopic: basic-incidents
 guardrailQualityMetricsTopic: guardrail-quality-metrics
+# Event-time aggregate strategy и размеры окон; большее число или размер окон увеличивает state и output.
 windowType: tumbling-event-time
 aggregateWindowMinutes:
   - 1
   - 5
+# At-least-once повышает durability, но может дублировать записи после recovery; consumers должны deduplicate.
 deliveryGuarantee: AT_LEAST_ONCE
+# Допуск disorder до продвижения watermark; большие значения увеличивают latency/state retention.
 outOfOrdernessSeconds: 30
+# Не даёт idle Kafka partition удерживать global watermark; слишком малое значение может продвинуть его рано.
 idleTimeoutMinutes: 1
+# Grace period для late events; большие значения повышают полноту, но дольше удерживают state.
 lateToleranceMinutes: 5
+# Периодичность checkpoint; малые интервалы безопаснее, но добавляют I/O и coordination overhead.
 checkpointIntervalSeconds: 30
+# Периодичность watermark; малые интервалы повышают отзывчивость, но добавляют timer/coordination overhead.
 autoWatermarkIntervalSeconds: 5
+# Replay всех сохранённых Kafka данных для новой group; удобно локально, но рискованно при большом backlog.
 startFromEarliest: true
+# Включает incident branch и его sink; false удаляет все incident operators из graph.
 incidentEnabled: true
+# Управляет выпуском revisions; true увеличивает output и необходимость downstream deduplication.
 incidentEmitUpdates: false
+# Session-state TTL; большие значения улучшают поиск длинных кампаний, но удерживают больше state.
 incidentSessionTimeoutMinutes: 30
+# Ограничение incident payload; большие значения улучшают drill-down, но увеличивают Kafka/storage payload.
 incidentMaxRequestIdsPerIncident: 50
+# Чувствительность burst; малые thresholds увеличивают объём alert и риск false positives.
 incidentPromptInjectionBurstMinFindings: 3
 incidentToxicityCampaignMinFindings: 3
 incidentLoopingMinOccurrences: 2
+# Включает combined PI/toxicity correlation и дополнительный keyed state.
 incidentPiAndToxicEnabled: true
+# Event-time window combined rule; большие значения повышают recall и lifetime state.
 incidentPiAndToxicWindowMinutes: 5
+# Severity combined rule используется для triage priority, а не для matching.
 incidentPiAndToxicSeverity: HIGH
+# Threshold triggered PI count; малые значения повышают sensitivity и noise.
 incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
+# Threshold triggered toxicity count; малые значения повышают sensitivity и noise.
 incidentPiAndToxicMinToxicityTriggeredCount: 1
+# Topology-level similarity switch; false удаляет embedding, campaign state и similarity metrics.
 incidentSimilarPromptInjectionEnabled: true
+# Similarity event-time window; большие значения удерживают больше кластеров и могут пере-сопоставлять атаки.
 incidentSimilarPromptInjectionWindowMinutes: 5
+# Cosine threshold; малые значения повышают recall и риск false positives.
 incidentSimilarPromptInjectionThreshold: 0.5
+# Необходимое число unique requests для кампании; малые значения раньше создают output, но шумнее.
 incidentSimilarPromptInjectionMinUniqueRequests: 3
+# Необходимое число distinct sessions; значение 1 удаляет cross-session confirmation.
 incidentSimilarPromptInjectionMinDistinctSessions: 2
+# Severity similarity campaign-инцидентов.
 incidentSimilarPromptInjectionSeverity: HIGH
+# Версия embedding model изолирует state при изменении модели; migration может создать parallel state.
 incidentSimilarPromptInjectionEmbeddingModelVersion: deterministic-hash-v1
+# Выбор local provider. ONNX требует artifacts и добавляет CPU/memory cost; deterministic безопасен для replay.
 incidentSimilarPromptInjectionEmbeddingProvider: deterministic
+# Input prefix модели; изменение нарушает предположения similarity calibration.
 incidentSimilarPromptInjectionEmbeddingInputPrefix: "query: "
+# Contract размерности vector; mismatch вызывает failure embedding path.
 incidentSimilarPromptInjectionEmbeddingExpectedDimension: 384
+# ONNX token limit; большие значения увеличивают inference CPU, latency и memory.
 incidentSimilarPromptInjectionEmbeddingMaxTokens: 256
+# Embedding parallelism; большие значения потребляют Flink slots и могут перегрузить CPU/native threads.
 incidentSimilarPromptInjectionEmbeddingParallelism: 1
+# Включает загрузку policy. Отключение меняет поведение incident policy.
 policyEnabled: true
+# Path policy с точки зрения job; отсутствие файла нарушает ожидаемую инициализацию policy.
 policyBootstrapFile: runtime/policies/active-policy.yaml
+# false разрешает запуск без bootstrap policy и может скрыть ошибки конфигурации.
 policyRequireBootstrap: false
+# Выбирает RocksDB для managed keyed state вместо default in-memory backend.
 runtimeState:
+  # Идентификатор backend, используемый runtime profile applier.
   backendType: rocksdb
+  # Incremental checkpoints уменьшают передачу большого state, но требуют совместимого
+  # checkpoint storage и могут усложнить диагностику recovery.
   incrementalCheckpointsEnabled: true
+  # Persistent checkpoint URI; нехватка места или прав блокирует checkpoints/recovery.
   checkpointsDir: file:///opt/flink/state/checkpoints
+  # Savepoint URI для контролируемых upgrades; её потеря удаляет самый безопасный migration path.
   savepointsDir: file:///opt/flink/state/savepoints
+  # Рабочая директория local RocksDB. Важен быстрый диск; его заполнение может завершить tasks с ошибкой.
   rocksdbLocalDir: /opt/flink/state/rocksdb

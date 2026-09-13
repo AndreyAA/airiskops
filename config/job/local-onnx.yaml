@@ -1,49 +1,79 @@
-# Local ONNX profile. Build deployment/local/flink-onnx.Dockerfile before submitting this profile.
+# Локальный ONNX-профиль. Перед отправкой этого профиля соберите deployment/local/flink-onnx.Dockerfile.
+# Образ должен содержать указанные ниже файлы модели/tokenizer; fallback через сеть отсутствует.
 bootstrapServers: kafka:9092
+# Входные Kafka topics; переименование нарушает wiring source и replay tooling.
 topics: [agent-requests, agent-responses, guardrail-findings]
+# Отдельная consumer group не даёт ONNX-экспериментам использовать offset default-профиля.
 groupId: airiskops-mvp-onnx
+# Выходные Kafka contracts для downstream consumers и smoke checks.
 normalizedEventsTopic: normalized-events
 invalidEventsTopic: invalid-events
 lateEventsTopic: late-events
 guardrailAggregatesTopic: guardrail-aggregates
 basicIncidentsTopic: basic-incidents
 guardrailQualityMetricsTopic: guardrail-quality-metrics
+# Event-time aggregation; дополнительные или большие окна увеличивают state и объём эмиссии.
 windowType: tumbling-event-time
 aggregateWindowMinutes: [1, 5]
+# At-least-once может дублировать записи после recovery; downstream consumers нужны idempotency/deduplication.
 deliveryGuarantee: AT_LEAST_ONCE
+# Параметры watermark и late events задают компромисс между полнотой результата, latency и state retention.
 outOfOrdernessSeconds: 30
 idleTimeoutMinutes: 1
 lateToleranceMinutes: 5
+# Периодичность checkpoint/watermark; малые значения улучшают recovery/latency, но увеличивают overhead.
 checkpointIntervalSeconds: 30
 autoWatermarkIntervalSeconds: 5
+# Replay с earliest полезен для чистых demo, но может создать большой startup backlog.
 startFromEarliest: true
+# Включает обработку инцидентов; false удаляет incident operators и incident sink.
 incidentEnabled: true
+# Revision mode увеличивает объём incident output при включении.
 incidentEmitUpdates: false
+# Больший session TTL улучшает correlation кампаний, но удерживает больше keyed state.
 incidentSessionTimeoutMinutes: 30
+# Ограничивает размер incident payload; увеличение повышает стоимость Kafka и storage.
 incidentMaxRequestIdsPerIncident: 50
+# Пороги существующих правил; уменьшение повышает чувствительность и false positives.
 incidentPromptInjectionBurstMinFindings: 3
 incidentToxicityCampaignMinFindings: 3
 incidentLoopingMinOccurrences: 2
+# Switch, window и thresholds combined rule влияют на объём alert и retained state.
 incidentPiAndToxicEnabled: true
 incidentPiAndToxicWindowMinutes: 5
 incidentPiAndToxicSeverity: HIGH
 incidentPiAndToxicMinPromptInjectionTriggeredCount: 1
 incidentPiAndToxicMinToxicityTriggeredCount: 1
+# Similarity является topology-level: false полностью исключает ONNX model/operator/state/counters.
 incidentSimilarPromptInjectionEnabled: true
+# Similarity event-time window; большие значения удерживают больше кластеров и могут увеличить false matches.
 incidentSimilarPromptInjectionWindowMinutes: 5
+# Малый cosine threshold повышает recall за счёт precision; 0.5 является concept default.
 incidentSimilarPromptInjectionThreshold: 0.5
+# Границы eligibility кампании; уменьшение любого threshold повышает шум alert.
 incidentSimilarPromptInjectionMinUniqueRequests: 3
 incidentSimilarPromptInjectionMinDistinctSessions: 2
+# Similarity incident severity; влияет только на приоритет triage.
 incidentSimilarPromptInjectionSeverity: HIGH
+# ONNX implementation. Требуются custom image и локальные immutable artifacts.
 incidentSimilarPromptInjectionEmbeddingProvider: langchain4j-onnx
+# Container paths проверяются по manifest/checksums до инициализации модели.
 incidentSimilarPromptInjectionEmbeddingModelPath: /opt/airiskops/models/multilingual-e5-small/model.onnx
 incidentSimilarPromptInjectionEmbeddingTokenizerPath: /opt/airiskops/models/multilingual-e5-small/tokenizer.json
 incidentSimilarPromptInjectionEmbeddingManifestPath: /opt/airiskops/models/multilingual-e5-small/manifest.json
+# Версия модели входит в identity similarity state; изменение изолирует старые/новые embeddings.
 incidentSimilarPromptInjectionEmbeddingModelVersion: multilingual-e5-small-onnx-v1
+# Должен соответствовать training/manifest contract модели; изменение может нарушить calibration.
 incidentSimilarPromptInjectionEmbeddingInputPrefix: "query: "
+# Dimension mismatch вызывает fail fast и защищает cosine similarity от несовместимых vectors.
 incidentSimilarPromptInjectionEmbeddingExpectedDimension: 384
+# Больший token limit увеличивает ONNX CPU time, latency и native memory usage.
 incidentSimilarPromptInjectionEmbeddingMaxTokens: 256
+# Больший parallelism потребляет slots и CPU; вместе с native threads может перегрузить hosts.
 incidentSimilarPromptInjectionEmbeddingParallelism: 1
+# Включает загрузку policy и обновления incident policy.
 policyEnabled: true
+# Path внутри смонтированного runtime volume; отсутствие файла нарушает ожидаемый policy bootstrap.
 policyBootstrapFile: runtime/policies/active-policy.yaml
+# false разрешает запуск без bootstrap policy и может скрыть ошибки deployment.
 policyRequireBootstrap: false

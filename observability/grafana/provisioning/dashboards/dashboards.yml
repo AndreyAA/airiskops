@@ -1,11 +1,19 @@
+# Версия schema для Grafana provisioning.
 apiVersion: 1
 
 providers:
+  # Файловый provider загружает dashboard JSON из смонтированной read-only директории.
   - name: AIRiskOps
+    # Grafana organization, в которую загружаются dashboard.
     orgId: 1
+    # Папка dashboard, отображаемая в Grafana UI.
     folder: AIRiskOps
+    # Provider на основе файлов; dashboard хранятся не только в Grafana database.
     type: file
+    # false разрешает удалять dashboard, удалённые из provisioned directory.
     disableDeletion: false
+    # Интервал polling изменений dashboard JSON; малые значения добавляют filesystem polling overhead.
     updateIntervalSeconds: 10
     options:
+      # Container path, смонтированный docker-compose; изменение нарушает provisioning.
       path: /var/lib/grafana/dashboards

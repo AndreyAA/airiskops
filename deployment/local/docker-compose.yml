@@ -1,12 +1,17 @@
+# Имя Compose project. Определяет область действия сети и сгенерированных ресурсов.
 name: flink
 
 services:
   kafka:
+    # Одноузловой Kafka только для local replay/E2E; это не production HA.
     image: apache/kafka:3.8.1
+    # Стабильное имя для scripts и диагностики.
     container_name: airiskops-kafka
     ports:
+      # Доступ с host для local CLI/tools. Конфликт port не даст stack запуститься.
       - "9092:9092"
     environment:
+      # Идентификатор KRaft node и совмещённые broker/controller roles для single-node setup.
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
@@ -16,33 +21,44 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      # Одна replica/min ISR необходимы для single broker, но не дают HA или durability.
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Три partition позволяют local job демонстрировать parallel consumption.
       KAFKA_NUM_PARTITIONS: 3
     healthcheck:
+      # Kafka считается ready только когда topic CLI может подключиться к broker.
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      # Медленные checks задерживают startup зависимых Flink services; слишком жёсткие значения дают false failures.
       interval: 10s
       timeout: 20s
       retries: 12
       start_period: 20s
 
   jobmanager:
+    # Flink coordinator image; для custom ONNX image задайте FLINK_IMAGE.
     image: ${FLINK_IMAGE:-flink:1.20.2-scala_2.12-java17}
     container_name: airiskops-jobmanager
     command: jobmanager
     ports:
+      # REST/UI port и Prometheus reporter port, доступные с host.
       - "8081:8081"
       - "9249:9249"
     environment:
       FLINK_PROPERTIES: |-
+        # Internal service DNS для подключения TaskManagers к JobManager.
         jobmanager.rpc.address: jobmanager
+        # Prometheus reporter экспортирует Flink runtime metrics.
         metrics.reporters: prom
         metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
         metrics.reporter.prom.port: 9249
     volumes:
+      # Директория собранного JAR; mount делает local builds сразу доступными Flink.
       - ../../flink-job/target:/opt/flink/usrlib
+      # Read-only job profiles не позволяют container менять конфигурацию.
       - ../../config:/opt/flink/job-config:ro
+      # Runtime policy/state находятся в writable local directories; вне local demo их нужно защищать.
       - ../../runtime:/opt/flink/runtime
       - ../../runtime/flink-state:/opt/flink/state
     depends_on:
@@ -50,19 +66,23 @@ services:
         condition: service_healthy
 
   taskmanager:
+    # Должен использовать тот же Flink/custom image, что и JobManager, для согласованности dependencies/model.
     image: ${FLINK_IMAGE:-flink:1.20.2-scala_2.12-java17}
     container_name: airiskops-taskmanager
     command: taskmanager
     ports:
+      # Host Prometheus reporter port; конфликт не даст TaskManager запуститься.
       - "9250:9250"
     environment:
       FLINK_PROPERTIES: |-
         jobmanager.rpc.address: jobmanager
+        # Двух slots достаточно для local MVP, но они ограничивают parallelism и throughput.
         taskmanager.numberOfTaskSlots: 2
         metrics.reporters: prom
         metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
         metrics.reporter.prom.port: 9250
     volumes:
+      # Те же JAR, config и runtime mounts, что у JobManager, необходимы для job submission/state.
       - ../../flink-job/target:/opt/flink/usrlib
       - ../../config:/opt/flink/job-config:ro
       - ../../runtime:/opt/flink/runtime
@@ -71,14 +91,18 @@ services:
       - jobmanager
 
   prometheus:
+    # Сервис хранения/query metrics для Flink и checkpoint exporter.
     image: prom/prometheus:v2.54.1
     container_name: airiskops-prometheus
     command:
+      # Явные config и local TSDB path; container volume в этом профиле ephemeral.
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
     ports:
+      # Prometheus API/UI, доступные с host для reports и Grafana.
       - "9090:9090"
     volumes:
+      # Read-only scrape configuration сохраняет воспроизводимость target definitions.
       - ../../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     depends_on:
       - jobmanager
@@ -86,32 +110,39 @@ services:
       - checkpoint-exporter
 
   checkpoint-exporter:
+    # Небольшой adapter, опрашивающий Flink REST и публикующий checkpoint metrics в Prometheus.
     image: python:3.11-slim
     container_name: airiskops-checkpoint-exporter
     command:
       - "python"
       - "/opt/airiskops/tools/exporters/flink_checkpoint_exporter.py"
+      # REST endpoint и bind port exporter внутри Docker-сети.
       - "--flink-base-url"
       - "http://jobmanager:8081"
       - "--listen-port"
       - "9261"
       - "--job-name"
       - "AIRiskOps MVP Increment 1"
+      # Exporter читает job с указанным именем; переименование job удалит его metrics.
     volumes:
       - ../../:/opt/airiskops:ro
     depends_on:
       - jobmanager
 
   grafana:
+    # Local dashboard/UI service; указанные ниже credentials предназначены только для development.
     image: grafana/grafana:11.2.0
     container_name: airiskops-grafana
     ports:
+      # Host UI/API port; изменение требует обновить runbook и smoke-test.
       - "3000:3000"
     environment:
+      # Development credentials. Не используйте эти значения в shared environment.
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
+      # Provisioning и dashboard JSON доступны только для чтения, чтобы предотвратить runtime drift.
       - ../../observability/grafana/provisioning:/etc/grafana/provisioning:ro
       - ../../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:

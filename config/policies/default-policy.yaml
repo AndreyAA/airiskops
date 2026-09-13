@@ -1,23 +1,37 @@
+# Монотонный идентификатор policy для отклонения устаревших обновлений и трассировки решений.
 version: "policy-v1"
+# Метаданные владельца actor/version для аудита и диагностики.
 updatedBy: "local-mvp"
+# UTC timestamp обновления; при изменении thresholds поддерживайте его точность для аудита.
 updatedAt: "2026-08-26T00:00:00Z"
+# Defaults применяются, если для agent нет rule-specific override.
 defaults:
   promptInjection:
+    # Границы confidence для MEDIUM/HIGH/CRITICAL. Малые значения повышают detection и noise.
     medium: 0.55
     high: 0.75
     critical: 0.90
   toxicity:
+    # Границы confidence для toxicity; отсутствие более высокой severity означает, что default CRITICAL не задан.
     medium: 0.70
     high: 0.90
   looping:
+    # Фиксированная severity для looping findings; порог looping detector не меняется.
     severity: "MEDIUM"
   systemPromptLeakage:
+    # Фиксированная severity для system-prompt leakage findings.
     severity: "CRITICAL"
+# Лимиты suppression уменьшают объём duplicate alert, но могут скрыть повторные события внутри окна.
 suppression:
+  # Повторные эквивалентные инциденты внутри этого интервала подавляются.
   duplicateWindowSeconds: 180
+  # Максимум emitted incidents на session window; малые значения уменьшают noise ценой пропущенных alert.
   maxIncidentsPerSessionWindow: 3
+# Per-agent overrides имеют приоритет над defaults и могут сделать поведение alert неоднородным.
 agents:
   agent-risk-01:
     promptInjection:
+      # Этот agent-specific threshold высокой confidence переопределяет defaults.high.
       high: 0.72
+      # Этот agent-specific critical threshold переопределяет defaults.critical.
       critical: 0.88

@@ -1,10 +1,18 @@
+# Версия schema для Grafana provisioning.
 apiVersion: 1
 
 datasources:
+  # Имя datasource, на которое ссылаются dashboard panels.
   - name: Prometheus
+    # Стабильный datasource UID; изменение может разорвать существующие ссылки dashboard.
     uid: prometheus
+    # Реализация Prometheus datasource.
     type: prometheus
+    # Proxy access позволяет Grafana запрашивать Prometheus внутри Docker-сети.
     access: proxy
+    # Internal service URL; localhost указывал бы на сам Grafana container.
     url: http://prometheus:9090
+    # Default datasource для panels без явной ссылки на datasource.
     isDefault: true
+    # Можно редактировать через UI. Удобно локально, но допускает configuration drift относительно Git.
     editable: true
