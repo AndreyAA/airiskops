@@ -49,6 +49,8 @@
 
 Если нужно понять MVP и этапы внедрения:
 
+Для управленческого решения: [отчёт о целесообразности внедрения](mvp/flink-adoption-management-report.md) — покрытие MVP, НТ, разрыв до прода и бюджет PoC.
+
 1. [mvp/mvp-spec.md](mvp/mvp-spec.md)
 2. [mvp/near-term-improvement-plan.md](mvp/near-term-improvement-plan.md)
 3. [mvp/increment-3-implementation-spec.md](mvp/increment-3-implementation-spec.md)
@@ -112,6 +114,9 @@
 
 ### `mvp/`
 
+- [flink-adoption-management-report.md](mvp/flink-adoption-management-report.md)
+  - управленческая оценка Flink для AISafety Ops на 50K сообщений/с;
+  - доказательства из кода и прогонов, риски, критерии успеха и оценка расширенного PoC.
 - [mvp-spec.md](mvp/mvp-spec.md)
   - детальная спецификация MVP и инкрементов.
 - [near-term-improvement-plan.md](mvp/near-term-improvement-plan.md)
